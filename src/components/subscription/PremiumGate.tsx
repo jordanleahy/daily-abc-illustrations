@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Crown, Lock } from "lucide-react";
-import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useAccessResolver } from '@/hooks/useAccessResolver';
+import { Lock } from "lucide-react";
 
 interface PremiumGateProps {
   children: ReactNode;
@@ -13,18 +12,20 @@ interface PremiumGateProps {
   showUpgrade?: boolean;
 }
 
+/**
+ * PremiumGate - Now just checks for authentication
+ * All authenticated users have full access
+ */
 export const PremiumGate = ({ 
   children, 
-  feature = "premium feature", 
-  description = "This feature requires a premium subscription.",
+  feature = "feature", 
+  description = "Sign in to access this feature.",
   showUpgrade = true 
 }: PremiumGateProps) => {
-  const { accessState, isReady } = useAccessResolver();
-  const { createCheckoutSession } = useSubscription();
-  const { user } = useAuthContext();
+  const { user, loading } = useAuthContext();
+  const navigate = useNavigate();
 
-  // Only show loading if we have no cached state
-  if (!isReady && accessState === 'loading') {
+  if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -32,29 +33,24 @@ export const PremiumGate = ({
     );
   }
 
-  if (accessState === 'locked') {
+  // Not authenticated - show sign in prompt
+  if (!user) {
     return (
       <Card className="border-orange-200 bg-orange-50/50">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-orange-600" />
-            <CardTitle>Plus Feature</CardTitle>
+            <CardTitle>Sign In Required</CardTitle>
           </div>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Upgrade to Plus to unlock {feature} with Habits & Rewards.
+            Create a free account to access {feature}.
           </p>
-          {showUpgrade && user && (
-            <Button onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.plus_monthly.price_id)}>
-              <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Plus
-            </Button>
-          )}
-          {showUpgrade && !user && (
-            <Button asChild>
-              <a href="/auth?mode=signup">Sign Up Free</a>
+          {showUpgrade && (
+            <Button onClick={() => navigate('/auth?mode=signup')}>
+              Sign Up Free
             </Button>
           )}
         </CardContent>
@@ -62,5 +58,6 @@ export const PremiumGate = ({
     );
   }
 
+  // Authenticated - show content
   return <>{children}</>;
 };

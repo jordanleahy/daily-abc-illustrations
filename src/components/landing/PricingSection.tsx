@@ -1,38 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useState } from 'react';
 
+/**
+ * Free Access Pricing Section for Landing Page
+ */
 export const PricingSection = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthContext();
-  const { createCheckoutSession } = useSubscription();
-  const [loadingPlan, setLoadingPlan] = useState<'monthly' | 'annual' | null>(null);
 
-  const handleCheckout = async (priceId: string, planType: 'monthly' | 'annual') => {
-    if (!isAuthenticated) {
-      navigate('/auth?mode=signup');
-      return;
-    }
-
-    setLoadingPlan(planType);
-    try {
-      await createCheckoutSession(priceId);
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  const plusFeatures = [
+  const features = [
     'Full library access',
     'Download PDF versions',
     'Habits & Rewards system',
     'Track reading progress',
-    'Premium experience'
+    'Premium experience',
+    'Daily ABC books'
   ];
 
   return (
@@ -40,32 +25,30 @@ export const PricingSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Simple, Transparent Pricing
+            Free For Everyone
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Unlock full access with Plus
+            All features included with a simple signup
           </p>
         </div>
 
-        {/* Two Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Plus Monthly Card */}
-          <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="max-w-md mx-auto">
+          <Card className="border-2 border-primary shadow-xl">
             <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl mb-2">Plus Monthly</CardTitle>
+              <div className="mx-auto mb-4">
+                <Sparkles className="h-12 w-12 text-primary" />
+              </div>
+              <CardTitle className="text-2xl mb-2">Free Access</CardTitle>
               <div className="mt-4">
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold">$14.99</span>
-                  <span className="text-muted-foreground text-lg">/month</span>
+                  <span className="text-5xl font-bold">$0</span>
+                  <span className="text-muted-foreground text-lg">/forever</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Billed monthly
-                </p>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <ul className="space-y-3">
-                {plusFeatures.map((feature, index) => (
+                {features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Check className="w-3 h-3 text-primary-foreground" />
@@ -75,71 +58,23 @@ export const PricingSection = () => {
                 ))}
               </ul>
               
-              <Button 
-                className="w-full text-lg py-6"
-                size="lg"
-                variant="outline"
-                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.plus_monthly.price_id, 'monthly')}
-                disabled={loadingPlan !== null}
-              >
-                {loadingPlan === 'monthly' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Get Started Now
-              </Button>
-              
-              <p className="text-xs text-center text-muted-foreground">
-                30-day money-back guarantee • Cancel anytime
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Plus Annual Card - Highlighted */}
-          <Card className="border-2 border-primary shadow-xl relative">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <Badge className="px-4 py-1 text-sm">Save 45%</Badge>
-            </div>
-            <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl mb-2">Plus Annual</CardTitle>
-            <div className="mt-4">
-              <div className="flex items-baseline justify-center gap-2">
-                <span className="text-5xl font-bold">$8.25</span>
-                <span className="text-muted-foreground text-lg">/month</span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Billed $99.00 annually
-              </p>
-            </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <ul className="space-y-3">
-                {plusFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    </div>
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-                <li className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check className="w-3 h-3 text-primary-foreground" />
-                  </div>
-                  <span className="text-sm">Early access to new books</span>
-                </li>
-              </ul>
-              
-              <Button 
-                className="w-full text-lg py-6"
-                size="lg"
-                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.plus_annual.price_id, 'annual')}
-                disabled={loadingPlan !== null}
-              >
-                {loadingPlan === 'annual' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Get Started Now
-              </Button>
-              
-              <p className="text-xs text-center text-muted-foreground">
-                30-day money-back guarantee • Cancel anytime
-              </p>
+              {isAuthenticated ? (
+                <Button 
+                  className="w-full text-lg py-6"
+                  size="lg"
+                  onClick={() => navigate('/')}
+                >
+                  Go to Library
+                </Button>
+              ) : (
+                <Button 
+                  className="w-full text-lg py-6"
+                  size="lg"
+                  onClick={() => navigate('/auth?mode=signup')}
+                >
+                  Sign Up Free
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

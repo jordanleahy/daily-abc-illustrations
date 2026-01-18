@@ -1,22 +1,8 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRole } from '@/contexts/RoleContext';
-import { useSubscription } from '@/hooks/useSubscription';
-
-// Trial users get full access for 7 days
-import { SafeLocalStorage, ACCESS_STATE_CACHE_KEY, ACCESS_STATE_CACHE_HOURS } from '@/utils/storage';
 
 export type AccessState = 'loading' | 'unlocked' | 'locked';
-
-interface CachedAccessState {
-  userId: string;
-  isUnlocked: boolean;
-  isAdmin: boolean;
-  isTeacher: boolean;
-  hasSubscription: boolean;
-  isInTrial: boolean;
-  cachedAt: number;
-}
 
 interface AccessResolverResult {
   accessState: AccessState;
@@ -27,74 +13,35 @@ interface AccessResolverResult {
 }
 
 /**
- * Unified Access Resolver Hook
+ * Unified Access Resolver Hook (Free Tier)
  * 
- * Single source of truth for access control that:
- * 1. Returns cached state INSTANTLY on first render (no loading flicker)
- * 2. Combines auth, role, and subscription checks into one atomic state
- * 3. Outputs simple locked/unlocked/loading state
+ * All authenticated users get full access.
+ * No subscription checks needed - the app is free to use.
  * 
  * Priority order:
- * - Admin/Teacher roles → always unlocked
- * - Active subscription → unlocked
- * - No subscription → locked
+ * - Not authenticated → locked
+ * - Authenticated → unlocked
  */
 export const useAccessResolver = (): AccessResolverResult => {
   const { user, loading: authLoading } = useAuthContext();
   const { hasRole, isLoading: roleLoading } = useRole();
-  const { hasActiveSubscription, loading: subscriptionLoading, isInTrial } = useSubscription();
 
-  // Step 1: Check cache SYNCHRONOUSLY for instant first render
-  const cachedState = useMemo(() => {
-    if (!user?.id) return null;
-    const cached = SafeLocalStorage.get<CachedAccessState>(ACCESS_STATE_CACHE_KEY);
-    if (cached && cached.userId === user.id) {
-      return cached;
-    }
-    return null;
-  }, [user?.id]);
-
-  // Step 2: Compute current state from hooks
   const isAdmin = hasRole('admin');
   const isTeacher = hasRole('teacher');
   const isPrivileged = isAdmin || isTeacher;
 
-  // Step 3: Determine if we're still loading
-  const isLoading = authLoading || roleLoading || subscriptionLoading;
+  const isLoading = authLoading || roleLoading;
 
-  // Step 4: Compute unlocked state
+  // All authenticated users are unlocked (free access)
   const isUnlocked = useMemo(() => {
-    // Privileged users always have access
-    if (isPrivileged) return true;
-    // Trial users get full access
-    if (isInTrial) return true;
-    // Check subscription
-    return hasActiveSubscription;
-  }, [isPrivileged, hasActiveSubscription, isInTrial]);
+    return !!user;
+  }, [user]);
 
-  // Step 5: Update cache when we have fresh data (useEffect for side effects)
-  useEffect(() => {
-    if (!user?.id || isLoading) return;
-    
-    const newCacheState: CachedAccessState = {
-      userId: user.id,
-      isUnlocked,
-      isAdmin,
-      isTeacher,
-      hasSubscription: hasActiveSubscription,
-      isInTrial: isInTrial || false,
-      cachedAt: Date.now(),
-    };
-    
-    SafeLocalStorage.set(ACCESS_STATE_CACHE_KEY, newCacheState, ACCESS_STATE_CACHE_HOURS);
-  }, [user?.id, isLoading, isUnlocked, isAdmin, isTeacher, hasActiveSubscription, isInTrial]);
-
-  // Step 6: Determine access state with cache-first approach
   const result = useMemo((): AccessResolverResult => {
-    // Not authenticated - always locked
+    // Not authenticated - locked
     if (!user) {
       return {
-        accessState: 'locked',
+        accessState: authLoading ? 'loading' : 'locked',
         isReady: !authLoading,
         isUnlocked: false,
         isPrivileged: false,
@@ -102,45 +49,33 @@ export const useAccessResolver = (): AccessResolverResult => {
       };
     }
 
-    // If we have valid cache for this user, use it immediately
-    if (cachedState) {
-      const cachedUnlocked = cachedState.isAdmin || cachedState.isTeacher || cachedState.hasSubscription || cachedState.isInTrial;
-      return {
-        accessState: cachedUnlocked ? 'unlocked' : 'locked',
-        isReady: true, // Cache means we're ready instantly
-        isUnlocked: cachedUnlocked,
-        isPrivileged: cachedState.isAdmin || cachedState.isTeacher,
-        hasSubscription: cachedState.hasSubscription,
-      };
-    }
-
-    // No cache - check if still loading
+    // Still loading role info
     if (isLoading) {
       return {
         accessState: 'loading',
         isReady: false,
-        isUnlocked: false,
+        isUnlocked: true,
         isPrivileged: false,
-        hasSubscription: false,
+        hasSubscription: true, // Treat all users as having subscription for compatibility
       };
     }
 
-    // Fresh data available
+    // Authenticated user - full access
     return {
-      accessState: isUnlocked ? 'unlocked' : 'locked',
+      accessState: 'unlocked',
       isReady: true,
-      isUnlocked,
+      isUnlocked: true,
       isPrivileged,
-      hasSubscription: hasActiveSubscription,
+      hasSubscription: true, // All authenticated users get "subscription" features
     };
-  }, [user, cachedState, isLoading, isUnlocked, isPrivileged, hasActiveSubscription, authLoading]);
+  }, [user, isLoading, isPrivileged, authLoading]);
 
   return result;
 };
 
 /**
- * Clear access cache - call on logout or subscription change
+ * Clear access cache - kept for API compatibility
  */
 export const clearAccessCache = () => {
-  SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
+  // No-op since we no longer cache subscription state
 };

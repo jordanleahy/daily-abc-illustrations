@@ -73,7 +73,7 @@ export const PreviewHero = () => {
               Helping toddlers grow one habit at a time. One story. One moment. One habit each day.
             </p>
             <p className="text-sm text-white/80 drop-shadow">
-              Simple setup. Cancel anytime. 30-day money-back guarantee.
+              Free forever. No credit card required.
             </p>
           </div>
 

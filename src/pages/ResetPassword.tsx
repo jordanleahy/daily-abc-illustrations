@@ -82,14 +82,8 @@ const ResetPassword = () => {
           description: "Your password has been successfully reset.",
         });
 
-        // Check subscription status to determine redirect
-        const { data: subStatus } = await supabase.functions.invoke('check-subscription');
-        
-        if (subStatus?.subscribed && (!subStatus.subscription_end || new Date(subStatus.subscription_end) > new Date())) {
-          navigate('/library');
-        } else {
-          navigate('/pricing');
-        }
+        // Redirect to library after password reset
+        navigate('/library');
       }
     } catch (error) {
       toast({

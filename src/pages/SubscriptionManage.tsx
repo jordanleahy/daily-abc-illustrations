@@ -1,34 +1,32 @@
-import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, ArrowLeft } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Sparkles, CheckCircle } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
 
+/**
+ * SubscriptionManage - Now shows free access status
+ */
 const SubscriptionManage = () => {
-  const { hasActiveSubscription, openCustomerPortal, loading } = useSubscription();
-  const { toast } = useToast();
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    // Auto-redirect to customer portal if user has active subscription
-    if (hasActiveSubscription && !loading) {
-      const timer = setTimeout(() => {
-        openCustomerPortal();
-      }, 3000); // Give user a moment to read the message
-
-      return () => clearTimeout(timer);
-    }
-  }, [hasActiveSubscription, loading, openCustomerPortal]);
-
-  if (loading) {
+  if (!user) {
     return (
       <StandardPageLayout containerClassName="py-8">
         <div className="max-w-2xl mx-auto text-center">
           <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3" />
-              <span>Loading subscription details...</span>
+            <CardHeader>
+              <CardTitle>Sign In Required</CardTitle>
+              <CardDescription>
+                Please sign in to view your account
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/auth')}>
+                Sign In
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -36,84 +34,42 @@ const SubscriptionManage = () => {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <StandardPageLayout containerClassName="py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <Card className="border-orange-200 bg-orange-50/50">
-            <CardHeader>
-              <CardTitle>No Active Subscription</CardTitle>
-              <CardDescription>
-                You don't currently have an active subscription to manage
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                To access subscription management features, you need to have an active subscription first.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button asChild>
-                  <a href="/pricing">
-                    View Pricing Plans
-                  </a>
-                </Button>
-                <Button asChild variant="outline">
-                  <a href="/">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Home
-                  </a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </StandardPageLayout>
-    );
-  }
+  const features = [
+    "Access to all daily published ABC books",
+    "Download PDF versions",
+    "Full library access",
+    "Habits & Rewards system",
+    "Track reading progress"
+  ];
 
   return (
     <StandardPageLayout containerClassName="py-8">
       <div className="max-w-2xl mx-auto text-center">
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-green-200 bg-green-50/50">
           <CardHeader>
-            <CardTitle>Manage Your Subscription</CardTitle>
+            <div className="mx-auto mb-4">
+              <Sparkles className="h-12 w-12 text-primary" />
+            </div>
+            <CardTitle>Your Free Account</CardTitle>
             <CardDescription>
-              Redirecting you to the Stripe Customer Portal
+              You have full access to all features
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="text-left">
-              <p className="text-sm text-muted-foreground mb-4">
-                You'll be redirected to Stripe's secure customer portal where you can:
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                <li>• Update your payment method</li>
-                <li>• Change your billing address</li>
-                <li>• View your billing history</li>
-                <li>• Download invoices</li>
-                <li>• Cancel or modify your subscription</li>
-                <li>• Update your subscription plan</li>
-              </ul>
-            </div>
+            <ul className="space-y-2 text-left">
+              {features.map((feature, index) => (
+                <li key={index} className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
 
-            <div className="flex flex-col gap-3">
-              <Button onClick={openCustomerPortal} disabled={loading}>
-                <ExternalLink className="h-4 w-4 mr-2" />
-                {loading ? "Opening..." : "Open Customer Portal"}
+            <div className="pt-4">
+              <Button onClick={() => navigate('/')} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
               </Button>
-              <Button asChild variant="outline">
-                <a href="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </a>
-              </Button>
-            </div>
-
-            <div className="text-xs text-muted-foreground pt-4 border-t">
-              <p>
-                The customer portal is securely hosted by Stripe. 
-                Any changes you make will be reflected in your account immediately.
-              </p>
             </div>
           </CardContent>
         </Card>

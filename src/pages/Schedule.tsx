@@ -181,42 +181,27 @@ export default function Schedule() {
               </CardContent>
             </Card>}
 
-          {/* Expired Items (Plus-tier only - past books archive) */}
+          {/* Expired Items - Available to all authenticated users */}
           {expiredItems.length > 0 && (
             <div className="mt-8">
-              {hasActiveSubscription ? (
-                <details className="group" open>
-                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Show {expiredItems.length} past books
-                  </summary>
-                  <div className="mt-4 space-y-4 opacity-60">
-                    {expiredItems.map(item => (
-                      <PublicScheduleCard 
-                        key={item.id} 
-                        item={item}
-                        position="expired"
-                        seoMetadata={seoMetadataMap[item.id]}
-                        coverImageUrl={coverImageMap[item.book_id]}
-                        onHover={() => prefetchDailyPublished(item.id, item.book_id)}
-                      />
-                    ))}
-                  </div>
-                </details>
-              ) : (
-                <PremiumGate 
-                  feature="past books archive"
-                  description="Upgrade to Plus to access all past daily published ABC books and view the complete archive."
-                  showUpgrade={true}
-                >
-                  <details className="group">
-                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Show {expiredItems.length} past books (Plus only)
-                    </summary>
-                  </details>
-                </PremiumGate>
-              )}
+              <details className="group" open>
+                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Show {expiredItems.length} past books
+                </summary>
+                <div className="mt-4 space-y-4 opacity-60">
+                  {expiredItems.map(item => (
+                    <PublicScheduleCard 
+                      key={item.id} 
+                      item={item}
+                      position="expired"
+                      seoMetadata={seoMetadataMap[item.id]}
+                      coverImageUrl={coverImageMap[item.book_id]}
+                      onHover={() => prefetchDailyPublished(item.id, item.book_id)}
+                    />
+                  ))}
+                </div>
+              </details>
             </div>
           )}
         </div>

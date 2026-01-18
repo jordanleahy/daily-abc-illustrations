@@ -111,11 +111,11 @@ const CityLanding = () => {
               <Button 
                 size="lg" 
                 variant={cityVideo ? 'secondary' : 'default'}
-                onClick={() => navigate('/auth?mode=signup&redirect=/subscription/checkout&plan=annual&coupon=Solomon')}
+                onClick={() => navigate('/auth?mode=signup')}
                 className="flex items-center gap-2"
               >
                 <Sparkles className="h-5 w-5" />
-                Free Annual Subscription – Coupon Code Solomon
+                Sign Up Free
               </Button>
             </div>
           </div>

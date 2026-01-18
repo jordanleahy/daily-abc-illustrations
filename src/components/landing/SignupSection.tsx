@@ -34,7 +34,7 @@ export const SignupSection = () => {
         </div>
 
         <p className="text-sm mt-6 opacity-75">
-          30-day money-back guarantee • Cancel anytime
+          Free forever • No credit card required
         </p>
       </div>
     </section>

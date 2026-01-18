@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
-import { Lock, Crown } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { useAccessResolver } from "@/hooks/useAccessResolver";
+import { useNavigate } from "react-router-dom";
+import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PremiumContentWrapperProps {
@@ -11,31 +10,29 @@ interface PremiumContentWrapperProps {
   className?: string;
 }
 
+/**
+ * PremiumContentWrapper - Now just checks authentication
+ * All authenticated users have full access
+ */
 export const PremiumContentWrapper = ({ 
   children, 
   showOverlay = true,
   className = ""
 }: PremiumContentWrapperProps) => {
-  const { accessState, isReady } = useAccessResolver();
-  const { createCheckoutSession } = useSubscription();
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, loading } = useAuthContext();
+  const navigate = useNavigate();
 
-  // If user is unlocked (has subscription or is privileged), show content
-  if (accessState === 'unlocked') {
+  // If authenticated, show content
+  if (isAuthenticated) {
     return <>{children}</>;
   }
 
-  // If not authenticated, show content normally (they'll hit auth wall elsewhere)
-  if (!isAuthenticated) {
+  // Still loading - show content to avoid flicker
+  if (loading) {
     return <>{children}</>;
   }
 
-  // Still loading with no cache - show content to avoid flicker
-  if (!isReady && accessState === 'loading') {
-    return <>{children}</>;
-  }
-
-  // User is authenticated but doesn't have subscription (accessState === 'locked')
+  // Not authenticated - show sign in prompt
   if (showOverlay) {
     return (
       <div className={`relative ${className}`}>
@@ -44,30 +41,29 @@ export const PremiumContentWrapper = ({
           {children}
         </div>
         
-        {/* Premium overlay */}
+        {/* Sign in overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="text-center space-y-4 p-6">
             <div className="flex justify-center">
-              <div className="rounded-full bg-orange-100 dark:bg-orange-900/20 p-3">
-                <Lock className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              <div className="rounded-full bg-primary/10 p-3">
+                <Lock className="h-8 w-8 text-primary" />
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-1">Premium Content</h3>
+              <h3 className="font-semibold text-lg mb-1">Sign In Required</h3>
               <p className="text-sm text-muted-foreground">
-                Upgrade to access the full library
+                Create a free account to access this content
               </p>
             </div>
             <Button 
               onClick={(e) => {
                 e.stopPropagation();
-                createCheckoutSession("price_1RBzKVP6s2BxJmNFaGe2wKwc");
+                navigate('/auth?mode=signup');
               }}
               size="sm"
               className="shadow-lg"
             >
-              <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Premium
+              Sign Up Free
             </Button>
           </div>
         </div>
@@ -75,6 +71,5 @@ export const PremiumContentWrapper = ({
     );
   }
 
-  // No overlay mode - just return children but they won't be clickable due to parent logic
   return <>{children}</>;
 };

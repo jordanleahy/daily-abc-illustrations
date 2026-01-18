@@ -111,11 +111,11 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Upgrade prompt card - Admin only */}
+            {/* Get Started prompt card - Admin only */}
             <AdminOnly>
               <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 rounded-lg p-6 space-y-4">
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold">Unlock Habits & Rewards</h2>
+                  <h2 className="text-2xl font-bold">Habits & Rewards</h2>
                   <p className="text-muted-foreground">
                     Track reading progress, earn points, and motivate your kids with our interactive rewards system.
                   </p>
@@ -138,8 +138,8 @@ const Index = () => {
                     <span>Track progress and build reading consistency</span>
                   </li>
                 </ul>
-                <button onClick={() => navigate('/pricing')} className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors">
-                  Upgrade to Plus
+                <button onClick={() => navigate('/auth?mode=signup')} className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors">
+                  Sign Up Free
                 </button>
               </div>
             </AdminOnly>

@@ -57,9 +57,9 @@ export default function UserLibraryDetail() {
   
   const isLoading = isLoadingDaily;
 
-  // Access gate: redirect non-subscribers to pricing
+  // Access gate: redirect unauthenticated users to signup
   if (isReady && accessState === 'locked') {
-    return <Navigate to="/pricing" state={{ upgrade: 'library' }} replace />;
+    return <Navigate to="/auth?mode=signup" state={{ redirect: `/library/${id}` }} replace />;
   }
 
   const handlePageClick = (pageIndex: number) => {
@@ -104,14 +104,7 @@ export default function UserLibraryDetail() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!hasActiveSubscription) {
-      toast({
-        title: "Plus Feature",
-        description: "Upgrade to Plus to download PDF versions of books.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // All authenticated users can download PDFs
 
     if (!dailyContent?.book_id || !pages.length) return;
     
@@ -276,49 +269,25 @@ export default function UserLibraryDetail() {
                     )}
                     <span className="sr-only">{isBookAdded ? 'Added to habits' : 'Add as habit'}</span>
                   </Button>
-                ) : (
-                  <Button
-                    onClick={() => navigate('/pricing', { state: { upgrade: 'habits_rewards' } })}
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                    title="Upgrade to Plus to add as habit"
-                  >
-                    <Lock className="h-4 w-4" />
-                    <span className="sr-only">Upgrade for Habits</span>
-                  </Button>
-                )}
+                ) : null}
                 
-                {hasActiveSubscription ? (
-                  <Button
-                    onClick={handleDownloadPDF}
-                    disabled={isDownloading}
-                    variant="outline"
-                    size="icon"
-                    className={`shrink-0 ${isDownloading ? 'opacity-75 cursor-wait' : ''}`}
-                    title={isDownloading ? "Generating PDF..." : "Download as PDF"}
-                  >
-                    {isDownloading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Download className="h-5 w-5" />
-                    )}
-                    <span className="sr-only">
-                      {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
-                    </span>
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => navigate('/pricing', { state: { upgrade: 'pdf_download' } })}
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                    title="Upgrade to Plus to download PDFs"
-                  >
-                    <Lock className="h-4 w-4" />
-                    <span className="sr-only">Upgrade for PDF Downloads</span>
-                  </Button>
-                )}
+                <Button
+                  onClick={handleDownloadPDF}
+                  disabled={isDownloading}
+                  variant="outline"
+                  size="icon"
+                  className={`shrink-0 ${isDownloading ? 'opacity-75 cursor-wait' : ''}`}
+                  title={isDownloading ? "Generating PDF..." : "Download as PDF"}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Download className="h-5 w-5" />
+                  )}
+                  <span className="sr-only">
+                    {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
+                  </span>
+                </Button>
               </div>
             </div>
           </div>

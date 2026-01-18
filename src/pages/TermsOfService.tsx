@@ -62,7 +62,7 @@ const TermsOfService = () => {
                   <li><strong>AI Book Creation & Illustrations</strong></li>
                   <li><strong>Kid Profiles:</strong> Parent/guardian-managed profiles with rewards/progress</li>
                   <li><strong>Library & History:</strong> Access to prior and upcoming content</li>
-                  <li><strong>Premium Features:</strong> Subscription tiers, institution/family plans</li>
+                  <li><strong>Full Access:</strong> All features are free for registered users</li>
                 </ul>
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">2.2 AI-Generated Content</h3>

@@ -9,12 +9,15 @@ interface LibraryUpgradeModalProps {
   bookTitle: string;
 }
 
+/**
+ * LibraryUpgradeModal - Now prompts for free signup instead of upgrade
+ */
 export const LibraryUpgradeModal = ({ open, onOpenChange, bookTitle }: LibraryUpgradeModalProps) => {
   const navigate = useNavigate();
 
-  const handleUpgrade = () => {
+  const handleSignUp = () => {
     onOpenChange(false);
-    navigate('/pricing');
+    navigate('/auth?mode=signup');
   };
 
   return (
@@ -23,16 +26,16 @@ export const LibraryUpgradeModal = ({ open, onOpenChange, bookTitle }: LibraryUp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Unlock Full Library Access
+            Sign Up for Free Access
           </DialogTitle>
           <DialogDescription className="pt-4">
-            <span className="font-medium text-foreground">"{bookTitle}"</span> is part of our premium library.
+            Create a free account to access <span className="font-medium text-foreground">"{bookTitle}"</span> and all library books.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <p className="text-sm text-muted-foreground">
-            Upgrade to Chairlift Plus to unlock:
+            Free account includes:
           </p>
           
           <ul className="space-y-3">
@@ -55,8 +58,8 @@ export const LibraryUpgradeModal = ({ open, onOpenChange, bookTitle }: LibraryUp
           </ul>
 
           <div className="pt-4 space-y-2">
-            <Button onClick={handleUpgrade} className="w-full" size="lg">
-              Upgrade to Plus
+            <Button onClick={handleSignUp} className="w-full" size="lg">
+              Sign Up Free
             </Button>
             <Button onClick={() => onOpenChange(false)} variant="ghost" className="w-full">
               Continue browsing

@@ -1,4 +1,4 @@
-import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target, Snowflake, UtensilsCrossed } from 'lucide-react';
+import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target, Snowflake, UtensilsCrossed, Youtube } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 
 /**
@@ -55,6 +55,7 @@ export const ROUTES = {
   AGENTS: '/agents',
   DAILY_PUB_SCHEDULE: '/daily-published-schedule',
   ADMIN_USER_ACTIVITY: '/admin/user-activity',
+  ADMIN_YOUTUBE_CHANNELS: '/admin/youtube-channels',
   REDDIT: '/reddit',
   AUTH: '/auth',
   PROFILE: '/profile',
@@ -220,6 +221,14 @@ export const navigationConfig: RouteConfig[] = [
     group: 'admin',
     permission: { role: 'admin' },
     activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.ADMIN_YOUTUBE_CHANNELS,
+    name: 'YouTube Channels',
+    icon: Youtube,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { startsWith: true },
   },
 ];
 

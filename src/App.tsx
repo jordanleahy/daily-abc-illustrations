@@ -21,6 +21,7 @@ import QuestionDetail from "./pages/QuestionDetail";
 import AgentCreator from "./pages/AgentCreator";
 import AdminChat from "./pages/AdminChat";
 import AdminPersonas from "./pages/admin/Personas";
+import YouTubeChannels from "./pages/admin/YouTubeChannels";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import BlogAdmin from "./pages/BlogAdmin";
@@ -184,6 +185,7 @@ const App = () => {
                 <Route path="/agents/create" element={<ProtectedRoute requireRole="admin"><AgentCreator /></ProtectedRoute>} />
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />
+                <Route path="/admin/youtube-channels" element={<ProtectedRoute requireRole="admin"><YouTubeChannels /></ProtectedRoute>} />
                 <Route path="/blog/admin" element={<ProtectedRoute requireRole="admin"><BlogAdmin /></ProtectedRoute>} />
                 <Route path="/test-video-export" element={<ProtectedRoute requireRole="admin"><VideoExportTest /></ProtectedRoute>} />
                 <Route path="/blog" element={<Blog />} />

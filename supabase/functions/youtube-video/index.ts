@@ -488,6 +488,69 @@ Deno.serve(async (req) => {
         );
       }
 
+      case 'get-channel-info': {
+        let channelId = url.searchParams.get('channelId');
+        
+        if (!channelId) {
+          throw new Error('Channel ID is required');
+        }
+
+        console.log('Fetching channel info:', channelId);
+
+        // If it's a handle (starts with @), resolve to channel ID first
+        let resolvedChannelId = channelId;
+        
+        if (!channelId.startsWith('UC')) {
+          // Search for the channel by handle/username
+          const searchResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(channelId)}&maxResults=1&key=${YOUTUBE_API_KEY}`
+          );
+
+          if (!searchResponse.ok) {
+            throw new Error('Failed to resolve channel handle');
+          }
+
+          const searchData = await searchResponse.json();
+          if (searchData.items && searchData.items.length > 0) {
+            resolvedChannelId = searchData.items[0].snippet.channelId;
+          } else {
+            throw new Error('Channel not found');
+          }
+        }
+
+        // Get channel details
+        const channelResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${resolvedChannelId}&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!channelResponse.ok) {
+          throw new Error('Failed to fetch channel info');
+        }
+
+        const channelData = await channelResponse.json();
+        
+        if (!channelData.items || channelData.items.length === 0) {
+          throw new Error('Channel not found');
+        }
+
+        const channel = channelData.items[0];
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              channelId: channel.id,
+              title: channel.snippet.title,
+              description: channel.snippet.description,
+              thumbnailUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default?.url,
+              subscriberCount: parseInt(channel.statistics.subscriberCount || '0'),
+              videoCount: parseInt(channel.statistics.videoCount || '0'),
+            },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         throw new Error('Invalid action');
     }

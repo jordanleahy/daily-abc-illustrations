@@ -3140,6 +3140,45 @@ export type Database = {
         }
         Relationships: []
       }
+      youtube_channels: {
+        Row: {
+          channel_id: string
+          channel_thumbnail_url: string | null
+          channel_title: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          parent_user_id: string
+          subscriber_count: number | null
+          updated_at: string | null
+          video_count: number | null
+        }
+        Insert: {
+          channel_id: string
+          channel_thumbnail_url?: string | null
+          channel_title: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          parent_user_id: string
+          subscriber_count?: number | null
+          updated_at?: string | null
+          video_count?: number | null
+        }
+        Update: {
+          channel_id?: string
+          channel_thumbnail_url?: string | null
+          channel_title?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          parent_user_id?: string
+          subscriber_count?: number | null
+          updated_at?: string | null
+          video_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       active_daily_published: {

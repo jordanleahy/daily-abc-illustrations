@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,9 @@ import { LoadingState } from "@/components/ui/loading-state";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 import { ScreenTimeExpiredModal } from "./ScreenTimeExpiredModal";
 import { ScreenTimeWarningBanner } from "./ScreenTimeWarningBanner";
+import { VideoEmptyState } from "./VideoEmptyState";
 import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
+import { useActiveYouTubeChannels } from "@/hooks/useYouTubeChannels";
 import { 
   saveVideoListToCache, 
   getCachedVideoList, 
@@ -32,51 +34,50 @@ export const VideoGrid = () => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   
   const { timeRemaining, showWarning, showExpiredModal, dismissExpiredModal } = useScreenTimeTimer();
+  
+  // Get approved channels from database
+  const { data: approvedChannels, isLoading: isLoadingChannels } = useActiveYouTubeChannels();
 
   // Phase 1: Get cached video list as placeholder data for instant display
   const cachedVideos = getCachedVideoList();
 
-  const { data: videos, isLoading } = useQuery({
-    queryKey: ['youtube-videos'],
+  const { data: videos, isLoading: isLoadingVideos } = useQuery({
+    queryKey: ['youtube-videos', approvedChannels?.map(c => c.channel_id).join(',')],
     queryFn: async () => {
+      // If no approved channels, return empty array
+      if (!approvedChannels || approvedChannels.length === 0) {
+        return [];
+      }
+      
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
-      const response = await fetch(
-        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=search-channels&query=kids educational videos`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-          },
-        }
-      );
-
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      
-      // Fetch videos from multiple channels
+      // Fetch videos from approved channels only
       const allVideos: Video[] = [];
-      const channels = result.data.channels.slice(0, 5); // Get videos from first 5 channels
 
-      for (const channel of channels) {
-        const videoResponse = await fetch(
-          `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=get-channel-videos&channelId=${channel.channelId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-            },
+      for (const channel of approvedChannels) {
+        try {
+          const videoResponse = await fetch(
+            `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=get-channel-videos&channelId=${channel.channel_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
+              },
+            }
+          );
+
+          const videoResult = await videoResponse.json();
+          if (videoResult.success) {
+            // Take up to 6 videos per channel
+            allVideos.push(...videoResult.data.videos.slice(0, 6));
           }
-        );
-
-        const videoResult = await videoResponse.json();
-        if (videoResult.success) {
-          allVideos.push(...videoResult.data.videos.slice(0, 3)); // Take 3 videos per channel
+        } catch (error) {
+          console.error(`Failed to fetch videos for channel ${channel.channel_id}:`, error);
         }
       }
 
-      // Shuffle videos for variety (but use a seeded shuffle based on date for consistency)
+      // Shuffle videos for variety
       const shuffled = allVideos.sort(() => Math.random() - 0.5);
       
       // Phase 1: Save to LocalStorage cache
@@ -91,6 +92,7 @@ export const VideoGrid = () => {
       
       return shuffled;
     },
+    enabled: !!approvedChannels && approvedChannels.length > 0,
     staleTime: 60 * 60 * 1000, // 1 hour
     gcTime: 24 * 60 * 60 * 1000, // 24 hours
     // Phase 1: Use cached data as placeholder for instant display
@@ -114,16 +116,20 @@ export const VideoGrid = () => {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const isLoading = isLoadingChannels || isLoadingVideos;
+
   if (isLoading) {
     return <LoadingState text="Loading videos..." />;
   }
 
+  // Show empty state if no approved channels
+  if (!approvedChannels || approvedChannels.length === 0) {
+    return <VideoEmptyState />;
+  }
+
+  // Show empty state if no videos available
   if (!videos || videos.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        No videos available at the moment.
-      </div>
-    );
+    return <VideoEmptyState />;
   }
 
   return (

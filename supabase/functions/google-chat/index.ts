@@ -571,17 +571,15 @@ serve(async (req) => {
     }
 
 
-    // Character theme context (only if character_theme question is enabled)
-    const isCharacterThemeEnabled = enabledQuestions.has('character_theme');
-    const themeContext = isCharacterThemeEnabled
-      ? characterTheme
-        ? characterTheme === 'custom'
-          ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
-          : characterTheme === 'no-theme'
-          ? `\n\n⚠️ CRITICAL - THEME STATUS:\n📚 NO THEME - The user prefers an educational-only book without character themes. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.\n\n❌ DO NOT ask about character themes - this step is complete. Proceed to grade level.`
-          : `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 THEME ALREADY SELECTED: "${characterTheme}"\n❌ DO NOT ask "What character theme would you like?" - Step 1 is COMPLETE.\n✅ PROCEED to Step 2 (Grade Level) or Step 3 if grade is also set.\nIntegrate "${characterTheme}" character throughout the book outline including cover page, educational focus page, and all content pages.`
-        : ''
-      : `\n\n📋 CHARACTER THEME QUESTION DISABLED: Do NOT ask about character themes. Proceed with educational content without themed characters.`;
+    // Character theme is now handled by the dynamic question system (buildDynamicDiscoveryBlock)
+    // Only inject context when theme is already selected to prevent re-asking
+    const themeContext = characterTheme
+      ? characterTheme === 'custom'
+        ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
+        : characterTheme === 'no-theme'
+        ? `\n\n⚠️ CRITICAL - THEME STATUS:\n📚 NO THEME - The user prefers an educational-only book without character themes. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.\n\n❌ DO NOT ask about character themes - this step is complete.`
+        : `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 THEME ALREADY SELECTED: "${characterTheme}"\n❌ DO NOT ask "What character theme would you like?" - this step is COMPLETE.\nIntegrate "${characterTheme}" character throughout the book outline including cover page, educational focus page, and all content pages.`
+      : ''; // Empty when no theme - let dynamic question system present options
 
     // Character constraints for selected characters - now fetched from database
     let characterConstraintsContext = '';

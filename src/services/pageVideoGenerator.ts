@@ -177,7 +177,7 @@ function drawFrame(
   
   // First, draw a blurred/darkened version as background to fill empty space
   ctx.save();
-  ctx.filter = 'blur(30px) brightness(0.4)';
+  ctx.filter = 'blur(80px) brightness(0.4)';
   // Draw cover version for background blur
   if (imgRatio > canvasRatio) {
     const bgHeight = height;

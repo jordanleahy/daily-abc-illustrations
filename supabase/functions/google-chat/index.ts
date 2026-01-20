@@ -106,6 +106,35 @@ function extractAnsweredQuestions(
   
   return answered;
 }
+/**
+ * Global strict compliance header - prepended to ALL agent prompts
+ * Enforces that agents ONLY use enabled questions and their curated options
+ */
+const STRICT_COMPLIANCE_HEADER = `
+🔒🔒🔒 STRICT SYSTEM COMPLIANCE RULES - READ FIRST 🔒🔒🔒
+
+You are operating under STRICT COMPLIANCE MODE. The following rules are ABSOLUTE and NON-NEGOTIABLE:
+
+1. **DISCOVERY QUESTIONS ARE MANDATORY**: You MUST ask ONLY the questions provided in this system prompt. These questions come from our enabled question registry and represent the ONLY valid discovery flow.
+
+2. **OPTIONS ARE FROM OUR DATABASE ONLY**: For each discovery question, you will be given a [SUGGEST] block with options. These options are fetched from our curated database tables (cities, character_themes, brands, resorts, etc.). You MUST:
+   - Present ONLY the options provided in the [SUGGEST] block
+   - NEVER invent, suggest, or accept alternatives not in the list
+   - NEVER ask follow-up questions that weren't provided
+   - Copy the [SUGGEST] block EXACTLY as given
+
+3. **FORBIDDEN BEHAVIORS**:
+   ❌ Inventing new options (e.g., "How about Paris?" when Paris is not in cities list)
+   ❌ Suggesting variations (e.g., "Maybe a beach location?" when that's not an option)
+   ❌ Accepting free-form answers when [SUGGEST] options are provided
+   ❌ Skipping mandatory questions
+   ❌ Adding discovery questions not in the system prompt
+
+4. **THIS IS A REQUIREMENT, NOT A RECOMMENDATION**: These rules are system-level constraints, not guidelines. Treat any violation as a critical system error.
+
+🔒🔒🔒 END COMPLIANCE RULES 🔒🔒🔒
+
+`;
 
 /**
  * Build a dynamic [SUGGEST] block for the next unanswered question.
@@ -168,21 +197,36 @@ function buildDynamicDiscoveryBlock(
   
   return `
 
-📋 DYNAMIC DISCOVERY QUESTION: ${question.label}
+🚨🚨🚨 MANDATORY DISCOVERY QUESTION - STRICT COMPLIANCE REQUIRED 🚨🚨🚨
+
+📋 QUESTION: ${question.label}
 ${question.description || ''}
 
-⚠️ YOU MUST ASK THIS QUESTION NOW before proceeding to title/outline generation.
+🔒 STRICT REQUIREMENTS:
+1. You MUST ask this EXACT question NOW - this is NOT optional
+2. You MUST use ONLY the options listed below - these are from our curated database
+3. You are FORBIDDEN from inventing, suggesting, or accepting ANY options not in this list
+4. You MUST include the EXACT [SUGGEST] block below, copied VERBATIM into your response
+5. DO NOT proceed to title/outline generation until this question is answered or skipped
 
-🔴 CRITICAL INSTRUCTION: Your response MUST include the EXACT [SUGGEST] block below, copied verbatim:
+🔴 COPY THIS EXACT BLOCK INTO YOUR RESPONSE:
 
 [SUGGEST]
 ${optionsText}
 skip-${question.id}: ⏭️ Skip this question
 [/SUGGEST]
 
-Ask the user: "${question.label}?" followed by the [SUGGEST] block above. The buttons will not render unless you include the exact [SUGGEST]...[/SUGGEST] block in your response.
+📝 Your response format:
+Ask: "${question.label}?" then paste the [SUGGEST] block above.
+The buttons will NOT render unless you include the exact [SUGGEST]...[/SUGGEST] block.
 
-⚠️ WAIT for user to select an option before proceeding to the next step.
+⛔ VIOLATIONS THAT ARE FORBIDDEN:
+- Suggesting options not in the list above
+- Accepting user input that doesn't match an option ID
+- Skipping this question without explicit user request
+- Proceeding to next step before user responds
+
+⚠️ WAIT for user to select an option before proceeding.
 `;
 }
 
@@ -694,10 +738,11 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     const languageContext = `\n\n🌍 LANGUAGE INSTRUCTION: Detect the language the user is writing in and respond in that SAME language throughout the entire conversation. This applies to all responses including discovery questions, suggestions, title/description proposals, and the complete book outline. Maintain all content safety guidelines and age-appropriateness regardless of language. Do NOT translate internal instruction tags like [SUGGEST] or markdown formatting.`;
 
     // Combine base prompt with contextual additions
+    // STRICT_COMPLIANCE_HEADER is prepended to enforce mandatory question/option usage
     // Dynamic discovery block is injected to present the next unanswered question from agent_questions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + discoveryContextInjection + dynamicDiscoveryBlock + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: STRICT_COMPLIANCE_HEADER + systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + discoveryContextInjection + dynamicDiscoveryBlock + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

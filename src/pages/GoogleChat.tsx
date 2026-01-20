@@ -659,16 +659,9 @@ export default function GoogleChat() {
       return;
     }
 
-    // Use refactored hook for theme detection from text
-    if (characterFlow.detectThemeFromText(raw)) {
-      // Theme was detected - add user message and wait for character selection
-      const userMsg = { role: 'user' as const, content: raw };
-      const newMessages = [...messages, userMsg];
-      queryClient.setQueryData(['session-messages', currentSessionId], newMessages);
-      await updateSessionMessages({ sessionId: currentSessionId, messages: newMessages as any });
-      setInput('');
-      return;
-    }
+    // REMOVED: Hardcoded theme detection from text
+    // Character theme is now handled by the dynamic question system via [SUGGEST] blocks
+    // The backend presents character_theme options based on sort_order in agent_questions
 
     console.log('[Handle Send Debug] Calling sendMessage with context:', {
       outlineReady: shouldShowReviewButton && !createdBookId,
@@ -1150,23 +1143,21 @@ export default function GoogleChat() {
       }
       
       // Capture character theme if present in the action
-      // If theme is selected but no characters yet, DON'T send to AI - wait for CharacterSelector
-      if (action.themeId && !action.selectedCharacterIds?.length) {
-        console.log('[Theme Selection] User selected theme, waiting for character selection:', action.themeId);
-        characterFlow.selectTheme(action.themeId);
-        // Don't send message - CharacterSelector will be injected via hook
-        return;
-      }
-      
-      // Capture selected character IDs for enforcement
-      // IMPORTANT: Must check this BEFORE calling selectTheme, because selectTheme resets selectedCharacterIds
-      if (action.selectedCharacterIds && action.selectedCharacterIds.length > 0) {
-        console.log('[Character Selection] User selected characters:', action.selectedCharacterIds);
-        characterFlow.confirmSelection(action.selectedCharacterIds);
-      } else if (action.themeId) {
-        // Only call selectTheme if we're NOT confirming a character selection
-        // (selectTheme resets character IDs which would break the flow)
-        characterFlow.selectTheme(action.themeId);
+      // Theme selection from dynamic [SUGGEST] block triggers character selection flow
+      if (action.themeId) {
+        console.log('[Theme Selection] User selected theme from dynamic question:', action.themeId);
+        
+        // If characters are already selected (from CharacterSelector), confirm them
+        if (action.selectedCharacterIds && action.selectedCharacterIds.length > 0) {
+          console.log('[Character Selection] User selected characters:', action.selectedCharacterIds);
+          characterFlow.selectTheme(action.themeId);
+          characterFlow.confirmSelection(action.selectedCharacterIds);
+        } else {
+          // Theme selected but no characters yet - trigger CharacterSelector
+          // The CharacterSelectionInjection hook will inject the selector UI
+          characterFlow.selectTheme(action.themeId);
+          // Don't return - let the message go through to acknowledge theme selection
+        }
       }
       
       // Capture grade level if present in the action OR if action.id is a valid grade ID

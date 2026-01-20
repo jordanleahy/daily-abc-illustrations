@@ -183,74 +183,7 @@ skip-${question.id}: ⏭️ Skip this question
 `;
 }
 
-/**
- * Build a dynamic [SUGGEST] block for the next unanswered question.
- * Returns empty string if all questions are answered or no questions have static options.
- */
-function buildDynamicDiscoveryBlock(
-  enabledQuestions: EnabledQuestionWithDetails[],
-  answeredQuestionIds: Set<string>,
-  existingContextKeys: Set<string>
-): string {
-  // Filter out already-answered questions and those already in context
-  const unanswered = enabledQuestions.filter(eq => {
-    // Skip if already answered in conversation
-    if (answeredQuestionIds.has(eq.question_id)) return false;
-    
-    // Skip if already provided via explicit context (e.g., gradeLevel, season, etc.)
-    // These are the question IDs that match context parameter names
-    const contextKeyMappings: Record<string, string[]> = {
-      'grade_level': ['gradeLevel', 'grade_level'],
-      'character_theme': ['characterTheme', 'character_theme'],
-      'season': ['season'],
-      'environment': ['environment'],
-      'clothing_brand': ['clothingBrand', 'clothing_brand'],
-      'location': ['location'],
-      'city': ['city'],
-      'manner_type': ['mannerType', 'manner_type'],
-      'manner_setting': ['mannersSetting', 'manner_setting', 'manners_setting'],
-    };
-    
-    const mappedKeys = contextKeyMappings[eq.question_id] || [];
-    if (mappedKeys.some(key => existingContextKeys.has(key))) {
-      return false;
-    }
-    
-    return true;
-  });
-  
-  if (unanswered.length === 0) return '';
-  
-  // Take the next unanswered question (sorted by sort_order)
-  const nextQuestion = unanswered[0];
-  const question = nextQuestion.question;
-  
-  // Skip questions without static options (free text or lookup-based - handled elsewhere)
-  if (!question.static_options || question.static_options.length === 0) {
-    return '';
-  }
-  
-  // Build [SUGGEST] block from static_options
-  const options = question.static_options
-    .map(opt => `${opt.id}: ${opt.emoji || ''} ${opt.label}${opt.description ? ` - ${opt.description}` : ''}`)
-    .join('\n');
-  
-  return `
-
-📋 DYNAMIC DISCOVERY QUESTION: ${question.label}
-${question.description || ''}
-
-⚠️ YOU MUST ASK THIS QUESTION NOW before proceeding to title/outline generation.
-Ask the user: "${question.label}?" and present these options:
-
-[SUGGEST]
-${options}
-skip-${question.id}: ⏭️ Skip this question
-[/SUGGEST]
-
-⚠️ WAIT for user to select an option before proceeding to the next step.
-`;
-}
+// Duplicate function removed - keeping the version that uses resolvedOptions (lines 115-184)
 
 
 // Optional parser for AI suggestions

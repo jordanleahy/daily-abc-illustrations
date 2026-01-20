@@ -172,12 +172,15 @@ function buildDynamicDiscoveryBlock(
 ${question.description || ''}
 
 ⚠️ YOU MUST ASK THIS QUESTION NOW before proceeding to title/outline generation.
-Ask the user: "${question.label}?" and present these options:
+
+🔴 CRITICAL INSTRUCTION: Your response MUST include the EXACT [SUGGEST] block below, copied verbatim:
 
 [SUGGEST]
 ${optionsText}
 skip-${question.id}: ⏭️ Skip this question
 [/SUGGEST]
+
+Ask the user: "${question.label}?" followed by the [SUGGEST] block above. The buttons will not render unless you include the exact [SUGGEST]...[/SUGGEST] block in your response.
 
 ⚠️ WAIT for user to select an option before proceeding to the next step.
 `;

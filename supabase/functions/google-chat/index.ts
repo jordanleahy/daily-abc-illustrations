@@ -14,7 +14,7 @@ import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothi
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
-// Note: Discovery questions now handled by frontend via useDiscoveryFlow - no longer fetched here
+// Dynamic question injection system - fetches enabled questions and injects [SUGGEST] blocks
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -35,6 +35,138 @@ interface SuggestedAction {
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string | MessageContent[];
+}
+
+interface StaticOption {
+  id: string;
+  label: string;
+  emoji?: string;
+  description?: string;
+}
+
+interface QuestionDetails {
+  id: string;
+  label: string;
+  description: string | null;
+  static_options: StaticOption[] | null;
+  placeholder_key: string | null;
+}
+
+interface EnabledQuestionWithDetails {
+  question_id: string;
+  sort_order: number;
+  question: QuestionDetails;
+}
+
+/**
+ * Extract which question IDs have been answered based on conversation history.
+ * Checks if any user message contains an option ID or label from a question's static_options.
+ */
+function extractAnsweredQuestions(
+  messages: Message[],
+  enabledQuestions: EnabledQuestionWithDetails[]
+): Set<string> {
+  const answered = new Set<string>();
+  
+  for (const eq of enabledQuestions) {
+    const questionId = eq.question_id;
+    const options = eq.question.static_options || [];
+    
+    // Check if any user message contains an option ID or label from this question
+    for (const msg of messages) {
+      if (msg.role !== 'user') continue;
+      const content = typeof msg.content === 'string' 
+        ? msg.content.toLowerCase() 
+        : '';
+      
+      for (const opt of options) {
+        // Check for option ID (exact) or label (contains) in the message
+        if (content.includes(opt.id.toLowerCase()) || 
+            content.toLowerCase().includes(opt.label.toLowerCase())) {
+          answered.add(questionId);
+          break;
+        }
+      }
+      
+      // Also check for "skip-{questionId}" pattern
+      if (content.includes(`skip-${questionId}`)) {
+        answered.add(questionId);
+      }
+      
+      if (answered.has(questionId)) break;
+    }
+  }
+  
+  return answered;
+}
+
+/**
+ * Build a dynamic [SUGGEST] block for the next unanswered question.
+ * Returns empty string if all questions are answered or no questions have static options.
+ */
+function buildDynamicDiscoveryBlock(
+  enabledQuestions: EnabledQuestionWithDetails[],
+  answeredQuestionIds: Set<string>,
+  existingContextKeys: Set<string>
+): string {
+  // Filter out already-answered questions and those already in context
+  const unanswered = enabledQuestions.filter(eq => {
+    // Skip if already answered in conversation
+    if (answeredQuestionIds.has(eq.question_id)) return false;
+    
+    // Skip if already provided via explicit context (e.g., gradeLevel, season, etc.)
+    // These are the question IDs that match context parameter names
+    const contextKeyMappings: Record<string, string[]> = {
+      'grade_level': ['gradeLevel', 'grade_level'],
+      'character_theme': ['characterTheme', 'character_theme'],
+      'season': ['season'],
+      'environment': ['environment'],
+      'clothing_brand': ['clothingBrand', 'clothing_brand'],
+      'location': ['location'],
+      'city': ['city'],
+      'manner_type': ['mannerType', 'manner_type'],
+      'manner_setting': ['mannersSetting', 'manner_setting', 'manners_setting'],
+    };
+    
+    const mappedKeys = contextKeyMappings[eq.question_id] || [];
+    if (mappedKeys.some(key => existingContextKeys.has(key))) {
+      return false;
+    }
+    
+    return true;
+  });
+  
+  if (unanswered.length === 0) return '';
+  
+  // Take the next unanswered question (sorted by sort_order)
+  const nextQuestion = unanswered[0];
+  const question = nextQuestion.question;
+  
+  // Skip questions without static options (free text or lookup-based - handled elsewhere)
+  if (!question.static_options || question.static_options.length === 0) {
+    return '';
+  }
+  
+  // Build [SUGGEST] block from static_options
+  const options = question.static_options
+    .map(opt => `${opt.id}: ${opt.emoji || ''} ${opt.label}${opt.description ? ` - ${opt.description}` : ''}`)
+    .join('\n');
+  
+  return `
+
+📋 DYNAMIC DISCOVERY QUESTION: ${question.label}
+${question.description || ''}
+
+⚠️ YOU MUST ASK THIS QUESTION NOW before proceeding to title/outline generation.
+Ask the user: "${question.label}?" and present these options:
+
+[SUGGEST]
+${options}
+skip-${question.id}: ⏭️ Skip this question
+[/SUGGEST]
+
+⚠️ WAIT for user to select an option before proceeding to the next step.
+`;
 }
 
 
@@ -151,6 +283,7 @@ serve(async (req) => {
 
     // Track enabled questions for this agent (will be populated if bookType is set)
     let enabledQuestions: Set<string> = new Set();
+    let enabledQuestionsWithDetails: EnabledQuestionWithDetails[] = [];
 
     if (bookType) {
       // Book type selected - route to specialized agent
@@ -165,20 +298,38 @@ serve(async (req) => {
         .eq('is_latest', true)
         .single();
       
-      // Fetch enabled questions for this agent type
-      const { data: agentQuestions } = await supabase
+      // Fetch enabled questions for this agent type WITH full question details
+      const { data: agentQuestionsData } = await supabase
         .from('agent_questions')
-        .select('question_id, is_enabled')
-        .eq('agent_type', agentType);
+        .select(`
+          question_id,
+          is_enabled,
+          sort_order,
+          question:questions(
+            id, label, description, static_options, placeholder_key
+          )
+        `)
+        .eq('agent_type', agentType)
+        .eq('is_enabled', true)
+        .order('sort_order', { ascending: true });
       
-      if (agentQuestions) {
-        for (const aq of agentQuestions) {
-          if (aq.is_enabled) {
-            enabledQuestions.add(aq.question_id);
-          }
+      // Build set of enabled question IDs for backward compatibility
+      const agentQuestions = agentQuestionsData || [];
+      for (const aq of agentQuestions) {
+        if (aq.is_enabled && aq.question) {
+          enabledQuestions.add(aq.question_id);
         }
-        console.log(`📋 Enabled questions for ${agentType}:`, Array.from(enabledQuestions));
       }
+      console.log(`📋 Enabled questions for ${agentType}:`, Array.from(enabledQuestions));
+      
+      // Store the full question details for dynamic injection
+      enabledQuestionsWithDetails = agentQuestions
+        .filter(aq => aq.question !== null)
+        .map(aq => ({
+          question_id: aq.question_id,
+          sort_order: aq.sort_order,
+          question: aq.question as QuestionDetails,
+        }));
       
       if (agent?.instructions) {
         systemPromptContent = agent.instructions;
@@ -408,6 +559,49 @@ serve(async (req) => {
       ? `\n\n📋 DISCOVERY CONTEXT (from frontend):\n${Object.entries(discoveryContext).map(([key, value]) => `- ${key}: ${value}`).join('\n')}\n\n⚠️ These discovery questions have already been answered. DO NOT re-ask any of these questions.`
       : '';
 
+    // DYNAMIC QUESTION INJECTION SYSTEM
+    // Build set of context keys that have already been provided (to avoid re-asking)
+    const existingContextKeys = new Set<string>();
+    if (gradeLevel) existingContextKeys.add('gradeLevel');
+    if (characterTheme) existingContextKeys.add('characterTheme');
+    if (season) existingContextKeys.add('season');
+    if (environment) existingContextKeys.add('environment');
+    if (clothingBrand) existingContextKeys.add('clothingBrand');
+    if (location) existingContextKeys.add('location');
+    if (city) existingContextKeys.add('city');
+    if (mannerType) existingContextKeys.add('mannerType');
+    if (mannersSetting) existingContextKeys.add('mannersSetting');
+    
+    // Add discovery context keys
+    if (discoveryContext) {
+      Object.keys(discoveryContext).forEach(key => existingContextKeys.add(key));
+    }
+    
+    // Extract which questions have been answered from conversation history
+    const answeredQuestionIds = extractAnsweredQuestions(messages, enabledQuestionsWithDetails);
+    console.log(`📋 Answered questions from conversation:`, Array.from(answeredQuestionIds));
+    
+    // Build dynamic [SUGGEST] block for the next unanswered question
+    const dynamicDiscoveryBlock = buildDynamicDiscoveryBlock(
+      enabledQuestionsWithDetails,
+      answeredQuestionIds,
+      existingContextKeys
+    );
+    
+    if (dynamicDiscoveryBlock) {
+      console.log(`🎯 Dynamic discovery block injected for next unanswered question`);
+    }
+
+    // Check if all dynamic questions are complete (for proceeding to title)
+    const allDynamicQuestionsComplete = enabledQuestionsWithDetails.every(eq => 
+      answeredQuestionIds.has(eq.question_id) || 
+      existingContextKeys.has(eq.question_id) ||
+      existingContextKeys.has(eq.question_id.replace('_', ''))
+    );
+    
+    // All optional questions complete when both frontend-driven and dynamic questions are done
+    const allOptionalQuestionsComplete = allDynamicQuestionsComplete && !dynamicDiscoveryBlock;
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -416,11 +610,6 @@ serve(async (req) => {
     // Detect if user just approved title
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
     const titleWasJustApproved = titleApprovalPhrases.some(phrase => lastMessageContent.includes(phrase));
-
-    // All optional questions are now handled by frontend via useDiscoveryFlow
-    // Edge function receives completed answers - no need to track unanswered questions here
-    // When frontend finishes discovery flow, it passes all answers in context
-    const allOptionalQuestionsComplete = true; // Frontend controls this now
     
     // Get category word for title requirement
     const categoryWord = bookType ? getBookTypeCategoryWord(normalizeBookType(bookType)) : 'Adventure';
@@ -453,10 +642,10 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     const languageContext = `\n\n🌍 LANGUAGE INSTRUCTION: Detect the language the user is writing in and respond in that SAME language throughout the entire conversation. This applies to all responses including discovery questions, suggestions, title/description proposals, and the complete book outline. Maintain all content safety guidelines and age-appropriateness regardless of language. Do NOT translate internal instruction tags like [SUGGEST] or markdown formatting.`;
 
     // Combine base prompt with contextual additions
-    // Note: Discovery questions are now handled by frontend via useDiscoveryFlow
+    // Dynamic discovery block is injected to present the next unanswered question from agent_questions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + discoveryContextInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + discoveryContextInjection + dynamicDiscoveryBlock + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -472,6 +661,7 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     console.log(`📚 Manner type: ${mannerType || 'None'}`);
     console.log(`🏠 Manners setting: ${mannersSetting || 'None'}`);
     console.log(`📋 Discovery context: ${discoveryContext ? JSON.stringify(discoveryContext) : 'None'}`);
+    console.log(`📋 Dynamic discovery block active: ${dynamicDiscoveryBlock ? 'Yes' : 'No'}`);
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);
 

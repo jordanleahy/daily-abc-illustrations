@@ -183,9 +183,6 @@ skip-${question.id}: ⏭️ Skip this question
 `;
 }
 
-// Duplicate function removed - keeping the version that uses resolvedOptions (lines 115-184)
-
-
 // Optional parser for AI suggestions
 function parseSuggestions(aiResponse: string): { 
   cleanContent: string; 

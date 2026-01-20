@@ -6,7 +6,7 @@
  * - Link to existing video if it exists
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Video, Loader2, Check, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookVideos, VideoAspectRatio } from '@/hooks/useBookVideos';
@@ -16,6 +16,7 @@ import { generateBookVideo, downloadBookVideo, type BookVideoProgress } from '@/
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Page } from '@/types/book';
+import { VideoRenderingModal } from './VideoRenderingModal';
 
 interface VideoAspectBadgesProps {
   bookId: string;
@@ -51,6 +52,17 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
     landscape: { isGenerating: false, progress: 0, phase: '' },
     portrait: { isGenerating: false, progress: 0, phase: '' },
   });
+
+  // Find active rendering state for modal
+  const activeRendering = useMemo(() => {
+    for (const config of ASPECT_CONFIGS) {
+      const state = generationStates[config.ratio];
+      if (state.isGenerating) {
+        return { ratio: config.ratio, label: config.label, ...state };
+      }
+    }
+    return null;
+  }, [generationStates]);
 
   // Check if a video exists for a given aspect ratio
   const getExistingVideo = useCallback((ratio: VideoAspectRatio) => {
@@ -126,73 +138,83 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
   }
 
   return (
-    <div className="flex items-center justify-center gap-2 pt-1">
-      {ASPECT_CONFIGS.map(({ ratio, label }) => {
-        const existingVideo = getExistingVideo(ratio);
-        const state = generationStates[ratio];
-        const isGenerating = state.isGenerating;
+    <>
+      {/* Rendering warning modal */}
+      <VideoRenderingModal
+        isOpen={!!activeRendering}
+        progress={activeRendering?.progress ?? 0}
+        phase={activeRendering?.phase ?? ''}
+        aspectLabel={activeRendering?.label ?? ''}
+      />
 
-        // Video exists - show as link
-        if (existingVideo && !isGenerating) {
+      <div className="flex items-center justify-center gap-2 pt-1">
+        {ASPECT_CONFIGS.map(({ ratio, label }) => {
+          const existingVideo = getExistingVideo(ratio);
+          const state = generationStates[ratio];
+          const isGenerating = state.isGenerating;
+
+          // Video exists - show as link
+          if (existingVideo && !isGenerating) {
+            return (
+              <Button
+                key={ratio}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-7 px-2 text-xs gap-1 transition-all",
+                  "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleOpenVideo(existingVideo.publicUrl);
+                }}
+                title={`Open ${label} video`}
+              >
+                <Video className="h-3 w-3" />
+                {label}
+                <ExternalLink className="h-2.5 w-2.5" />
+              </Button>
+            );
+          }
+
+          // Generating - show progress
+          if (isGenerating) {
+            return (
+              <Button
+                key={ratio}
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1 text-muted-foreground"
+                disabled
+              >
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {label}
+                <span className="text-[10px]">{Math.round(state.progress)}%</span>
+              </Button>
+            );
+          }
+
+          // Not generated - show generate button
           return (
             <Button
               key={ratio}
               variant="outline"
               size="sm"
-              className={cn(
-                "h-7 px-2 text-xs gap-1 transition-all",
-                "bg-primary/10 border-primary text-primary hover:bg-primary/20"
-              )}
+              className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                handleOpenVideo(existingVideo.publicUrl);
+                handleGenerate(ratio);
               }}
-              title={`Open ${label} video`}
+              title={`Generate ${label} video`}
             >
               <Video className="h-3 w-3" />
               {label}
-              <ExternalLink className="h-2.5 w-2.5" />
             </Button>
           );
-        }
-
-        // Generating - show progress
-        if (isGenerating) {
-          return (
-            <Button
-              key={ratio}
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs gap-1 text-muted-foreground"
-              disabled
-            >
-              <Loader2 className="h-3 w-3 animate-spin" />
-              {label}
-              <span className="text-[10px]">{Math.round(state.progress)}%</span>
-            </Button>
-          );
-        }
-
-        // Not generated - show generate button
-        return (
-          <Button
-            key={ratio}
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              handleGenerate(ratio);
-            }}
-            title={`Generate ${label} video`}
-          >
-            <Video className="h-3 w-3" />
-            {label}
-          </Button>
-        );
-      })}
-    </div>
+        })}
+      </div>
+    </>
   );
 }

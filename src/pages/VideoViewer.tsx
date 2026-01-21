@@ -82,11 +82,13 @@ export default function VideoViewer() {
           size="lg"
         >
           <Share2 className="mr-2 h-5 w-5" />
-          Share / Save Video
+          Share Video
         </Button>
-        <p className="text-white/60 text-sm text-center">
-          Tap "Share" → scroll down → "Save to Files"
-        </p>
+        <div className="text-white/60 text-sm text-center space-y-1">
+          <p><strong>To save to Photos:</strong></p>
+          <p>Tap "Share" → scroll down → tap <strong>"Open in Safari"</strong></p>
+          <p>Then long-press the video → "Save Video"</p>
+        </div>
       </div>
     </div>
   );

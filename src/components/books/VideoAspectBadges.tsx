@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { Video, Loader2, Check, ExternalLink } from 'lucide-react';
+import { Video, Loader2, Check, ExternalLink, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookVideos, VideoAspectRatio } from '@/hooks/useBookVideos';
 import { useBookPages } from '@/hooks/useBookPages';
@@ -133,6 +133,29 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
     window.open(url, '_blank');
   }, []);
 
+  // Handle downloading video to device
+  const handleDownloadVideo = useCallback(async (url: string, label: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const filename = `${bookName.replace(/[^a-zA-Z0-9]/g, '-')}-${label}.mp4`;
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      
+      toast.success('Video downloaded! Open Files app to save to Photos.');
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download video');
+    }
+  }, [bookName]);
+
   if (isLoading) {
     return null;
   }
@@ -153,28 +176,45 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
           const state = generationStates[ratio];
           const isGenerating = state.isGenerating;
 
-          // Video exists - show as link
+          // Video exists - show link + download buttons
           if (existingVideo && !isGenerating) {
             return (
-              <Button
-                key={ratio}
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "h-7 px-2 text-xs gap-1 transition-all",
-                  "bg-primary/10 border-primary text-primary hover:bg-primary/20"
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  handleOpenVideo(existingVideo.publicUrl);
-                }}
-                title={`Open ${label} video`}
-              >
-                <Video className="h-3 w-3" />
-                {label}
-                <ExternalLink className="h-2.5 w-2.5" />
-              </Button>
+              <div key={ratio} className="flex items-center gap-0.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-2 text-xs gap-1 transition-all rounded-r-none border-r-0",
+                    "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleOpenVideo(existingVideo.publicUrl);
+                  }}
+                  title={`Open ${label} video`}
+                >
+                  <Video className="h-3 w-3" />
+                  {label}
+                  <ExternalLink className="h-2.5 w-2.5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-1.5 transition-all rounded-l-none",
+                    "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleDownloadVideo(existingVideo.publicUrl, label);
+                  }}
+                  title={`Download ${label} video`}
+                >
+                  <Download className="h-3 w-3" />
+                </Button>
+              </div>
             );
           }
 

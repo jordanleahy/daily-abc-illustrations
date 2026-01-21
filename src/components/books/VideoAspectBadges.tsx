@@ -128,40 +128,11 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
     }
   }, [pages, imageMap, bookId, bookName, getImageUrl, refetch]);
 
-  // Single unified save handler - uses Share API with file for iOS
-  const handleSaveVideo = useCallback(async (url: string, label: string) => {
-    const filename = `${bookName.replace(/[^a-zA-Z0-9]/g, '-')}-${label}.mp4`;
-    
-    try {
-      toast.info('Preparing video...');
-      
-      // Fetch video as blob
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const file = new File([blob], filename, { type: 'video/mp4' });
-      
-      // Try Share API with file (works best on iOS for saving to Photos)
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file] });
-        toast.success('Video shared!');
-        return;
-      }
-      
-      // Fallback: blob download
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-      toast.success('Video downloaded!');
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') return;
-      console.error('Save failed:', error);
-      toast.error('Failed to save video');
-    }
-  }, [bookName]);
+  // Open video in new tab - user can long-press to save on iOS
+  const handleOpenVideo = useCallback((url: string) => {
+    window.open(url, '_blank');
+    toast.info('Long-press video to save to Photos');
+  }, []);
 
   if (isLoading) {
     return null;
@@ -197,7 +168,7 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  handleSaveVideo(existingVideo.publicUrl, label);
+                  handleOpenVideo(existingVideo.publicUrl);
                 }}
                 title={`Save ${label} video to Photos`}
               >

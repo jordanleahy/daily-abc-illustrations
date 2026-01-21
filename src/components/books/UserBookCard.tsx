@@ -9,6 +9,7 @@ import { BookImage } from '@/components/ui/book-image';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { AdminOnly } from '@/components/AdminOnly';
 import { SocialPostTracker } from '@/components/books/SocialPostTracker';
+import { YouTubePostDrawer } from '@/components/books/YouTubePostDrawer';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useArchiveBook } from '@/hooks/useArchiveBook';
@@ -21,7 +22,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
-import { generateYouTubePost } from '@/utils/marketing/generateYouTubePost';
 import { SITE_CONFIG } from '@/config/site';
 import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -67,7 +67,7 @@ export function UserBookCard({
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const { mutate: archiveBook, isPending: isArchiving } = useArchiveBook();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
-  const [isCopyingYouTubePost, setIsCopyingYouTubePost] = useState(false);
+  const [isYouTubeDrawerOpen, setIsYouTubeDrawerOpen] = useState(false);
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const coverImageUrl = book.coverImageUrl;
 
@@ -169,42 +169,9 @@ export function UserBookCard({
     }
   };
 
-  const handleCopyYouTubePost = async (e: React.MouseEvent) => {
+  const handleOpenYouTubeDrawer = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsCopyingYouTubePost(true);
-    
-    try {
-      const textPromise = async (): Promise<Blob> => {
-        const slug = publicationStatus?.slug || book.marketing_url;
-        const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${slug}`;
-        
-        const { fullPost } = generateYouTubePost({
-          bookName: book.book_name,
-          bookDescription: book.book_description,
-          characterTheme: book.metadata?.characterTheme || null,
-          marketingUrl,
-          bookType: book.metadata?.bookType || null,
-          season: book.metadata?.season || null,
-          environment: book.metadata?.environment || null,
-          clothingBrand: book.metadata?.clothingBrand || null,
-          location: book.metadata?.location || null,
-          targetAge: book.metadata?.targetAge || null,
-        });
-        
-        return new Blob([fullPost], { type: 'text/plain' });
-      };
-      
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'text/plain': textPromise() })
-      ]);
-      
-      toast({ title: "YouTube post copied!" });
-    } catch (error) {
-      console.error('Failed to copy YouTube post:', error);
-      toast({ title: "Failed to copy", variant: "destructive" });
-    } finally {
-      setIsCopyingYouTubePost(false);
-    }
+    setIsYouTubeDrawerOpen(true);
   };
 
   const handleEditHover = useCallback(() => {
@@ -497,13 +464,20 @@ export function UserBookCard({
                 variant="outline"
                 size="sm"
                 className="w-full gap-2"
-                onClick={handleCopyYouTubePost}
-                disabled={isCopyingYouTubePost}
+                onClick={handleOpenYouTubeDrawer}
               >
                 <Youtube className="h-4 w-4" />
-                {isCopyingYouTubePost ? 'Copying...' : 'YouTube Post'}
+                YouTube Post
               </Button>
             )}
+            
+            {/* YouTube Post Drawer */}
+            <YouTubePostDrawer
+              open={isYouTubeDrawerOpen}
+              onOpenChange={setIsYouTubeDrawerOpen}
+              book={book}
+              publicationSlug={publicationStatus?.slug}
+            />
             
             
             {/* Social Post Tracker with OG Assets - Always visible for library books */}

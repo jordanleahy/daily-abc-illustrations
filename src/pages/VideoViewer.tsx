@@ -1,11 +1,13 @@
 /**
- * VideoViewer - Dedicated page for viewing/saving videos on iOS
+ * VideoViewer - Dedicated page for viewing/saving videos
  * 
- * Uses native share sheet with URL for iOS compatibility
+ * Provides direct download link for saving videos to device.
+ * On iOS: Uses download attribute with direct file URL
+ * On Desktop: Standard download
  */
 
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -15,26 +17,38 @@ export default function VideoViewer() {
   
   const videoUrl = searchParams.get('url');
   const title = searchParams.get('title') || 'Video';
-
-  const handleShare = async () => {
-    if (!videoUrl) return;
-    
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: title,
-          url: videoUrl,
-        });
-      } else {
-        // Fallback: copy URL
-        await navigator.clipboard.writeText(videoUrl);
-        toast.success('Video URL copied!');
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Share failed:', error);
+  
+  // Extract filename from URL or create one from title
+  const getFilename = () => {
+    if (videoUrl) {
+      const urlParts = videoUrl.split('/');
+      const lastPart = urlParts[urlParts.length - 1];
+      if (lastPart && lastPart.includes('.')) {
+        return lastPart;
       }
     }
+    return `${title.replace(/[^a-zA-Z0-9]/g, '-')}.webm`;
+  };
+
+  const handleDownload = () => {
+    if (!videoUrl) return;
+    
+    // Create a temporary anchor to trigger download
+    const a = document.createElement('a');
+    a.href = videoUrl;
+    a.download = getFilename();
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    toast.success('Download started!');
+  };
+
+  const handleOpenInNewTab = () => {
+    if (!videoUrl) return;
+    window.open(videoUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (!videoUrl) {
@@ -60,35 +74,44 @@ export default function VideoViewer() {
         <h1 className="text-white font-medium truncate flex-1">{title}</h1>
       </div>
 
-      {/* Video container - user-select-none to prevent text selection */}
+      {/* Video container */}
       <div className="flex-1 flex items-center justify-center p-4 select-none">
         <video
           src={videoUrl}
           controls
           autoPlay
           playsInline
-          className="max-w-full max-h-[65vh] rounded-lg pointer-events-auto"
-          style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+          className="max-w-full max-h-[60vh] rounded-lg"
         >
           Your browser does not support video playback.
         </video>
       </div>
 
-      {/* Share button - uses native iOS share sheet */}
+      {/* Action buttons */}
       <div className="p-4 pb-8 space-y-3">
         <Button
-          onClick={handleShare}
+          onClick={handleDownload}
           className="w-full h-14 text-lg font-semibold"
           size="lg"
         >
-          <Share2 className="mr-2 h-5 w-5" />
-          Share Video
+          <Download className="mr-2 h-5 w-5" />
+          Download Video
         </Button>
-        <div className="text-white/60 text-sm text-center space-y-1">
-          <p><strong>To save to Photos:</strong></p>
-          <p>Tap "Share" → scroll down → tap <strong>"Open in Safari"</strong></p>
-          <p>Then long-press the video → "Save Video"</p>
-        </div>
+        
+        <Button
+          onClick={handleOpenInNewTab}
+          variant="outline"
+          className="w-full h-12 text-white border-white/30 hover:bg-white/10"
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          Open in New Tab
+        </Button>
+        
+        <p className="text-white/50 text-xs text-center pt-2">
+          Videos are generated in WebM format for best quality.
+          <br />
+          Generate videos on desktop, then view/download on any device.
+        </p>
       </div>
     </div>
   );

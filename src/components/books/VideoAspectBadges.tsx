@@ -4,6 +4,9 @@
  * Shows 3 aspect ratio badges (1:1, 16:9, 9:16) that either:
  * - Trigger video generation if video doesn't exist
  * - Link to existing video if it exists
+ * 
+ * Note: Video generation only works on desktop browsers due to 
+ * MediaRecorder codec limitations on iOS/Safari.
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -13,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useBookVideos, VideoAspectRatio } from '@/hooks/useBookVideos';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
-import { generateBookVideo, downloadBookVideo, type BookVideoProgress } from '@/services/bookVideoGenerator';
+import { generateBookVideo, downloadBookVideo, type BookVideoProgress, isVideoGenerationSupported } from '@/services/bookVideoGenerator';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Page } from '@/types/book';
@@ -78,6 +81,14 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
 
   // Handle video generation
   const handleGenerate = useCallback(async (ratio: VideoAspectRatio) => {
+    // Check browser support first
+    if (!isVideoGenerationSupported()) {
+      toast.error('Video generation requires a desktop browser. Please use Chrome, Firefox, or Edge on a computer.', {
+        duration: 6000,
+      });
+      return;
+    }
+
     if (!pages || pages.length === 0) {
       toast.error('No pages found for this book');
       return;

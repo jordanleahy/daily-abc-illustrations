@@ -47,7 +47,7 @@ const DIMENSIONS = {
 const DEFAULT_VOICE_ID = 'XrExE9yKIg1WjnnlVkGX'; // Matilda - warm, nurturing voice for toddlers
 
 /**
- * Detect iOS or Safari browser for MP4 compatibility
+ * Detect iOS or Safari browser
  */
 function isIOSOrSafari(): boolean {
   const ua = navigator.userAgent;
@@ -63,30 +63,28 @@ function isIOSOrSafari(): boolean {
 }
 
 /**
- * Get the best supported video mime type for the current browser
+ * Check if video generation is supported on this browser
+ * iOS and Safari don't properly support the required codecs for MediaRecorder
  */
-function getBestMimeType(): { mimeType: string; format: 'mp4' | 'webm' } {
-  // On iOS/Safari, try MP4 first
+export function isVideoGenerationSupported(): boolean {
   if (isIOSOrSafari()) {
-    // Try various MP4 codec strings Safari might support
-    const mp4Types = [
-      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-      'video/mp4;codecs=avc1.4d002a',
-      'video/mp4',
-    ];
-    
-    for (const type of mp4Types) {
-      if (MediaRecorder.isTypeSupported(type)) {
-        console.log('Using MP4 format for iOS/Safari:', type);
-        return { mimeType: type, format: 'mp4' };
-      }
-    }
-    
-    // Fallback to WebM even on Safari if MP4 not supported
-    console.warn('MP4 not supported on this Safari/iOS device, trying WebM');
+    return false;
   }
   
-  // Default to WebM (best browser support for recording)
+  if (typeof MediaRecorder === 'undefined') {
+    return false;
+  }
+  
+  return MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ||
+         MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ||
+         MediaRecorder.isTypeSupported('video/webm');
+}
+
+/**
+ * Get the best supported video mime type for the current browser
+ * Only use WebM since iOS/Safari are blocked at UI level
+ */
+function getBestMimeType(): { mimeType: string; format: 'mp4' | 'webm' } {
   if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
     return { mimeType: 'video/webm;codecs=vp9,opus', format: 'webm' };
   }

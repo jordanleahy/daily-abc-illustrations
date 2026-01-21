@@ -198,22 +198,18 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
                   {label}
                   <ExternalLink className="h-2.5 w-2.5" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <a
+                  href={existingVideo.publicUrl}
+                  download
+                  onClick={(e) => e.stopPropagation()}
                   className={cn(
-                    "h-7 px-1.5 transition-all rounded-l-none",
+                    "inline-flex items-center justify-center h-7 px-1.5 transition-all rounded-l-none rounded-r-md border",
                     "bg-primary/10 border-primary text-primary hover:bg-primary/20"
                   )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    handleDownloadVideo(existingVideo.publicUrl, label);
-                  }}
-                  title={`Download ${label} video`}
+                  title={`Long-press to save ${label} video to Photos`}
                 >
                   <Download className="h-3 w-3" />
-                </Button>
+                </a>
               </div>
             );
           }

@@ -78,6 +78,10 @@ function yieldToBrowser(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));
 }
 
+/**
+ * Detect iOS or Safari browser
+ * These browsers have limited MediaRecorder codec support
+ */
 function isIOSOrSafari(): boolean {
   const ua = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(ua) || 
@@ -86,20 +90,30 @@ function isIOSOrSafari(): boolean {
   return isIOS || isSafari;
 }
 
-function getBestMimeType(): { mimeType: string; format: 'mp4' | 'webm' } {
+/**
+ * Check if video generation is supported on this browser
+ * iOS and Safari don't properly support the required codecs for MediaRecorder
+ * Videos generated on these platforms will be corrupted
+ */
+export function isVideoGenerationSupported(): boolean {
+  // iOS and Safari don't support proper video encoding
   if (isIOSOrSafari()) {
-    const mp4Types = [
-      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-      'video/mp4;codecs=avc1.4d002a',
-      'video/mp4',
-    ];
-    for (const type of mp4Types) {
-      if (MediaRecorder.isTypeSupported(type)) {
-        return { mimeType: type, format: 'mp4' };
-      }
-    }
+    return false;
   }
   
+  // Check for basic MediaRecorder support
+  if (typeof MediaRecorder === 'undefined') {
+    return false;
+  }
+  
+  // Check for WebM support (required for proper encoding)
+  return MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ||
+         MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus') ||
+         MediaRecorder.isTypeSupported('video/webm');
+}
+
+function getBestMimeType(): { mimeType: string; format: 'mp4' | 'webm' } {
+  // We now only support WebM since iOS/Safari are blocked at the UI level
   if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
     return { mimeType: 'video/webm;codecs=vp9,opus', format: 'webm' };
   }

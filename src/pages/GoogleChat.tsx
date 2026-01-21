@@ -1156,7 +1156,23 @@ export default function GoogleChat() {
           // Theme selected but no characters yet - trigger CharacterSelector
           // The CharacterSelectionInjection hook will inject the selector UI
           characterFlow.selectTheme(action.themeId);
-          // Don't return - let the message go through to acknowledge theme selection
+          
+          // Add user's theme selection to the conversation WITHOUT sending to backend
+          // This allows the CharacterSelector to appear before the next AI question
+          if (currentSessionId) {
+            const userMsg = { role: 'user' as const, content: action.value };
+            const assistantMsg = { 
+              role: 'assistant' as const, 
+              content: `Great choice! Now select which characters you'd like to include in your book.`,
+              suggestedActions: [] // Will be populated by useCharacterSelectionInjection
+            };
+            const newMessages = [...messages, userMsg, assistantMsg];
+            queryClient.setQueryData(['session-messages', currentSessionId], newMessages);
+            updateSessionMessages({ sessionId: currentSessionId, messages: newMessages as any });
+          }
+          
+          // Return early - don't send to backend until characters are confirmed
+          return;
         }
       }
       

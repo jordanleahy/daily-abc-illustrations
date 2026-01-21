@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { Video, Loader2, Check, ExternalLink, Download } from 'lucide-react';
+import { Video, Loader2, Check, ExternalLink, Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookVideos, VideoAspectRatio } from '@/hooks/useBookVideos';
 import { useBookPages } from '@/hooks/useBookPages';
@@ -133,14 +133,55 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
     window.open(url, '_blank');
   }, []);
 
-  // Handle downloading video to device
-  const handleDownloadVideo = useCallback(async (url: string, label: string) => {
+  // Method 1: Native Share API (best for iOS - shows "Save Video" in share sheet)
+  const handleShareVideo = useCallback(async (url: string, label: string) => {
     try {
+      const filename = `${bookName.replace(/[^a-zA-Z0-9]/g, '-')}-${label}.mp4`;
+      
+      // Check if native share is available
+      if (navigator.share && navigator.canShare) {
+        // Fetch the video as a blob first
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const file = new File([blob], filename, { type: 'video/mp4' });
+        
+        // Check if we can share files
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `${bookName} Video`,
+          });
+          return;
+        }
+      }
+      
+      // Fallback: just share the URL
+      if (navigator.share) {
+        await navigator.share({
+          title: `${bookName} Video`,
+          url: url,
+        });
+        return;
+      }
+      
+      // No share API, fall back to blob download
+      handleBlobDownload(url, label);
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Share failed:', error);
+        toast.error('Failed to share video');
+      }
+    }
+  }, [bookName]);
+
+  // Method 2: Blob download (downloads to Files app on iOS)
+  const handleBlobDownload = useCallback(async (url: string, label: string) => {
+    try {
+      toast.info('Downloading video...');
       const response = await fetch(url);
       const blob = await response.blob();
       const filename = `${bookName.replace(/[^a-zA-Z0-9]/g, '-')}-${label}.mp4`;
       
-      // Create download link
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = filename;
@@ -149,7 +190,7 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
       
-      toast.success('Video downloaded! Open Files app to save to Photos.');
+      toast.success('Video downloaded! Check Files app, then save to Photos.');
     } catch (error) {
       console.error('Download failed:', error);
       toast.error('Failed to download video');
@@ -176,10 +217,11 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
           const state = generationStates[ratio];
           const isGenerating = state.isGenerating;
 
-          // Video exists - show link + download buttons
+          // Video exists - show play + share + download buttons
           if (existingVideo && !isGenerating) {
             return (
               <div key={ratio} className="flex items-center gap-0.5">
+                {/* Method 3: Open in new tab (native video player has save option) */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -192,21 +234,45 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
                     e.preventDefault();
                     handleOpenVideo(existingVideo.publicUrl);
                   }}
-                  title={`Open ${label} video`}
+                  title={`Open ${label} video (long-press video to save)`}
                 >
                   <Video className="h-3 w-3" />
                   {label}
-                  <ExternalLink className="h-2.5 w-2.5" />
                 </Button>
+                
+                {/* Method 1: Share API (shows iOS share sheet with "Save Video") */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-1.5 transition-all rounded-none border-x-0",
+                    "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleShareVideo(existingVideo.publicUrl, label);
+                  }}
+                  title={`Share/Save ${label} video to Photos`}
+                >
+                  <Share2 className="h-3 w-3" />
+                </Button>
+                
+                {/* Method 2: Direct link (long-press on iOS Safari) */}
                 <a
                   href={existingVideo.publicUrl}
                   download
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // On tap, use blob download instead
+                    e.preventDefault();
+                    handleBlobDownload(existingVideo.publicUrl, label);
+                  }}
                   className={cn(
                     "inline-flex items-center justify-center h-7 px-1.5 transition-all rounded-l-none rounded-r-md border",
                     "bg-primary/10 border-primary text-primary hover:bg-primary/20"
                   )}
-                  title={`Long-press to save ${label} video to Photos`}
+                  title={`Download ${label} video`}
                 >
                   <Download className="h-3 w-3" />
                 </a>

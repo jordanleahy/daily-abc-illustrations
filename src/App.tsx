@@ -82,6 +82,7 @@ import CityLanding from "./pages/CityLanding";
 import SkiResortLanding from "./pages/SkiResortLanding";
 import BookTypeLanding from "./pages/BookTypeLanding";
 import VideoExportTest from "./pages/VideoExportTest";
+import VideoViewer from "./pages/VideoViewer";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -219,6 +220,9 @@ const App = () => {
                 
                 {/* Bites - food portion analyzer (public) */}
                 <Route path="/bites" element={<Bites />} />
+                
+                {/* Video viewer - for iOS save to photos */}
+                <Route path="/video" element={<VideoViewer />} />
                 
                 {/* Habits & Rewards routes - Plus tier only */}
                 <Route path="/rewards" element={<ProtectedRoute requireFeature="habits_rewards"><Rewards /></ProtectedRoute>} />

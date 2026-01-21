@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Video, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookVideos, VideoAspectRatio } from '@/hooks/useBookVideos';
@@ -41,6 +42,7 @@ interface GenerationState {
 }
 
 export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) {
+  const navigate = useNavigate();
   const { videos, isLoading, refetch } = useBookVideos(bookId);
   const { pages } = useBookPages(bookId);
   const { data: bookPageData } = useBookPageImages(bookId);
@@ -128,11 +130,14 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
     }
   }, [pages, imageMap, bookId, bookName, getImageUrl, refetch]);
 
-  // Open video in new tab - user can long-press to save on iOS
-  const handleOpenVideo = useCallback((url: string) => {
-    window.open(url, '_blank');
-    toast.info('Long-press video to save to Photos');
-  }, []);
+  // Navigate to video viewer page for iOS-friendly saving
+  const handleOpenVideo = useCallback((url: string, label: string) => {
+    const params = new URLSearchParams({
+      url,
+      title: `${bookName} (${label})`
+    });
+    navigate(`/video?${params.toString()}`);
+  }, [navigate, bookName]);
 
   if (isLoading) {
     return null;
@@ -168,7 +173,7 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  handleOpenVideo(existingVideo.publicUrl);
+                  handleOpenVideo(existingVideo.publicUrl, label);
                 }}
                 title={`Save ${label} video to Photos`}
               >

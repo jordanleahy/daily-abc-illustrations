@@ -95,8 +95,8 @@ function extractAnsweredQuestions(
         }
       }
       
-      // Also check for "skip-{questionId}" pattern
-      if (content.includes(`skip-${questionId}`)) {
+      // Also check for "skip-{questionId}" pattern (case-insensitive)
+      if (content.includes(`skip-${questionId.toLowerCase()}`)) {
         answered.add(questionId);
       }
       
@@ -157,6 +157,7 @@ function buildDynamicDiscoveryBlock(
       'grade_level': ['gradeLevel', 'grade_level'],
       'character_theme': ['characterTheme', 'character_theme'],
       'season': ['season'],
+      'SEASON': ['season'],  // Uppercase question ID
       'environment': ['environment'],
       'clothing_brand': ['clothingBrand', 'clothing_brand'],
       'location': ['location'],
@@ -165,6 +166,7 @@ function buildDynamicDiscoveryBlock(
       'manner_setting': ['mannersSetting', 'manner_setting', 'manners_setting'],
       'RESORT': ['location', 'resort'],
       'BRAND': ['clothingBrand', 'brand'],
+      'THEME': ['theme'],  // Uppercase question ID
       'age_group': ['ageGroup', 'age_group'],
     };
     
@@ -176,17 +178,23 @@ function buildDynamicDiscoveryBlock(
     return true;
   });
   
-  if (unanswered.length === 0) return '';
+  if (unanswered.length === 0) {
+    console.log('📋 All questions answered - no more discovery blocks needed');
+    return '';
+  }
   
   // Take the next unanswered question (sorted by sort_order)
   const nextQuestion = unanswered[0];
   const question = nextQuestion.question;
+  
+  console.log(`📋 Next unanswered question: ${question.id} (${question.label}) - ${unanswered.length} remaining`);
   
   // Use resolvedOptions (which includes both static and lookup-based options)
   const options = nextQuestion.resolvedOptions || question.static_options || [];
   
   // Skip questions without options (free text only)
   if (options.length === 0) {
+    console.log(`📋 Question ${question.id} has no options - skipping discovery block`);
     return '';
   }
   

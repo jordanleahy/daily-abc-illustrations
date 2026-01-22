@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Upload, Wand2, Loader2, ClipboardPaste, X, Check } from 'lucide-react';
+import { Copy, Upload, Wand2, Loader2, ClipboardPaste } from 'lucide-react';
 import { processImage } from '@/utils/imageProcessor';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,11 +24,8 @@ export function ColorModeUploadSection({
   onCancel,
 }: ColorModeUploadSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // Preview state for immediate image display
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,8 +35,8 @@ export function ColorModeUploadSection({
     setIsProcessing(true);
     try {
       const processed = await processImage(file, { maxWidth: 1024, maxHeight: 1024 });
-      // Show preview immediately
-      setPreviewImage(processed.dataUrl);
+      onImageUpload(processed.dataUrl, 'color');
+      onCancel?.();
     } catch (error) {
       console.error('Error processing image:', error);
       toast({
@@ -55,7 +52,7 @@ export function ColorModeUploadSection({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast]);
+  }, [toast, onImageUpload, onCancel]);
 
   const handlePasteEvent = useCallback(async (e: ClipboardEvent) => {
     if (disabled || isProcessing) return;
@@ -71,8 +68,8 @@ export function ColorModeUploadSection({
           setIsProcessing(true);
           try {
             const processed = await processImage(blob, { maxWidth: 1024, maxHeight: 1024 });
-            // Show preview immediately instead of uploading
-            setPreviewImage(processed.dataUrl);
+            onImageUpload(processed.dataUrl, 'color');
+            onCancel?.();
           } catch (error) {
             console.error('Error processing pasted image:', error);
             toast({
@@ -87,7 +84,7 @@ export function ColorModeUploadSection({
         return;
       }
     }
-  }, [disabled, isProcessing, toast]);
+  }, [disabled, isProcessing, toast, onImageUpload, onCancel]);
 
   // Add global paste listener when component is mounted
   useEffect(() => {
@@ -109,8 +106,8 @@ export function ColorModeUploadSection({
           const blob = await item.getType(imageType);
           const file = new File([blob], 'pasted-image.png', { type: imageType });
           const processed = await processImage(file, { maxWidth: 1024, maxHeight: 1024 });
-          // Show preview immediately
-          setPreviewImage(processed.dataUrl);
+          onImageUpload(processed.dataUrl, 'color');
+          onCancel?.();
           return;
         }
       }
@@ -129,57 +126,7 @@ export function ColorModeUploadSection({
     } finally {
       setIsProcessing(false);
     }
-  }, [disabled, isProcessing, toast]);
-
-  // Confirm the preview and upload
-  const handleConfirmUpload = useCallback(() => {
-    if (previewImage) {
-      onImageUpload(previewImage, 'color');
-      setPreviewImage(null);
-      onCancel?.();
-    }
-  }, [previewImage, onImageUpload, onCancel]);
-
-  // Clear preview and go back to upload options
-  const handleClearPreview = useCallback(() => {
-    setPreviewImage(null);
-  }, []);
-
-  // If we have a preview image, show it with confirm/cancel buttons
-  if (previewImage) {
-    return (
-      <div className="relative w-full h-full flex flex-col">
-        {/* Preview image */}
-        <div className="flex-1 relative overflow-hidden rounded-lg m-2">
-          <img 
-            src={previewImage} 
-            alt="Preview" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-        
-        {/* Action buttons */}
-        <div className="flex gap-2 p-4 pt-2">
-          <Button
-            onClick={handleClearPreview}
-            variant="outline"
-            className="flex-1 h-12 gap-2"
-          >
-            <X className="h-5 w-5" />
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmUpload}
-            variant="default"
-            className="flex-1 h-12 gap-2"
-          >
-            <Check className="h-5 w-5" />
-            Use Image
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  }, [disabled, isProcessing, toast, onImageUpload, onCancel]);
 
   return (
     <div className="relative w-full h-full flex flex-col p-4 text-center">

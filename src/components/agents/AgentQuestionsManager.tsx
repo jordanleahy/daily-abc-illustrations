@@ -39,7 +39,7 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
 
   const isLoading = questionsLoading || agentQuestionsLoading;
 
-  // Build sorted list using agent_questions order, falling back to question order
+  // Build sorted list: enabled questions first (by sort order), then disabled questions (by sort order)
   const sortedQuestions = (agentQuestions || [])
     .map(aq => ({
       ...aq.question,
@@ -47,7 +47,14 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
       isEnabled: aq.is_enabled,
       agentSortOrder: aq.sort_order,
     }))
-    .sort((a, b) => (a.agentSortOrder ?? 0) - (b.agentSortOrder ?? 0));
+    .sort((a, b) => {
+      // First, group by enabled status (enabled first)
+      if (a.isEnabled !== b.isEnabled) {
+        return a.isEnabled ? -1 : 1;
+      }
+      // Within each group, sort by sort_order
+      return (a.agentSortOrder ?? 0) - (b.agentSortOrder ?? 0);
+    });
 
   const handleToggle = (questionId: string, currentEnabled: boolean) => {
     toggleMutation.mutate({

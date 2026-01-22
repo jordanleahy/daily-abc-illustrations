@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Loader2, List, Mountain } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { Plus, Pencil, Trash2, Loader2, List, Mountain, Search, MapPin, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useResortPlacesAutocomplete, useAddResort, ResortPrediction } from '@/hooks/useResortMutations';
 
 interface Resort {
   id: string;
@@ -76,6 +78,17 @@ export function ResortOptionManager({ questionId }: ResortOptionManagerProps) {
     },
   });
 
+  // Places autocomplete hooks
+  const { 
+    predictions, 
+    isLoading: isSearching, 
+    searchResorts, 
+    getResortDetails, 
+    enrichResortWithAI,
+    clearPredictions 
+  } = useResortPlacesAutocomplete();
+  const addResortMutation = useAddResort();
+
   const createMutation = useMutation({
     mutationFn: async (data: { id: string; label: string; [key: string]: unknown }) => {
       const { error } = await supabase.from('resorts').insert(data);
@@ -126,11 +139,32 @@ export function ResortOptionManager({ questionId }: ResortOptionManagerProps) {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ResortFormData>(defaultFormData);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [selectedPrediction, setSelectedPrediction] = useState<ResortPrediction | null>(null);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        searchResorts(searchQuery);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchResorts]);
 
   const handleOpenCreate = () => {
+    setIsSearchDrawerOpen(true);
+    setSearchQuery('');
+    clearPredictions();
+  };
+
+  const handleOpenManualCreate = () => {
+    setIsSearchDrawerOpen(false);
     setEditingId(null);
     setFormData(defaultFormData);
     setIsDialogOpen(true);
@@ -157,6 +191,57 @@ export function ResortOptionManager({ questionId }: ResortOptionManagerProps) {
   const handleOpenDelete = (id: string) => {
     setDeleteId(id);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleSelectPrediction = async (prediction: ResortPrediction) => {
+    setSelectedPrediction(prediction);
+    setIsEnriching(true);
+    
+    try {
+      // Get place details
+      const details = await getResortDetails(prediction.place_id);
+      if (!details) {
+        toast.error('Failed to get resort details');
+        setIsEnriching(false);
+        return;
+      }
+
+      // Get AI enrichment
+      const enrichment = await enrichResortWithAI(
+        details.name,
+        details.state,
+        details.country
+      );
+
+      // Create the resort with all data
+      const resortId = details.name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_')
+        .replace(/^_|_$/g, '');
+
+      await addResortMutation.mutateAsync({
+        id: resortId,
+        label: details.name,
+        state: details.state,
+        country: details.country,
+        location: details.location,
+        terrain: enrichment?.terrain,
+        difficulty_levels: enrichment?.difficulty_levels,
+        signature_runs: enrichment?.signature_runs,
+        atmosphere: enrichment?.atmosphere,
+        color_palette: enrichment?.color_palette,
+      });
+
+      setIsSearchDrawerOpen(false);
+      setSearchQuery('');
+      clearPredictions();
+    } catch (error) {
+      console.error('Error adding resort:', error);
+      toast.error('Failed to add resort');
+    } finally {
+      setIsEnriching(false);
+      setSelectedPrediction(null);
+    }
   };
 
   const handleSave = () => {
@@ -274,6 +359,88 @@ export function ResortOptionManager({ questionId }: ResortOptionManagerProps) {
         ) : (
           <p className="text-muted-foreground text-sm">No resorts available.</p>
         )}
+
+        {/* Search Drawer (Bottom Sheet) */}
+        <Drawer open={isSearchDrawerOpen} onOpenChange={setIsSearchDrawerOpen}>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader className="text-left">
+              <DrawerTitle className="flex items-center gap-2">
+                <Mountain className="h-5 w-5 text-primary" />
+                Add Ski Resort
+              </DrawerTitle>
+              <DrawerDescription>
+                Search for a ski resort to add with AI-generated details
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 pb-6 space-y-4">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search ski resorts (e.g., Vail, Aspen, Park City)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  autoFocus
+                />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Search Results */}
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {predictions.length > 0 ? (
+                  predictions.map((prediction) => (
+                    <button
+                      key={prediction.place_id}
+                      onClick={() => handleSelectPrediction(prediction)}
+                      disabled={isEnriching}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors text-left disabled:opacity-50"
+                    >
+                      {isEnriching && selectedPrediction?.place_id === prediction.place_id ? (
+                        <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                          <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                          <MapPin className="h-5 w-5 text-primary" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{prediction.main_text}</p>
+                        <p className="text-xs text-muted-foreground truncate">{prediction.secondary_text}</p>
+                      </div>
+                      {isEnriching && selectedPrediction?.place_id === prediction.place_id && (
+                        <span className="text-xs text-primary">Adding with AI...</span>
+                      )}
+                    </button>
+                  ))
+                ) : searchQuery.length >= 2 && !isSearching ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    No ski resorts found. Try a different search.
+                  </p>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    Start typing to search for ski resorts
+                  </p>
+                )}
+              </div>
+
+              {/* Manual Entry Option */}
+              <div className="border-t pt-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleOpenManualCreate}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Add manually instead
+                </Button>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

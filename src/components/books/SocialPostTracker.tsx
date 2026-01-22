@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Instagram, Facebook, Linkedin, Check, Image, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialPostTracking, SocialPlatform } from '@/hooks/useSocialPostTracking';
 import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { VideoAspectBadges } from './VideoAspectBadges';
-import { Separator } from '@/components/ui/separator';
+import { InstagramPostDrawer } from './InstagramPostDrawer';
+import { SITE_CONFIG } from '@/config/site';
 
 // TikTok icon (Lucide doesn't have one)
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -25,19 +26,41 @@ interface SocialPostTrackerProps {
   bookName: string;
   bookDescription?: string | null;
   dailyPublishedId: string;
+  marketingUrl?: string | null;
+  metadata?: {
+    characterTheme?: string;
+    bookType?: string;
+    season?: string;
+    environment?: string;
+    clothingBrand?: string;
+    location?: string;
+    targetAge?: string;
+  };
 }
 
-const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; iconPosted?: React.ReactNode; label: string }[] = [
-  { id: 'instagram', icon: <Instagram className="h-4 w-4" />, label: 'Instagram' },
-  { id: 'facebook', icon: <Facebook className="h-4 w-4" />, label: 'Facebook' },
+const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; iconPosted?: React.ReactNode; label: string; hasDrawer?: boolean }[] = [
+  { id: 'instagram', icon: <Instagram className="h-4 w-4" />, label: 'Instagram', hasDrawer: true },
+  { id: 'facebook', icon: <Facebook className="h-4 w-4" />, label: 'Facebook', hasDrawer: true },
   { id: 'tiktok', icon: <TikTokIcon className="h-4 w-4" />, label: 'TikTok' },
   { id: 'linkedin', icon: <Linkedin className="h-4 w-4" />, label: 'LinkedIn' },
   { id: 'ig_subscribers', icon: <Circle className="h-4 w-4" />, iconPosted: <Circle className="h-4 w-4 fill-current" />, label: 'IG Subscribers' },
 ];
 
-export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPublishedId }: SocialPostTrackerProps) {
+export function SocialPostTracker({ 
+  bookId, 
+  bookName, 
+  bookDescription, 
+  dailyPublishedId,
+  marketingUrl,
+  metadata,
+}: SocialPostTrackerProps) {
+  const queryClient = useQueryClient();
   const { postedPlatforms, markAsPosted, isMarking } = useSocialPostTracking(bookId);
   const { mutate: generateOGAssets, isPending: isGeneratingOG } = useGenerateOGAssets();
+  
+  // Drawer state for Instagram/Facebook
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerPlatform, setDrawerPlatform] = useState<'instagram' | 'facebook'>('instagram');
   
   // Check if OG assets already exist for this book
   const { data: hasOGAssets } = useQuery({
@@ -68,6 +91,17 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
 
   const handlePlatformClick = (platform: SocialPlatform, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // For Instagram and Facebook, open the drawer
+    if (platform === 'instagram' || platform === 'facebook') {
+      if (!postedPlatforms.includes(platform)) {
+        setDrawerPlatform(platform);
+        setDrawerOpen(true);
+      }
+      return;
+    }
+    
+    // For other platforms, mark directly
     if (!postedPlatforms.includes(platform)) {
       markAsPosted(platform);
     }
@@ -86,6 +120,16 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
       }
     });
   };
+
+  const handleDrawerPosted = () => {
+    // Invalidate the social posts query to refresh the icon state
+    queryClient.invalidateQueries({ queryKey: ['social-posts', bookId] });
+  };
+
+  // Build the marketing URL for the drawer
+  const fullMarketingUrl = marketingUrl 
+    ? `${SITE_CONFIG.productionUrl}/book/${marketingUrl}` 
+    : `${SITE_CONFIG.productionUrl}/library/${bookId}`;
 
   return (
     <div className="flex flex-col items-center gap-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -141,6 +185,19 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
 
       {/* Row 2: Video aspect ratio badges */}
       <VideoAspectBadges bookId={bookId} bookName={bookName} />
+
+      {/* Instagram/Facebook Post Drawer */}
+      <InstagramPostDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        bookId={bookId}
+        bookName={bookName}
+        bookDescription={bookDescription}
+        marketingUrl={fullMarketingUrl}
+        metadata={metadata}
+        platform={drawerPlatform}
+        onPosted={handleDrawerPosted}
+      />
     </div>
   );
 }

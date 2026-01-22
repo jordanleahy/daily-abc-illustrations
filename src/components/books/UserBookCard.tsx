@@ -480,13 +480,15 @@ export function UserBookCard({
             />
             
             
-            {/* Social Post Tracker with OG Assets - Always visible for library books */}
+{/* Social Post Tracker with OG Assets - Always visible for library books */}
             {publicationStatus && (
               <SocialPostTracker 
                 bookId={book.id}
                 bookName={book.book_name}
                 bookDescription={book.book_description}
                 dailyPublishedId={publicationStatus.id}
+                marketingUrl={publicationStatus.slug || book.marketing_url}
+                metadata={book.metadata}
               />
             )}
 

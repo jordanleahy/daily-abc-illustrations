@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { VideoAspectBadges } from './VideoAspectBadges';
 import { InstagramPostDrawer } from './InstagramPostDrawer';
+import { TikTokPostDrawer } from './TikTokPostDrawer';
 import { SITE_CONFIG } from '@/config/site';
 
 // TikTok icon (Lucide doesn't have one)
@@ -41,7 +42,7 @@ interface SocialPostTrackerProps {
 const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; iconPosted?: React.ReactNode; label: string; hasDrawer?: boolean }[] = [
   { id: 'instagram', icon: <Instagram className="h-4 w-4" />, label: 'Instagram', hasDrawer: true },
   { id: 'facebook', icon: <Facebook className="h-4 w-4" />, label: 'Facebook', hasDrawer: true },
-  { id: 'tiktok', icon: <TikTokIcon className="h-4 w-4" />, label: 'TikTok' },
+  { id: 'tiktok', icon: <TikTokIcon className="h-4 w-4" />, label: 'TikTok', hasDrawer: true },
   { id: 'linkedin', icon: <Linkedin className="h-4 w-4" />, label: 'LinkedIn' },
   { id: 'ig_subscribers', icon: <Circle className="h-4 w-4" />, iconPosted: <Circle className="h-4 w-4 fill-current" />, label: 'IG Subscribers' },
 ];
@@ -61,6 +62,9 @@ export function SocialPostTracker({
   // Drawer state for Instagram/Facebook
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerPlatform, setDrawerPlatform] = useState<'instagram' | 'facebook'>('instagram');
+  
+  // TikTok drawer state
+  const [tiktokDrawerOpen, setTiktokDrawerOpen] = useState(false);
   
   // Check if OG assets already exist for this book
   const { data: hasOGAssets } = useQuery({
@@ -97,6 +101,14 @@ export function SocialPostTracker({
       if (!postedPlatforms.includes(platform)) {
         setDrawerPlatform(platform);
         setDrawerOpen(true);
+      }
+      return;
+    }
+    
+    // For TikTok, open the TikTok drawer
+    if (platform === 'tiktok') {
+      if (!postedPlatforms.includes(platform)) {
+        setTiktokDrawerOpen(true);
       }
       return;
     }
@@ -196,6 +208,18 @@ export function SocialPostTracker({
         marketingUrl={fullMarketingUrl}
         metadata={metadata}
         platform={drawerPlatform}
+        onPosted={handleDrawerPosted}
+      />
+
+      {/* TikTok Post Drawer */}
+      <TikTokPostDrawer
+        open={tiktokDrawerOpen}
+        onOpenChange={setTiktokDrawerOpen}
+        bookId={bookId}
+        bookName={bookName}
+        bookDescription={bookDescription}
+        marketingUrl={fullMarketingUrl}
+        metadata={metadata}
         onPosted={handleDrawerPosted}
       />
     </div>

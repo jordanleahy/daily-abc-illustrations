@@ -180,6 +180,8 @@ export type Database = {
       agent_questions: {
         Row: {
           agent_type: string
+          conditional_on_answer_id: string | null
+          conditional_on_question_id: string | null
           created_at: string | null
           id: string
           is_enabled: boolean | null
@@ -189,6 +191,8 @@ export type Database = {
         }
         Insert: {
           agent_type: string
+          conditional_on_answer_id?: string | null
+          conditional_on_question_id?: string | null
           created_at?: string | null
           id?: string
           is_enabled?: boolean | null
@@ -198,6 +202,8 @@ export type Database = {
         }
         Update: {
           agent_type?: string
+          conditional_on_answer_id?: string | null
+          conditional_on_question_id?: string | null
           created_at?: string | null
           id?: string
           is_enabled?: boolean | null

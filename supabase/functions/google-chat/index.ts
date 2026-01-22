@@ -62,6 +62,9 @@ interface EnabledQuestionWithDetails {
   question: QuestionDetails;
   // Resolved options (from static_options OR fetched from lookup table)
   resolvedOptions?: StaticOption[];
+  // Conditional question support
+  conditional_on_question_id?: string | null;
+  conditional_on_answer_id?: string | null;
 }
 
 /**
@@ -144,12 +147,41 @@ You are operating under STRICT COMPLIANCE MODE. The following rules are ABSOLUTE
 function buildDynamicDiscoveryBlock(
   enabledQuestions: EnabledQuestionWithDetails[],
   answeredQuestionIds: Set<string>,
-  existingContextKeys: Set<string>
+  existingContextKeys: Set<string>,
+  messages: Message[] = []
 ): string {
+  // Helper to check if a specific answer was given to a question
+  const wasAnswerSelected = (questionId: string, answerId: string): boolean => {
+    for (const msg of messages) {
+      if (msg.role !== 'user') continue;
+      const content = typeof msg.content === 'string' ? msg.content.toLowerCase() : '';
+      if (content.includes(answerId.toLowerCase())) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Filter out already-answered questions and those already in context
   const unanswered = enabledQuestions.filter(eq => {
     // Skip if already answered in conversation
     if (answeredQuestionIds.has(eq.question_id)) return false;
+    
+    // Handle conditional questions - only show if parent question was answered with specific value
+    if (eq.conditional_on_question_id && eq.conditional_on_answer_id) {
+      // Check if the parent question was answered
+      if (!answeredQuestionIds.has(eq.conditional_on_question_id)) {
+        // Parent not answered yet - don't show this conditional question
+        return false;
+      }
+      // Check if the specific answer was selected
+      if (!wasAnswerSelected(eq.conditional_on_question_id, eq.conditional_on_answer_id)) {
+        // Parent was answered but not with the trigger answer - skip this conditional question
+        console.log(`📋 Skipping conditional question ${eq.question_id} - requires ${eq.conditional_on_answer_id} but different answer was given`);
+        return false;
+      }
+      console.log(`📋 Showing conditional question ${eq.question_id} - parent ${eq.conditional_on_question_id} answered with ${eq.conditional_on_answer_id}`);
+    }
     
     // Skip if already provided via explicit context (e.g., gradeLevel, season, etc.)
     // These are the question IDs that match context parameter names
@@ -168,6 +200,8 @@ function buildDynamicDiscoveryBlock(
       'BRAND': ['clothingBrand', 'brand'],
       'THEME': ['theme'],  // Uppercase question ID
       'age_group': ['ageGroup', 'age_group'],
+      'DIGRAPH_FOCUS': ['digraphFocus', 'digraph_focus'],
+      'DIGRAPH_SELECTION': ['digraphSelection', 'digraph_selection', 'specificDigraph'],
     };
     
     const mappedKeys = contextKeyMappings[eq.question_id] || [];
@@ -366,13 +400,15 @@ serve(async (req) => {
         .eq('is_latest', true)
         .single();
       
-      // Fetch enabled questions for this agent type WITH full question details (including lookup columns)
+      // Fetch enabled questions for this agent type WITH full question details (including lookup columns and conditionals)
       const { data: agentQuestionsData } = await supabase
         .from('agent_questions')
         .select(`
           question_id,
           is_enabled,
           sort_order,
+          conditional_on_question_id,
+          conditional_on_answer_id,
           question:questions(
             id, label, description, static_options, placeholder_key,
             options_table, options_value_column, options_label_column
@@ -432,6 +468,8 @@ serve(async (req) => {
           sort_order: aq.sort_order,
           question,
           resolvedOptions,
+          conditional_on_question_id: (aq as any).conditional_on_question_id || null,
+          conditional_on_answer_id: (aq as any).conditional_on_answer_id || null,
         });
       }
       
@@ -687,7 +725,8 @@ serve(async (req) => {
     const dynamicDiscoveryBlock = buildDynamicDiscoveryBlock(
       enabledQuestionsWithDetails,
       answeredQuestionIds,
-      existingContextKeys
+      existingContextKeys,
+      messages
     );
     
     if (dynamicDiscoveryBlock) {

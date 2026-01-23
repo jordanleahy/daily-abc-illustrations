@@ -16,6 +16,42 @@ const corsHeaders = {
 // Page types that use the pro model for better text accuracy
 const PRO_MODEL_PAGE_TYPES = ['cover', 'educational'];
 
+/**
+ * Sanitize image prompts to remove text overlay instructions
+ * This is a defense-in-depth measure to prevent text from appearing on generated images
+ */
+function sanitizeImagePrompt(prompt: string): string {
+  let clean = prompt;
+  
+  // Remove **Text Overlay:** section and its content (until next ** or end)
+  clean = clean.replace(/\*\*Text Overlay:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+  
+  // Remove **Rhyme Text:** section and its content
+  clean = clean.replace(/\*\*Rhyme Text:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+  
+  // Remove **Rhyme Pair:** lines
+  clean = clean.replace(/\*\*Rhyme Pair:\*\*[^\n]*\n?/gi, '');
+  
+  // Remove standalone quoted text lines (rhymes in quotes)
+  clean = clean.replace(/^[""][^""]+[""]\.?\s*$/gm, '');
+  
+  // Remove **Illustration:** or **Image Prompt:** labels but keep content
+  clean = clean.replace(/\*\*(?:Illustration|Image Prompt):\*\*\s*/gi, '');
+  
+  // Remove bullet point markers at start of lines
+  clean = clean.replace(/^[-*]\s+/gm, '');
+  
+  // Clean up extra whitespace
+  clean = clean.replace(/\n{3,}/g, '\n\n').trim();
+  
+  // Ensure proper ending if not present
+  if (!clean.toLowerCase().includes('no text overlay')) {
+    clean = clean.replace(/\.?\s*$/, '. No text overlays. Clean illustration only.');
+  }
+  
+  return clean;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -76,13 +112,16 @@ serve(async (req) => {
       ? `CRITICAL - BOOK COVER: This is a COVER PAGE for the book titled "${bookTitle}". The title "${bookTitle}" MUST be prominently displayed as a BIG, BUBBLY, CENTERED text overlay in the upper-middle area of the image. Use extra large bubble-letter font (rounded, playful, child-friendly). The title should be the most prominent text element.\n\n`
       : '';
     
-    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + prompt;
+    // Sanitize the prompt to remove any text overlay instructions
+    const sanitizedPrompt = sanitizeImagePrompt(prompt);
+    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + sanitizedPrompt;
     
     console.log('🎨 Generating color image for page:', pageId);
     console.log('📄 Page type:', pageType || 'unknown');
     console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
     console.log('📐 Square format enforced:', requiresSquareFormat);
     console.log('📕 Cover title included:', isCoverPage && bookTitle ? bookTitle : 'N/A');
+    console.log('🧹 Prompt sanitized:', prompt !== sanitizedPrompt ? 'YES (text content removed)' : 'NO (already clean)');
     console.log('📝 Prompt length:', enhancedPrompt.length);
 
     // Call Lovable AI to generate the color image with retry logic for transient errors

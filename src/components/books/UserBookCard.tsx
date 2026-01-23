@@ -10,6 +10,7 @@ import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { AdminOnly } from '@/components/AdminOnly';
 import { SocialPostTracker } from '@/components/books/SocialPostTracker';
 import { YouTubePostDrawer } from '@/components/books/YouTubePostDrawer';
+import { LinkedInPostDrawer } from '@/components/books/LinkedInPostDrawer';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useArchiveBook } from '@/hooks/useArchiveBook';
@@ -23,7 +24,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -68,6 +69,7 @@ export function UserBookCard({
   const { mutate: archiveBook, isPending: isArchiving } = useArchiveBook();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const [isYouTubeDrawerOpen, setIsYouTubeDrawerOpen] = useState(false);
+  const [isLinkedInDrawerOpen, setIsLinkedInDrawerOpen] = useState(false);
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const coverImageUrl = book.coverImageUrl;
 
@@ -475,6 +477,30 @@ export function UserBookCard({
             <YouTubePostDrawer
               open={isYouTubeDrawerOpen}
               onOpenChange={setIsYouTubeDrawerOpen}
+              book={book}
+              publicationSlug={publicationStatus?.slug}
+            />
+
+            {/* LinkedIn Post - All library books */}
+            {publicationStatus && book.marketing_url && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLinkedInDrawerOpen(true);
+                }}
+              >
+                <Linkedin className="h-4 w-4" />
+                LinkedIn
+              </Button>
+            )}
+            
+            {/* LinkedIn Post Drawer */}
+            <LinkedInPostDrawer
+              open={isLinkedInDrawerOpen}
+              onOpenChange={setIsLinkedInDrawerOpen}
               book={book}
               publicationSlug={publicationStatus?.slug}
             />

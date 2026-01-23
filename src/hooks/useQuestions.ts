@@ -135,7 +135,7 @@ export function useToggleAgentQuestion() {
       questionId: string; 
       isEnabled: boolean;
     }) => {
-      // Check if mapping exists
+      // Step 1: Update the target question's enabled status
       const { data: existing } = await supabase
         .from('agent_questions')
         .select('id')
@@ -143,25 +143,49 @@ export function useToggleAgentQuestion() {
         .eq('question_id', questionId)
         .single();
 
+      // Use temporary sort_order: 999 for enabling (will be resequenced), 100 for disabling
+      const tempSortOrder = isEnabled ? 999 : 100;
+
       if (existing) {
-        // Update existing
         const { error } = await supabase
           .from('agent_questions')
-          .update({ is_enabled: isEnabled })
+          .update({ is_enabled: isEnabled, sort_order: tempSortOrder })
           .eq('id', existing.id);
 
         if (error) throw error;
       } else {
-        // Create new mapping
         const { error } = await supabase
           .from('agent_questions')
           .insert({
             agent_type: agentType,
             question_id: questionId,
             is_enabled: isEnabled,
+            sort_order: tempSortOrder,
           });
 
         if (error) throw error;
+      }
+
+      // Step 2: Re-sequence ALL enabled questions for this agent (0, 1, 2, 3...)
+      const { data: enabledQuestions, error: fetchError } = await supabase
+        .from('agent_questions')
+        .select('id')
+        .eq('agent_type', agentType)
+        .eq('is_enabled', true)
+        .order('sort_order', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      // Update each enabled question with sequential sort_order
+      if (enabledQuestions && enabledQuestions.length > 0) {
+        for (let i = 0; i < enabledQuestions.length; i++) {
+          const { error } = await supabase
+            .from('agent_questions')
+            .update({ sort_order: i })
+            .eq('id', enabledQuestions[i].id);
+          
+          if (error) throw error;
+        }
       }
     },
     onSuccess: (_, variables) => {

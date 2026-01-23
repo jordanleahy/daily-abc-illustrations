@@ -100,32 +100,26 @@ export function SocialPostTracker({
   const handlePlatformClick = (platform: SocialPlatform, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // For Instagram and Facebook, open the drawer
+    // For Instagram and Facebook, always open the drawer
     if (platform === 'instagram' || platform === 'facebook') {
-      if (!postedPlatforms.includes(platform)) {
-        setDrawerPlatform(platform);
-        setDrawerOpen(true);
-      }
+      setDrawerPlatform(platform);
+      setDrawerOpen(true);
       return;
     }
     
-    // For TikTok, open the TikTok drawer
+    // For TikTok, always open the TikTok drawer
     if (platform === 'tiktok') {
-      if (!postedPlatforms.includes(platform)) {
-        setTiktokDrawerOpen(true);
-      }
+      setTiktokDrawerOpen(true);
       return;
     }
     
-    // For LinkedIn, open the LinkedIn drawer
+    // For LinkedIn, always open the LinkedIn drawer
     if (platform === 'linkedin') {
-      if (!postedPlatforms.includes(platform)) {
-        setLinkedinDrawerOpen(true);
-      }
+      setLinkedinDrawerOpen(true);
       return;
     }
     
-    // For other platforms, mark directly
+    // For other platforms, mark directly (only if not already posted)
     if (!postedPlatforms.includes(platform)) {
       markAsPosted(platform);
     }
@@ -195,7 +189,7 @@ export function SocialPostTracker({
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={(e) => handlePlatformClick(id, e)}
-              disabled={isMarking || isPosted}
+              disabled={isMarking || (isPosted && !PLATFORMS.find(p => p.id === id)?.hasDrawer)}
               title={isPosted ? `Posted to ${label}` : `Mark as posted to ${label}`}
             >
               {isPosted && iconPosted ? iconPosted : icon}

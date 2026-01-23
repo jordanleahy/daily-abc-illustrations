@@ -98,6 +98,7 @@ export function SocialPostTracker({
   const ogComplete = hasOGAssets || showSuccessAnimation;
 
   const handlePlatformClick = (platform: SocialPlatform, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     
     // For Instagram and Facebook, always open the drawer

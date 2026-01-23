@@ -755,15 +755,28 @@ serve(async (req) => {
     // Get category word for title requirement
     const categoryWord = bookType ? getBookTypeCategoryWord(normalizeBookType(bookType)) : 'Adventure';
     
-    // Proceed to title context with category requirement
+    // Proceed to title context with category requirement - MUST be forceful to prevent AI from inventing questions
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
-      ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: All discovery questions have been answered or skipped. NOW propose a book title and description for user approval.
+      ? `\n\n🚨🚨🚨 CRITICAL: DISCOVERY PHASE COMPLETE - STOP ASKING QUESTIONS 🚨🚨🚨
+
+❌ DO NOT ask any more discovery questions
+❌ DO NOT invent questions like "Activity?", "Style?", "Setting?" or ANY other question
+❌ DO NOT ask for more information - you have EVERYTHING you need
+
+✅ YOU MUST NOW: Present a creative book title and short description for user approval.
 
 📛 TITLE REQUIREMENT: The book title MUST include the category word "${categoryWord}" somewhere in the title.
 ✅ Good examples: "Bluey's ${categoryWord} Adventure", "Chase's ${categoryWord} Fun", "${categoryWord} with Elsa"
 ❌ Bad examples: Titles without "${categoryWord}" in them
 
-The title confirmation ("✅ Create My Book!") is the VERY LAST step before generating the outline.`
+🔴 MANDATORY: After presenting title and description, include this EXACT [SUGGEST] block:
+
+[SUGGEST]
+approve: ✅ Create My Book!
+revise: ✏️ Suggest Changes
+[/SUGGEST]
+
+This is the FINAL step before generating the outline. DO NOT ask anything else.`
       : '';
 
     // Title confirmation is the FINAL step - when title is approved, generate outline immediately

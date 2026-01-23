@@ -6,6 +6,168 @@
  */
 
 // ============================================================================
+// TITLE GENERATION UTILITY
+// ============================================================================
+
+/**
+ * Title format words for each book type
+ * Maps book type ID to preferred title keyword and example formats
+ */
+export const BOOK_TYPE_TITLE_WORDS: Record<string, { word: string; formats: string[] }> = {
+  'abc': { 
+    word: 'ABCs',
+    formats: ['[Location] ABCs', '[Character]\'s ABC Adventure']
+  },
+  'rhyming': { 
+    word: 'Rhyme Time',
+    formats: ['[Location] Rhyme Time', 'Rhyme Time in [City]', '[Character]\'s Rhyme Time']
+  },
+  'numbers': { 
+    word: 'Numbers',
+    formats: ['[Location] Numbers Fun', '[Character]\'s Numbers Journey']
+  },
+  'colors': { 
+    word: 'Colors',
+    formats: ['[Location] Colors', '[Character]\'s Colorful Adventure']
+  },
+  'shapes': { 
+    word: 'Shapes',
+    formats: ['[Location] Shapes', '[Character]\'s Shape Adventure']
+  },
+  'manners': { 
+    word: 'Manners',
+    formats: ['[Location] Manners', '[Character]\'s Manners Fun']
+  },
+  'emotions': { 
+    word: 'Feelings',
+    formats: ['[Location] Feelings', '[Character]\'s Feelings Adventure']
+  },
+  'animals': {
+    word: 'Animals',
+    formats: ['[Location] Animals', '[Character]\'s Animal Friends']
+  },
+  'bedtime': {
+    word: 'Bedtime',
+    formats: ['[Location] Bedtime', '[Character]\'s Bedtime Story']
+  },
+  'sight-words': {
+    word: 'Sight Words',
+    formats: ['[Location] Sight Words', '[Character]\'s Sight Words']
+  },
+  'cvc': {
+    word: 'CVC Words',
+    formats: ['[Location] CVC Words', '[Character]\'s CVC Adventure']
+  },
+  'digraphs': {
+    word: 'Digraphs',
+    formats: ['[Location] Digraphs', '[Character]\'s Digraph Adventure']
+  }
+};
+
+export interface TitleGenerationContext {
+  bookType: string;
+  location?: string;    // Resort name (e.g., "Killington Resort")
+  city?: string;        // City name (e.g., "Jersey City")
+  character?: string;   // Character name (e.g., "Bluey")
+}
+
+/**
+ * Generates a consistent book title based on available context
+ * Priority: Location > City > Character > Fallback
+ */
+export function generateBookTitle(context: TitleGenerationContext): {
+  title: string;
+  format: string;
+  examples: string[];
+} {
+  const { bookType, location, city, character } = context;
+  const typeConfig = BOOK_TYPE_TITLE_WORDS[bookType] || { 
+    word: 'Adventure', 
+    formats: ['[Character]\'s Adventure'] 
+  };
+  
+  const { word } = typeConfig;
+  
+  // Priority 1: Location (Resort)
+  if (location) {
+    const title = `${location} ${word}`;
+    return {
+      title,
+      format: `[Resort Name] ${word}`,
+      examples: [`Killington ${word}`, `Vail ${word}`, `Whistler ${word}`]
+    };
+  }
+  
+  // Priority 2: City
+  if (city) {
+    // Special handling for "Rhyme Time" which sounds better with "in"
+    const title = bookType === 'rhyming' 
+      ? `${word} in ${city}`
+      : `${city} ${word}`;
+    return {
+      title,
+      format: bookType === 'rhyming' ? `${word} in [City]` : `[City] ${word}`,
+      examples: bookType === 'rhyming'
+        ? [`${word} in Jersey City`, `${word} in Hoboken`]
+        : [`Jersey City ${word}`, `Hoboken ${word}`]
+    };
+  }
+  
+  // Priority 3: Character
+  if (character) {
+    const title = `${character}'s ${word}`;
+    return {
+      title,
+      format: `[Character]'s ${word}`,
+      examples: [`Bluey's ${word}`, `Chase's ${word}`, `Elsa's ${word}`]
+    };
+  }
+  
+  // Priority 4: Fallback (no context available)
+  return {
+    title: `My ${word} Book`,
+    format: `My ${word} Book`,
+    examples: [`My ${word} Book`, `${word} Adventure`]
+  };
+}
+
+/**
+ * Generates the title format rules section for agent instructions
+ * Used by assembleAgentInstructions and can be injected dynamically
+ */
+export function generateTitleRulesSection(bookType: string): string {
+  const typeConfig = BOOK_TYPE_TITLE_WORDS[bookType] || { 
+    word: 'Adventure', 
+    formats: ['[Character]\'s Adventure'] 
+  };
+  
+  return `
+### Cover Page Title Format
+
+**MANDATORY TITLE RULES (Priority Order):**
+
+1. **If resort location was selected:**
+   - Format: "[Resort Name] ${typeConfig.word}"
+   - Examples: "Killington ${typeConfig.word}", "Vail ${typeConfig.word}"
+
+2. **If city was selected (no resort):**
+   - Format: "${bookType === 'rhyming' ? `${typeConfig.word} in [City]` : `[City] ${typeConfig.word}`}"
+   - Examples: "${bookType === 'rhyming' ? `${typeConfig.word} in Jersey City` : `Jersey City ${typeConfig.word}`}"
+
+3. **If character only (no location/city):**
+   - Format: "[Character]'s ${typeConfig.word}"
+   - Examples: "Bluey's ${typeConfig.word}", "Chase's ${typeConfig.word}"
+
+⚠️ FORBIDDEN TITLES:
+- ❌ Verbose titles like "Magical Snowy Adventure at Killington"
+- ❌ Titles longer than 5-6 words
+- ❌ Titles without the category word "${typeConfig.word}"
+
+✅ CORRECT: Keep it simple and location-focused
+`.trim();
+}
+
+// ============================================================================
 // TEMPLATE BLOCKS
 // ============================================================================
 
@@ -89,23 +251,31 @@ Generate Page 2 with three vertically-stacked colorful badges:
 Image prompt for educational focus page must be 200-350 characters describing the badges with theme-specific styling. End with "No text overlays. Clean illustration only."
 `.trim(),
 
-  // Cover page template
-  coverPage: `
+  // Cover page template - now uses BOOK_TYPE_TITLE_WORDS for dynamic formatting
+  coverPage: (bookType?: string) => {
+    const typeConfig = BOOK_TYPE_TITLE_WORDS[bookType || 'abc'] || { word: 'Adventure' };
+    
+    return `
 ## Cover Page (Page 1)
 
 Generate a cover page with:
-- Book title prominently displayed (MUST include the book category in the title)
+- Book title prominently displayed (MUST include "${typeConfig.word}" in the title)
 - Character theme integration (if selected)
 - Engaging, colorful illustration
 
-⚠️ TITLE CATEGORY RULE: The book title MUST contain the book type/category word. For example:
-- ABC books: Title includes "ABC" (e.g., "Bluey's ABC Adventure")
-- Manners books: Title includes "Manners" (e.g., "Chase's Manners Fun")
-- Numbers books: Title includes "Numbers" (e.g., "Elsa's Numbers Journey")
-- Rhyming books: Title includes "Rhyming" (e.g., "Peppa's Rhyming Time")
+⚠️ TITLE FORMAT (PRIORITY ORDER):
+1. **With Resort:** "[Resort Name] ${typeConfig.word}" (e.g., "Killington ${typeConfig.word}")
+2. **With City:** "[City] ${typeConfig.word}" (e.g., "Jersey City ${typeConfig.word}")
+3. **Character Only:** "[Character]'s ${typeConfig.word}" (e.g., "Bluey's ${typeConfig.word}")
+
+⚠️ FORBIDDEN TITLES:
+- ❌ Verbose titles like "Magical Snowy Adventure at Killington"
+- ❌ Titles longer than 5-6 words
+- ❌ Titles without "${typeConfig.word}"
 
 CRITICAL INSTRUCTION: Display the book title in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.
-`.trim(),
+`.trim();
+  },
 
   // Image prompt requirements
   imagePromptRequirements: `

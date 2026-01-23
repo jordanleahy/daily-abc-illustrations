@@ -752,8 +752,30 @@ serve(async (req) => {
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
     const titleWasJustApproved = titleApprovalPhrases.some(phrase => lastMessageContent.includes(phrase));
     
-    // Get category word for title requirement
-    const categoryWord = bookType ? getBookTypeCategoryWord(normalizeBookType(bookType)) : 'Adventure';
+    // Get category word for title requirement using unified utility
+    const normalizedType = bookType ? normalizeBookType(bookType) : 'abc';
+    const categoryWord = bookType ? getBookTypeCategoryWord(normalizedType) : 'Adventure';
+    
+    // Generate dynamic title examples based on available context
+    const titleWord = (() => {
+      const typeWords: Record<string, string> = {
+        'abc': 'ABCs', 'rhyming': 'Rhyme Time', 'numbers': 'Numbers', 'colors': 'Colors',
+        'shapes': 'Shapes', 'manners': 'Manners', 'emotions': 'Feelings', 'animals': 'Animals',
+        'bedtime': 'Bedtime', 'sight-words': 'Sight Words', 'cvc': 'CVC Words', 'digraphs': 'Digraphs'
+      };
+      return typeWords[normalizedType] || categoryWord;
+    })();
+    
+    // Build context-aware title examples (Priority: Location > City > Character)
+    const titleExamples = location 
+      ? `"${location} ${titleWord}", "Vail ${titleWord}"`
+      : city 
+        ? normalizedType === 'rhyming'
+          ? `"${titleWord} in ${city}", "${titleWord} in Hoboken"`
+          : `"${city} ${titleWord}", "Hoboken ${titleWord}"`
+        : `"Bluey's ${titleWord}", "Chase's ${titleWord}"`;
+    
+    const badTitleExamples = `"Magical Snowy Adventure at Killington", "Amazing ${categoryWord} Journey Through the Mountains"`;
     
     // Proceed to title context with category requirement - MUST be forceful to prevent AI from inventing questions
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
@@ -765,9 +787,15 @@ serve(async (req) => {
 
 ✅ YOU MUST NOW: Present a creative book title and short description for user approval.
 
-📛 TITLE REQUIREMENT: The book title MUST include the category word "${categoryWord}" somewhere in the title.
-✅ Good examples: "Bluey's ${categoryWord} Adventure", "Chase's ${categoryWord} Fun", "${categoryWord} with Elsa"
-❌ Bad examples: Titles without "${categoryWord}" in them
+📛 TITLE FORMAT (Priority Order):
+1. With Resort Location: "[Resort] ${titleWord}" (e.g., "Killington ${titleWord}")
+2. With City: "${normalizedType === 'rhyming' ? `${titleWord} in [City]` : `[City] ${titleWord}`}"
+3. Character Only: "[Character]'s ${titleWord}"
+
+✅ Good examples: ${titleExamples}
+❌ Bad examples (TOO VERBOSE): ${badTitleExamples}
+
+⚠️ KEEP TITLES SHORT: Maximum 5-6 words. Include "${titleWord}" in the title.
 
 🔴 MANDATORY: After presenting title and description, include this EXACT [SUGGEST] block:
 

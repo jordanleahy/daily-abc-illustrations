@@ -1,5 +1,8 @@
 import type { Context } from "https://edge.netlify.com";
-import { createClient } from "npm:@supabase/supabase-js@2";
+
+// Supabase configuration
+const SUPABASE_URL = "https://foxdnspwzhjxjxuicute.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI";
 
 // Crawler user agents that need server-rendered meta tags
 const CRAWLER_USER_AGENTS = [
@@ -55,7 +58,7 @@ const fallbackCityData: Record<string, { name: string; description: string; ogIm
   },
 };
 
-async function getCityData(supabase: ReturnType<typeof createClient>): Promise<Map<string, { name: string; description: string; ogImage: string | null }>> {
+async function getCityData(): Promise<Map<string, { name: string; description: string; ogImage: string | null }>> {
   const now = Date.now();
   
   // Return cached data if still valid
@@ -64,13 +67,23 @@ async function getCityData(supabase: ReturnType<typeof createClient>): Promise<M
   }
 
   try {
-    const { data, error } = await supabase
-      .from('cities')
-      .select('id, label, seo_description, description, og_image')
-      .eq('is_active', true);
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/cities?is_active=eq.true&select=id,label,seo_description,description,og_image`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
 
-    if (error || !data) {
-      console.error('Error fetching cities for meta:', error);
+    if (!response.ok) {
+      console.error('Error fetching cities for meta:', response.statusText);
+      return new Map(Object.entries(fallbackCityData));
+    }
+
+    const data = await response.json();
+    if (!data) {
       return new Map(Object.entries(fallbackCityData));
     }
 
@@ -122,13 +135,8 @@ export default async function handler(req: Request, context: Context) {
     
     const citySlug = pathParts[1].toLowerCase();
     
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
     // Fetch city data from database
-    const cityDataMap = await getCityData(supabase);
+    const cityDataMap = await getCityData();
     const city = cityDataMap.get(citySlug);
     
     // Fallback for unknown cities
@@ -136,9 +144,9 @@ export default async function handler(req: Request, context: Context) {
     const cityDescription = city?.description || 
       `Discover personalized ABC books for ${cityName}. Educational content designed for local families and children.`;
     
-    const siteUrl = 'https://chairlifthabits.com';
+    const siteUrl = 'https://dailyabcillustrations.com';
     const canonicalUrl = `${siteUrl}/city/${citySlug}`;
-    const ogTitle = `${cityName} ABC Books | Chairlift Habits`;
+    const ogTitle = `${cityName} ABC Books | Daily ABC Illustrations`;
     const ogImage = city?.ogImage 
       ? `${siteUrl}${city.ogImage}`
       : `${siteUrl}/images/cities/default-cover.jpeg`;
@@ -158,7 +166,7 @@ export default async function handler(req: Request, context: Context) {
   <meta property="og:title" content="${ogTitle}">
   <meta property="og:description" content="${cityDescription}">
   <meta property="og:image" content="${ogImage}">
-  <meta property="og:site_name" content="Chairlift Habits">
+  <meta property="og:site_name" content="Daily ABC Illustrations">
   <meta property="og:locale" content="en_US">
   
   <!-- Twitter Card -->

@@ -1,5 +1,8 @@
 import type { Context } from "https://edge.netlify.com";
-import { createClient } from "npm:@supabase/supabase-js@2";
+
+// Supabase configuration
+const SUPABASE_URL = "https://foxdnspwzhjxjxuicute.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI";
 
 // Crawler user agents that need server-rendered meta tags
 const CRAWLER_USER_AGENTS = [
@@ -96,67 +99,80 @@ interface BookTypeMetadata {
   ogImageUrl?: string | null;
 }
 
-async function getBookTypeFromDatabase(
-  supabase: ReturnType<typeof createClient>,
-  bookTypeId: string
-): Promise<BookTypeMetadata | null> {
+async function getBookTypeFromDatabase(bookTypeId: string): Promise<BookTypeMetadata | null> {
   try {
-    const { data, error } = await supabase
-      .from('book_types')
-      .select('label, description, seo_title, seo_description, og_image_url')
-      .eq('id', bookTypeId)
-      .eq('is_active', true)
-      .single();
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/book_types?id=eq.${encodeURIComponent(bookTypeId)}&is_active=eq.true&select=label,description,seo_title,seo_description,og_image_url`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
 
-    if (error || !data) {
+    if (!response.ok) {
       return null;
     }
 
+    const data = await response.json();
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const bookType = data[0];
     return {
-      label: data.label,
-      description: data.description || '',
-      seoTitle: data.seo_title,
-      seoDescription: data.seo_description,
-      ogImageUrl: data.og_image_url,
+      label: bookType.label,
+      description: bookType.description || '',
+      seoTitle: bookType.seo_title,
+      seoDescription: bookType.seo_description,
+      ogImageUrl: bookType.og_image_url,
     };
   } catch {
     return null;
   }
 }
 
-async function getBookTypeImage(
-  supabase: ReturnType<typeof createClient>,
-  bookTypeId: string
-): Promise<string | null> {
+async function getBookTypeImage(bookTypeId: string): Promise<string | null> {
   try {
     // Get a published book with this book type to use as OG image
-    const { data: publishedBooks } = await supabase
-      .from('daily_published')
-      .select(`
-        id,
-        book_id,
-        books!inner(metadata)
-      `)
-      .eq('status', 'active')
-      .eq('is_publicly_visible', true)
-      .eq('books.metadata->>bookType', bookTypeId)
-      .limit(1);
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/daily_published?select=id,book_id,books!inner(metadata)&status=eq.active&is_publicly_visible=eq.true&books.metadata->>bookType=eq.${encodeURIComponent(bookTypeId)}&limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
 
+    if (!response.ok) {
+      return null;
+    }
+
+    const publishedBooks = await response.json();
     if (!publishedBooks?.length) {
       return null;
     }
 
     // Get the OG image for this book from seo_metadata
     const bookId = publishedBooks[0].book_id;
-    const { data: seoData } = await supabase
-      .from('seo_metadata')
-      .select('og_image_url')
-      .eq('book_id', bookId)
-      .eq('is_latest', true)
-      .eq('is_active', true)
-      .single();
+    const seoResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/seo_metadata?book_id=eq.${bookId}&is_latest=eq.true&is_active=eq.true&select=og_image_url`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
 
-    return seoData?.og_image_url || null;
+    if (!seoResponse.ok) {
+      return null;
+    }
+
+    const seoData = await seoResponse.json();
+    return seoData?.[0]?.og_image_url || null;
   } catch {
     return null;
   }
@@ -183,13 +199,8 @@ export default async function handler(req: Request, context: Context) {
     // The route is /abc-books - this is for the "abc" book type
     const bookTypeId = 'abc';
     
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
     // Try to get book type metadata from database
-    const dbBookType = await getBookTypeFromDatabase(supabase, bookTypeId);
+    const dbBookType = await getBookTypeFromDatabase(bookTypeId);
     
     // Build metadata with priority: DB SEO fields > DB description > fallback
     const fallback = BOOK_TYPE_FALLBACK[bookTypeId] || DEFAULT_METADATA;
@@ -200,7 +211,7 @@ export default async function handler(req: Request, context: Context) {
     // Get OG image - prefer db og_image_url, then try to find a book image
     let ogImage = dbBookType?.ogImageUrl || null;
     if (!ogImage) {
-      ogImage = await getBookTypeImage(supabase, bookTypeId);
+      ogImage = await getBookTypeImage(bookTypeId);
     }
     
     const siteUrl = 'https://dailyabcillustrations.com';

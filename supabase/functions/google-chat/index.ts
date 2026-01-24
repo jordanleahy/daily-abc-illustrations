@@ -14,7 +14,10 @@ import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothi
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
+
 // Dynamic question injection system - fetches enabled questions and injects [SUGGEST] blocks
+// Constants for input validation
+const FREEFORM_TEXT_MAX_LENGTH = 500;
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -272,6 +275,8 @@ function buildDynamicDiscoveryBlock(
   if (options.length === 0) {
     console.log(`📋 Question ${question.id} is a freeform text question - injecting text prompt`);
     
+    const charLimit = FREEFORM_TEXT_MAX_LENGTH;
+    
     return `
 
 🚨🚨🚨 OPTIONAL FREEFORM INPUT - USER CAN SKIP 🚨🚨🚨
@@ -281,9 +286,10 @@ ${question.description || ''}
 
 🔓 THIS IS AN OPEN-ENDED QUESTION:
 1. Ask the user this question in a friendly, conversational way
-2. Accept ANY text response - there are no predefined options
+2. Accept ANY text response up to ${charLimit} characters
 3. The user can type anything they want, or skip this step
 4. DO NOT invent options or suggestions - let the user be creative
+5. If the response exceeds ${charLimit} characters, politely ask them to shorten it
 
 🔴 INCLUDE THIS EXACT BLOCK IN YOUR RESPONSE:
 
@@ -292,7 +298,7 @@ skip-${question.id}: ⏭️ Skip this step
 [/SUGGEST]
 
 📝 Your response format:
-Ask: "${question.label}" and let the user know they can type anything or skip.
+Ask: "${question.label}" and mention they can type anything (up to ${charLimit} characters) or skip.
 The skip button will render from the [SUGGEST] block above.
 
 ⚠️ WAIT for user response before proceeding to the next step.
@@ -406,6 +412,24 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Validate and sanitize user messages - enforce character limits for freeform text
+    const sanitizedMessages = messages.map(msg => {
+      if (msg.role === 'user' && typeof msg.content === 'string') {
+        // Truncate excessively long messages to prevent abuse
+        if (msg.content.length > FREEFORM_TEXT_MAX_LENGTH) {
+          console.log(`⚠️ User message truncated from ${msg.content.length} to ${FREEFORM_TEXT_MAX_LENGTH} chars`);
+          return {
+            ...msg,
+            content: msg.content.substring(0, FREEFORM_TEXT_MAX_LENGTH)
+          };
+        }
+      }
+      return msg;
+    });
+    
+    // Use sanitized messages for the rest of the function
+    const validatedMessages = sanitizedMessages;
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -568,7 +592,7 @@ serve(async (req) => {
     // ABC-specific curated items context - only process if ABC book and subject theme selected
     let curatedItemsContext = '';
     if (bookType === 'abc') {
-      const subjectTheme = messages.find(m => 
+      const subjectTheme = validatedMessages.find(m => 
         m.role === 'user' && 
         typeof m.content === 'string' && 
         (m.content.includes('Animals A-Z') || 
@@ -619,7 +643,7 @@ serve(async (req) => {
         const digraphPatterns = ['ch', 'sh', 'th', 'wh', 'ph', 'ck', 'ng', 'gh', 'kn', 'wr', 'qu', 'tch', 'dge', 'sc', 'sk', 'sm', 'sn', 'sp', 'st', 'sw'];
         let selectedDigraph: string | null = null;
         
-        for (const msg of messages) {
+        for (const msg of validatedMessages) {
           if (msg.role === 'user' && typeof msg.content === 'string') {
             const content = msg.content.toLowerCase();
             for (const dg of digraphPatterns) {
@@ -659,7 +683,7 @@ serve(async (req) => {
       
       let selectedLevel: SightWordLevel | null = null;
       
-      for (const msg of messages) {
+      for (const msg of validatedMessages) {
         if (msg.role === 'user' && typeof msg.content === 'string') {
           const content = msg.content;
           for (const { pattern, level } of levelPatterns) {
@@ -785,7 +809,7 @@ serve(async (req) => {
     }
     
     // Extract which questions have been answered from conversation history
-    const answeredQuestionIds = extractAnsweredQuestions(messages, enabledQuestionsWithDetails);
+    const answeredQuestionIds = extractAnsweredQuestions(validatedMessages, enabledQuestionsWithDetails);
     console.log(`📋 Answered questions from conversation:`, Array.from(answeredQuestionIds));
     
     // Build dynamic [SUGGEST] block for the next unanswered question
@@ -793,7 +817,7 @@ serve(async (req) => {
       enabledQuestionsWithDetails,
       answeredQuestionIds,
       existingContextKeys,
-      messages
+      validatedMessages
     );
     
     if (dynamicDiscoveryBlock) {
@@ -811,7 +835,7 @@ serve(async (req) => {
     const allOptionalQuestionsComplete = allDynamicQuestionsComplete && !dynamicDiscoveryBlock;
 
     // Check if user is forcing outline creation (e.g., typing "create outline")
-    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const lastUserMessage = validatedMessages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
     const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
 
@@ -915,7 +939,7 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);
 
-    const allMessages = [systemMessage, ...messages];
+    const allMessages = [systemMessage, ...validatedMessages];
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 

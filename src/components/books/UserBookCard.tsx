@@ -11,6 +11,7 @@ import { AdminOnly } from '@/components/AdminOnly';
 import { SocialPostTracker } from '@/components/books/SocialPostTracker';
 import { YouTubePostDrawer } from '@/components/books/YouTubePostDrawer';
 import { LinkedInPostDrawer } from '@/components/books/LinkedInPostDrawer';
+import { EtsyPostDrawer } from '@/components/books/EtsyPostDrawer';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useArchiveBook } from '@/hooks/useArchiveBook';
@@ -24,7 +25,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -70,6 +71,7 @@ export function UserBookCard({
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const [isYouTubeDrawerOpen, setIsYouTubeDrawerOpen] = useState(false);
   const [isLinkedInDrawerOpen, setIsLinkedInDrawerOpen] = useState(false);
+  const [isEtsyDrawerOpen, setIsEtsyDrawerOpen] = useState(false);
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const coverImageUrl = book.coverImageUrl;
 
@@ -503,6 +505,29 @@ export function UserBookCard({
               onOpenChange={setIsLinkedInDrawerOpen}
               book={book}
               publicationSlug={publicationStatus?.slug}
+            />
+
+            {/* Etsy Post - All library books */}
+            {publicationStatus && book.marketing_url && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEtsyDrawerOpen(true);
+                }}
+              >
+                <Store className="h-4 w-4" />
+                Etsy
+              </Button>
+            )}
+            
+            {/* Etsy Post Drawer */}
+            <EtsyPostDrawer
+              open={isEtsyDrawerOpen}
+              onOpenChange={setIsEtsyDrawerOpen}
+              book={book}
             />
             
             

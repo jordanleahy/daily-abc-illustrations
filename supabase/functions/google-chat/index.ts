@@ -82,6 +82,39 @@ function extractAnsweredQuestions(
     // Use resolvedOptions (which includes both static and lookup-based options)
     const options = eq.resolvedOptions || eq.question.static_options || [];
     
+    // Handle freeform questions (no options) - check if question was asked and user responded
+    if (options.length === 0) {
+      let questionWasAsked = false;
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        if (msg.role === 'assistant' && typeof msg.content === 'string') {
+          // Check if assistant asked this freeform question (look for the question label or skip button)
+          const contentLower = msg.content.toLowerCase();
+          const labelLower = eq.question.label.toLowerCase();
+          if (contentLower.includes(labelLower) || 
+              msg.content.includes(`skip-${questionId}`)) {
+            questionWasAsked = true;
+          }
+        }
+        // If question was asked and there's a subsequent user message, check if it's a skip or an answer
+        if (questionWasAsked && msg.role === 'user' && i > 0) {
+          const content = typeof msg.content === 'string' ? msg.content.toLowerCase() : '';
+          // Skip response marks as answered
+          if (content.includes(`skip-${questionId.toLowerCase()}`)) {
+            answered.add(questionId);
+            break;
+          }
+          // Any non-empty text response after the question was asked marks it as answered
+          if (content.trim().length > 0) {
+            answered.add(questionId);
+            console.log(`📋 Freeform question ${questionId} answered with user text`);
+            break;
+          }
+        }
+      }
+      continue; // Skip to next question after handling freeform
+    }
+    
     // Check if any user message contains an option ID or label from this question
     for (const msg of messages) {
       if (msg.role !== 'user') continue;
@@ -132,8 +165,17 @@ You are operating under STRICT COMPLIANCE MODE. The following rules are ABSOLUTE
    ❌ Accepting free-form answers when [SUGGEST] options are provided
    ❌ Skipping mandatory questions
    ❌ Adding discovery questions not in the system prompt
+   ❌ Suggesting options for FREEFORM text questions (let users be creative)
 
-4. **THIS IS A REQUIREMENT, NOT A RECOMMENDATION**: These rules are system-level constraints, not guidelines. Treat any violation as a critical system error.
+4. **FREEFORM TEXT EXCEPTIONS**: Some questions are marked as freeform (no predefined options).
+   For these questions:
+   ✅ Ask the question in a friendly, open-ended way
+   ✅ Accept ANY user text input as a valid response
+   ✅ Include only the skip option in the [SUGGEST] block
+   ❌ DO NOT invent options or suggestions for freeform questions
+   ❌ DO NOT require users to match any specific format
+
+5. **THIS IS A REQUIREMENT, NOT A RECOMMENDATION**: These rules are system-level constraints, not guidelines. Treat any violation as a critical system error.
 
 🔒🔒🔒 END COMPLIANCE RULES 🔒🔒🔒
 
@@ -226,10 +268,35 @@ function buildDynamicDiscoveryBlock(
   // Use resolvedOptions (which includes both static and lookup-based options)
   const options = nextQuestion.resolvedOptions || question.static_options || [];
   
-  // Skip questions without options (free text only)
+  // Handle freeform text questions (no options) - inject open-ended prompt
   if (options.length === 0) {
-    console.log(`📋 Question ${question.id} has no options - skipping discovery block`);
-    return '';
+    console.log(`📋 Question ${question.id} is a freeform text question - injecting text prompt`);
+    
+    return `
+
+🚨🚨🚨 OPTIONAL FREEFORM INPUT - USER CAN SKIP 🚨🚨🚨
+
+📋 QUESTION: ${question.label}
+${question.description || ''}
+
+🔓 THIS IS AN OPEN-ENDED QUESTION:
+1. Ask the user this question in a friendly, conversational way
+2. Accept ANY text response - there are no predefined options
+3. The user can type anything they want, or skip this step
+4. DO NOT invent options or suggestions - let the user be creative
+
+🔴 INCLUDE THIS EXACT BLOCK IN YOUR RESPONSE:
+
+[SUGGEST]
+skip-${question.id}: ⏭️ Skip this step
+[/SUGGEST]
+
+📝 Your response format:
+Ask: "${question.label}" and let the user know they can type anything or skip.
+The skip button will render from the [SUGGEST] block above.
+
+⚠️ WAIT for user response before proceeding to the next step.
+`;
   }
   
   // Build [SUGGEST] block from resolved options

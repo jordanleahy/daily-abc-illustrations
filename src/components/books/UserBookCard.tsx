@@ -484,7 +484,7 @@ export function UserBookCard({
             />
 
             {/* LinkedIn Post - All library books */}
-            {publicationStatus && book.marketing_url && (
+            {publicationStatus && (
               <Button 
                 variant="outline"
                 size="sm"
@@ -508,7 +508,7 @@ export function UserBookCard({
             />
 
             {/* Etsy Post - All library books */}
-            {publicationStatus && book.marketing_url && (
+            {publicationStatus && (
               <Button 
                 variant="outline"
                 size="sm"

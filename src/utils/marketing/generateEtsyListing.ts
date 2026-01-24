@@ -10,12 +10,36 @@ interface EtsyListingParams {
   bookType: string | null;
   targetAge: string | null;
   pageCount?: number;
+  city?: string | null;
+  resort?: string | null;
 }
 
 interface EtsyListing {
   title: string;
   description: string;
   tags: string[];
+}
+
+/**
+ * Get subject type display name for Etsy title
+ * Maps book types to clear subject descriptors
+ */
+function getSubjectType(bookType: string | null): string {
+  if (!bookType) return 'Coloring';
+  
+  const subjectMap: Record<string, string> = {
+    abc: 'ABC Alphabet',
+    numbers: 'Numbers Counting',
+    rhyming: 'Rhyming',
+    opposites: 'Opposites',
+    digraphs: 'Phonics',
+    colors: 'Colors',
+    shapes: 'Shapes',
+    bedtime: 'Bedtime',
+    feelings: 'Feelings',
+  };
+  
+  return subjectMap[bookType.toLowerCase()] || 'Coloring';
 }
 
 /**
@@ -28,9 +52,12 @@ function getBookTypeKeyword(bookType: string | null): string {
     abc: 'ABC Alphabet Coloring Book',
     numbers: 'Numbers Counting Coloring Book',
     rhyming: 'Rhyming Coloring Book',
+    opposites: 'Opposites Coloring Book',
     digraphs: 'Phonics Coloring Book',
     colors: 'Colors Learning Coloring Book',
     shapes: 'Shapes Coloring Book',
+    bedtime: 'Bedtime Coloring Book',
+    feelings: 'Feelings Coloring Book',
   };
   
   return typeMap[bookType.toLowerCase()] || 'Coloring Book';
@@ -51,6 +78,32 @@ function getAgeKeyword(targetAge: string | null): string {
   };
   
   return ageMap[targetAge] || 'Kids';
+}
+
+/**
+ * Format city ID to display name
+ */
+function formatCity(city: string | null): string {
+  if (!city) return '';
+  
+  // Convert JERSEY_CITY to Jersey City, PARK_CITY to Park City, etc.
+  return city
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Format resort ID to display name
+ */
+function formatResort(resort: string | null): string {
+  if (!resort) return '';
+  
+  // Convert WESTON to Weston, VAIL to Vail, etc.
+  return resort
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /**
@@ -81,6 +134,7 @@ function formatTheme(theme: string | null): string {
     zebras: 'Zebra',
     hippos: 'Hippo',
     bluey: 'Bluey',
+    weston: 'Weston',
     cocomelon: 'Cocomelon',
     paw_patrol: 'Paw Patrol',
     mickey_mouse: 'Mickey Mouse',
@@ -93,28 +147,52 @@ function formatTheme(theme: string | null): string {
 
 /**
  * Generate SEO-optimized Etsy title (max 140 chars)
+ * Priority: Subject Type + Location (City/Resort) + Theme + Digital Download
  */
 function generateTitle(
   bookName: string,
   bookType: string | null,
   characterTheme: string | null,
   targetAge: string | null,
-  pageCount: number
+  pageCount: number,
+  city: string | null,
+  resort: string | null
 ): string {
-  const bookTypeKeyword = getBookTypeKeyword(bookType);
-  const ageKeyword = getAgeKeyword(targetAge);
+  const subjectType = getSubjectType(bookType);
+  const location = formatResort(resort) || formatCity(city);
   const theme = formatTheme(characterTheme);
+  const ageKeyword = getAgeKeyword(targetAge);
   
-  // Build title with keywords front-loaded
-  let title = `${bookTypeKeyword} Pages`;
+  // Build title with subject type and location front-loaded
+  const parts: string[] = [];
   
-  if (theme) {
-    title += ` | ${theme} Theme`;
+  // Start with subject type
+  parts.push(`${subjectType} Coloring Book`);
+  
+  // Add location (city or resort)
+  if (location) {
+    parts.push(location);
   }
   
-  title += ` | Digital Download | ${ageKeyword} Printable | ${pageCount} Pages`;
+  // Add theme
+  if (theme) {
+    parts.push(`${theme} Theme`);
+  }
+  
+  // Add key SEO terms
+  parts.push('Digital Download');
+  parts.push(`${ageKeyword} Printable`);
+  parts.push(`${pageCount} Pages`);
+  
+  let title = parts.join(' | ');
   
   // Truncate if over 140 chars
+  if (title.length > 140) {
+    // Try shorter version without page count
+    parts.pop();
+    title = parts.join(' | ');
+  }
+  
   if (title.length > 140) {
     title = title.substring(0, 137) + '...';
   }
@@ -207,11 +285,14 @@ function generateDescription(
 function generateTags(
   bookType: string | null,
   characterTheme: string | null,
-  targetAge: string | null
+  targetAge: string | null,
+  city: string | null,
+  resort: string | null
 ): string[] {
   const tags: string[] = [];
   const theme = formatTheme(characterTheme);
   const ageKeyword = getAgeKeyword(targetAge);
+  const location = formatResort(resort) || formatCity(city);
   
   // Book type specific tags
   if (bookType) {
@@ -226,14 +307,28 @@ function generateTags(
         tags.push('shapes printable', 'shape learning', 'preschool shapes');
         break;
       case 'rhyming':
-        tags.push('rhyming book', 'phonics printable');
+        tags.push('rhyming book', 'phonics printable', 'rhyme learning');
+        break;
+      case 'opposites':
+        tags.push('opposites book', 'learning opposites', 'opposite words');
         break;
       case 'digraphs':
         tags.push('phonics book', 'reading practice');
         break;
+      case 'feelings':
+        tags.push('feelings book', 'emotions learning');
+        break;
+      case 'bedtime':
+        tags.push('bedtime book', 'sleep time');
+        break;
       default:
         tags.push('kids coloring book');
     }
+  }
+  
+  // Location tag (city or resort)
+  if (location && location.length <= 20) {
+    tags.push(`${location.toLowerCase()} coloring`.substring(0, 20));
   }
   
   // Theme tag
@@ -252,7 +347,6 @@ function generateTags(
   tags.push('printable pages');
   tags.push('kids activity');
   tags.push('homeschool');
-  tags.push('quiet time');
   
   // Dedupe and limit to 13
   const uniqueTags = [...new Set(tags)]
@@ -272,10 +366,12 @@ export function generateEtsyListing({
   bookType,
   targetAge,
   pageCount = 12,
+  city,
+  resort,
 }: EtsyListingParams): EtsyListing {
-  const title = generateTitle(bookName, bookType, characterTheme, targetAge, pageCount);
+  const title = generateTitle(bookName, bookType, characterTheme, targetAge, pageCount, city || null, resort || null);
   const description = generateDescription(bookName, bookDescription, bookType, characterTheme, targetAge, pageCount);
-  const tags = generateTags(bookType, characterTheme, targetAge);
+  const tags = generateTags(bookType, characterTheme, targetAge, city || null, resort || null);
   
   return {
     title,

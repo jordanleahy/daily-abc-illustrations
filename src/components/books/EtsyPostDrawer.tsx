@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateEtsyListing } from '@/utils/marketing/generateEtsyListing';
+import { generateBookPDF, fetchBookColoringImages, generatePDF } from '@/services/pdfGenerator';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, Copy, Store, ExternalLink } from 'lucide-react';
+import { Check, Copy, Store, ExternalLink, Download, Palette, FileText } from 'lucide-react';
 
 interface EtsyPostDrawerProps {
   open: boolean;
@@ -20,6 +21,8 @@ interface EtsyPostDrawerProps {
       bookType?: string;
       targetAge?: string;
       pageCount?: number;
+      city?: string;
+      resort?: string;
     };
   };
   onPosted?: () => void;
@@ -31,6 +34,8 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
   const [descriptionCopied, setDescriptionCopied] = useState(false);
   const [tagsCopied, setTagsCopied] = useState(false);
   const [isMarkingListed, setIsMarkingListed] = useState(false);
+  const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
+  const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
 
   const { title, description, tags } = generateEtsyListing({
     bookName: book.book_name,
@@ -39,6 +44,8 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
     bookType: book.metadata?.bookType || null,
     targetAge: book.metadata?.targetAge || null,
     pageCount: book.metadata?.pageCount || 12,
+    city: book.metadata?.city || null,
+    resort: book.metadata?.resort || null,
   });
 
   const handleCopy = async (text: string, type: 'title' | 'description' | 'tags') => {
@@ -93,6 +100,50 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
       toast({ title: 'Failed to save', variant: 'destructive' });
     } finally {
       setIsMarkingListed(false);
+    }
+  };
+
+  const handleDownloadColorPdf = async () => {
+    setIsDownloadingColorPdf(true);
+    try {
+      await generateBookPDF(book.id, `${book.book_name}-Color`);
+      toast({ title: 'Color PDF downloaded successfully!' });
+    } catch (error) {
+      console.error('Failed to download color PDF:', error);
+      toast({ title: 'Failed to download PDF', variant: 'destructive' });
+    } finally {
+      setIsDownloadingColorPdf(false);
+    }
+  };
+
+  const handleDownloadColoringPdf = async () => {
+    setIsDownloadingColoringPdf(true);
+    try {
+      const coloringPages = await fetchBookColoringImages(book.id);
+      if (coloringPages.length === 0) {
+        toast({ title: 'No coloring pages available', description: 'This book has no coloring book images.', variant: 'destructive' });
+        return;
+      }
+      
+      const pdfBytes = await generatePDF(coloringPages);
+      
+      // Create download
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${book.book_name.replace(/[^a-zA-Z0-9\s-]/g, '')}-Coloring-Book.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({ title: 'Coloring Book PDF downloaded successfully!' });
+    } catch (error) {
+      console.error('Failed to download coloring PDF:', error);
+      toast({ title: 'Failed to download PDF', variant: 'destructive' });
+    } finally {
+      setIsDownloadingColoringPdf(false);
     }
   };
 
@@ -198,6 +249,33 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
                   </Badge>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Download Section */}
+          <div className="space-y-2 pt-2 border-t">
+            <label className="text-sm font-medium text-foreground">Download PDFs</label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={handleDownloadColorPdf}
+                disabled={isDownloadingColorPdf}
+              >
+                <Palette className="h-4 w-4" />
+                {isDownloadingColorPdf ? 'Generating...' : 'Color PDF'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={handleDownloadColoringPdf}
+                disabled={isDownloadingColoringPdf}
+              >
+                <FileText className="h-4 w-4" />
+                {isDownloadingColoringPdf ? 'Generating...' : 'Coloring Book PDF'}
+              </Button>
             </div>
           </div>
         </div>

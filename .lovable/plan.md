@@ -1,224 +1,182 @@
 
-# Download Stickers PDF - 4×6 Avery Label Format
+# Real-Time Subscription for Agent Questions
 
-## Summary
+## Overview
+Currently, the `agent_questions` table lacks a Supabase Realtime subscription. Changes made in one browser tab (or by another admin) won't reflect immediately in the UI - they require a manual refresh or waiting for the 2-minute cache `staleTime` to expire.
 
-Add a new "Download Stickers" button to `UserBookCard.tsx` that generates a PDF formatted for 4×6 Avery shipping labels. Each page of the book becomes a sticker using the `text_image_url` (full-color with text overlay), optimized to maximize height on the 4×6 format.
-
----
-
-## 4×6 Label Specifications
-
-| Property | Value |
-|----------|-------|
-| **Label Size** | 4" × 6" (288 × 432 points at 72 DPI) |
-| **Orientation** | Portrait (taller than wide) |
-| **Image Fit** | Maximize height, center horizontally |
-| **Use Case** | Print → Stick on items, boxes, gifts |
+This plan adds a dedicated real-time subscription hook that automatically syncs UI state when discovery questions are toggled, reordered, or modified.
 
 ---
 
-## Implementation Overview
+## Implementation Approach
+
+### 1. Create New Hook: `useAgentQuestionsSubscription.ts`
+
+Create a new file following the established pattern (similar to `useDailyPublishedSubscription.ts`):
 
 ```text
-┌─────────────────────────────────────────┐
-│           New Function                   │
-│  generateStickersPDF(bookId, bookName)  │
-│                                         │
-│  1. Fetch text_image_url for all pages  │
-│  2. Create PDF with 4×6 page size       │
-│  3. Scale each image to fit 4×6         │
-│  4. Center image on label               │
-│  5. Download as PDF                     │
-└─────────────────────────────────────────┘
+src/hooks/useAgentQuestionsSubscription.ts
 ```
 
----
+**Functionality:**
+- Subscribe to `postgres_changes` on the `agent_questions` table
+- Filter by specific `agent_type` when provided (scoped updates)
+- Invalidate the `['agent-questions', agentType]` query cache on any change
+- Clean up channel on unmount
 
-## File Changes
+### 2. Hook Design
 
-### 1. `src/services/pdfGenerator.ts` - Add Sticker PDF Function
+**Parameters:**
+- `agentType` (optional): When provided, only listen for changes to that specific agent's questions
 
-Add a new function `generateStickersPDF` that:
-- Creates PDF pages sized exactly 4×6 inches (288×432 points)
-- Uses `text_image_url` (color images with text overlay)
-- Scales each image to maximize height while fitting within the 4×6 bounds
-- Centers the image horizontally if it doesn't fill the full width
-- Downloads with filename `{BookName}-Stickers.pdf`
+**Behavior:**
+- If `agentType` is provided: Filter subscription with `agent_type=eq.{agentType}`
+- If no `agentType`: Listen to all `agent_questions` changes (for global admin views)
+- On any change (INSERT/UPDATE/DELETE): Invalidate the relevant TanStack Query cache
 
-**Key calculations:**
-```typescript
-// 4×6 inches at 72 DPI = 288×432 points
-const LABEL_WIDTH = 288;   // 4 inches
-const LABEL_HEIGHT = 432;  // 6 inches
+### 3. Integration Points
 
-// Scale to fit, maximizing height
-const scaleToFitHeight = LABEL_HEIGHT / image.height;
-const scaleToFitWidth = LABEL_WIDTH / image.width;
-const scale = Math.min(scaleToFitHeight, scaleToFitWidth);
-
-const scaledWidth = image.width * scale;
-const scaledHeight = image.height * scale;
-
-// Center horizontally, align to top or center vertically
-const x = (LABEL_WIDTH - scaledWidth) / 2;
-const y = (LABEL_HEIGHT - scaledHeight) / 2;
-```
-
-### 2. `src/components/books/UserBookCard.tsx` - Add Button
-
-Add a new state variable and button below the existing download buttons:
-
-```typescript
-// New state
-const [isDownloadingStickers, setIsDownloadingStickers] = useState(false);
-
-// New button (after "Download Color Book PDF")
-<Button onClick={...}>
-  <Sticker className="h-4 w-4" /> {/* or Download icon */}
-  Download Stickers
-</Button>
-```
+The hook will be consumed in:
+- `AgentQuestionsManager` component (embedded in agent detail pages)
+- `BookAgentsManager` component (for book type → agent mappings)
+- `AgentDetail` page
 
 ---
 
 ## Technical Details
 
-### New Function: `generateStickersPDF`
-
-Location: `src/services/pdfGenerator.ts`
+### New File: `src/hooks/useAgentQuestionsSubscription.ts`
 
 ```typescript
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { RealtimeChannel } from '@supabase/supabase-js';
+
 /**
- * Generates a PDF formatted for 4×6 Avery shipping labels
- * Each page is one sticker using text_image_url (color with text)
+ * Real-time subscription for agent_questions table changes
+ * Automatically invalidates queries when questions are toggled or reordered
  */
-export async function generateStickersPDF(
-  bookId: string, 
-  bookName: string,
-  options: PDFGenerationOptions = {}
-): Promise<void> {
-  const sanitizedName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
-  const filename = `${sanitizedName}-Stickers.pdf`;
+export const useAgentQuestionsSubscription = (agentType?: string) => {
+  const queryClient = useQueryClient();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
-  // 4×6 inches at 72 DPI
-  const LABEL_WIDTH = 288;
-  const LABEL_HEIGHT = 432;
-
-  try {
-    // Fetch text_image_url for all pages (useTextImages: true)
-    const pages = await fetchBookPageImages(bookId, true);
-    const pagesWithImages = pages.filter(p => p.image_url);
+  useEffect(() => {
+    const channelName = agentType 
+      ? `agent-questions-${agentType}` 
+      : 'agent-questions-all';
     
-    if (pagesWithImages.length === 0) {
-      throw new Error('No images found for stickers');
-    }
+    const filter = agentType 
+      ? { filter: `agent_type=eq.${agentType}` }
+      : {};
 
-    const pdfDoc = await PDFDocument.create();
+    channelRef.current = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'agent_questions',
+          ...filter
+        },
+        (payload) => {
+          console.log('📡 Agent questions changed:', payload);
+          
+          // Invalidate specific agent query if we know which one changed
+          const changedAgentType = 
+            (payload.new as any)?.agent_type || 
+            (payload.old as any)?.agent_type;
+          
+          if (changedAgentType) {
+            queryClient.invalidateQueries({ 
+              queryKey: ['agent-questions', changedAgentType] 
+            });
+          }
+          
+          // Also invalidate the global questions registry
+          queryClient.invalidateQueries({ queryKey: ['questions'] });
+        }
+      )
+      .subscribe();
 
-    for (const page of pagesWithImages) {
-      // Download and embed image
-      let imageBuffer = await downloadImage(page.image_url);
-      let format = detectImageFormat(imageBuffer);
-      
-      // Convert WebP if needed
-      if (format === 'webp') {
-        imageBuffer = await convertWebPToPNG(imageBuffer);
-        format = 'png';
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
+    };
+  }, [agentType, queryClient]);
+};
+```
 
-      const image = format === 'png' 
-        ? await pdfDoc.embedPng(imageBuffer)
-        : await pdfDoc.embedJpg(imageBuffer);
+### Update: `AgentQuestionsManager.tsx`
 
-      // Calculate scaling to fit 4×6 while maximizing size
-      const scaleToFitHeight = LABEL_HEIGHT / image.height;
-      const scaleToFitWidth = LABEL_WIDTH / image.width;
-      const scale = Math.min(scaleToFitHeight, scaleToFitWidth);
+Add the subscription hook to the component:
 
-      const scaledWidth = image.width * scale;
-      const scaledHeight = image.height * scale;
+```typescript
+import { useAgentQuestionsSubscription } from '@/hooks/useAgentQuestionsSubscription';
 
-      // Center on the label
-      const x = (LABEL_WIDTH - scaledWidth) / 2;
-      const y = (LABEL_HEIGHT - scaledHeight) / 2;
-
-      // Create 4×6 page and draw image
-      const pdfPage = pdfDoc.addPage([LABEL_WIDTH, LABEL_HEIGHT]);
-      pdfPage.drawImage(image, {
-        x,
-        y,
-        width: scaledWidth,
-        height: scaledHeight,
-      });
-    }
-
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-    downloadBlob(blob, filename);
-    
-  } catch (error) {
-    console.error('[PDF] Error during sticker PDF generation:', error);
-    throw error;
-  }
+export function AgentQuestionsManager({ agentType, ... }) {
+  // Existing hooks...
+  
+  // Add real-time subscription
+  useAgentQuestionsSubscription(agentType);
+  
+  // Rest of component...
 }
 ```
 
-### Button in `UserBookCard.tsx`
+---
 
-```typescript
-{/* Download Stickers PDF - 4×6 Avery label format */}
-{publicationStatus && (
-  <Button 
-    variant="outline"
-    size="sm"
-    className="w-full gap-2"
-    disabled={isDownloadingStickers}
-    onClick={async (e) => {
-      e.stopPropagation();
-      setIsDownloadingStickers(true);
-      try {
-        await generateStickersPDF(book.id, book.book_name);
-        toast({ title: 'Stickers PDF downloaded successfully' });
-      } catch (error) {
-        console.error('Failed to generate stickers PDF:', error);
-        toast({ 
-          title: 'Failed to generate stickers PDF',
-          description: error instanceof Error ? error.message : 'Unknown error',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsDownloadingStickers(false);
-      }
-    }}
-  >
-    {isDownloadingStickers ? (
-      <Loader2 className="h-4 w-4 animate-spin" />
-    ) : (
-      <Download className="h-4 w-4" />
-    )}
-    {isDownloadingStickers ? 'Generating...' : 'Download Stickers'}
-  </Button>
-)}
+## Architecture Diagram
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                      Browser Tab A                               │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  AgentQuestionsManager                                   │    │
+│  │    └─> useAgentQuestionsSubscription('opposites')       │    │
+│  │           └─> supabase.channel('agent-questions-...')   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ postgres_changes
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  Supabase Realtime                               │
+│                                                                  │
+│   agent_questions table                                          │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │ UPDATE: is_enabled = false → true                        │   │
+│   │         agent_type = 'book-creation-opposites'          │   │
+│   └─────────────────────────────────────────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ broadcast
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      Browser Tab B                               │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  AgentQuestionsManager                                   │    │
+│  │    └─> Receives payload → invalidateQueries()           │    │
+│  │           └─> UI refreshes automatically                │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Print Instructions for Users
+## Files to Create/Modify
 
-When printed via File > Print:
-- Select "Actual Size" (not "Fit to Page")
-- Paper size: 4×6 or match your label stock
-- Each PDF page = one 4×6 sticker
-- Works with both sheet labels and thermal label printers
+| File | Action |
+|------|--------|
+| `src/hooks/useAgentQuestionsSubscription.ts` | Create new file |
+| `src/components/agents/AgentQuestionsManager.tsx` | Add hook import and usage |
 
 ---
 
-## Summary of Changes
+## Benefits
 
-| File | Change |
-|------|--------|
-| `src/services/pdfGenerator.ts` | Add `generateStickersPDF()` function |
-| `src/components/books/UserBookCard.tsx` | Add state + button for stickers download |
-
-**No new dependencies required** - uses existing `pdf-lib` library.
+1. **Immediate sync across tabs**: Changes in one admin tab reflect instantly in others
+2. **Multi-user collaboration**: If another admin toggles questions, your view updates
+3. **Consistent with existing patterns**: Follows the same architecture as 25+ other subscription hooks in the codebase
+4. **Minimal overhead**: Only subscribes to relevant agent type changes, not all table activity

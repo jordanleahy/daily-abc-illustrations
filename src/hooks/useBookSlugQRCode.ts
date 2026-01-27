@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { downloadBlob } from '@/services/pdfStorageService';
 
 export interface BookSlugQRCodeData {
   qrCodeImage: string;
@@ -67,14 +68,20 @@ export const useBookSlugQRCode = (bookId: string | undefined) => {
 
     const isSVG = bookData.qr_code_image.startsWith('data:image/svg+xml');
     const extension = isSVG ? 'svg' : 'png';
+    const mimeType = isSVG ? 'image/svg+xml' : 'image/png';
     const slug = bookData.marketing_url || 'book';
 
-    const link = document.createElement('a');
-    link.href = bookData.qr_code_image;
-    link.download = `qr-code-${slug}.${extension}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Convert data URL to blob
+    const dataUrl = bookData.qr_code_image;
+    const base64 = dataUrl.split(',')[1];
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mimeType });
+    
+    downloadBlob(blob, `qr-code-${slug}.${extension}`);
   };
 
   // Copy URL function

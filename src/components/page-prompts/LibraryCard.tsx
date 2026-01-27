@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { FileText, Copy, Download } from 'lucide-react';
+import { downloadBlob } from '@/services/pdfStorageService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,14 +107,9 @@ export function LibraryCard({ page, bookId, priority = false }: LibraryCardProps
     try {
       const response = await fetch(currentImage.image_url);
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${page.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const filename = `${page.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+      
+      downloadBlob(blob, filename);
       
       toast({
         title: "Downloaded",

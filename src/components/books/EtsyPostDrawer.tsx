@@ -127,16 +127,11 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
       
       const pdfBytes = await generatePDF(coloringPages);
       
-      // Create download
+      // Create download using shared utility
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${book.book_name.replace(/[^a-zA-Z0-9\s-]/g, '')}-Coloring-Book.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const filename = `${book.book_name.replace(/[^a-zA-Z0-9\s-]/g, '')}-Coloring-Book.pdf`;
+      const { downloadBlob } = await import('@/services/pdfStorageService');
+      downloadBlob(blob, filename);
       
       toast({ title: 'Coloring Book PDF downloaded successfully!' });
     } catch (error) {

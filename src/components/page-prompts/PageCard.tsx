@@ -210,14 +210,11 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     try {
       const response = await fetch(currentImage.image_url);
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${page.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const filename = `${page.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+      
+      // Import dynamically to avoid circular dependency
+      const { downloadBlob } = await import('@/services/pdfStorageService');
+      downloadBlob(blob, filename);
       
       console.log('Image downloaded successfully');
     } catch (error) {

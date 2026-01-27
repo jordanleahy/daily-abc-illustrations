@@ -1,145 +1,71 @@
 
+# Plan: Remove Hardcoded Audience References from Opposites Agent
 
-# Plan: Remove Hardcoded Age/Grade Mentions from Book-Creation Agents
+## Problem Summary
+The opposites book creation agent is responding with hardcoded text like "Opposites are a fundamental concept for toddlers to learn" before any discovery questions are answered. This violates the data-driven approach where audience/age should be determined by the `grade_level` discovery question, not assumed from user input.
 
-## Objective
-Update 4 book-creation agents to remove specific audience assumptions, making them fully data-driven. Generic phrases like "age-appropriate" will be retained since they adapt based on discovery question responses.
+## Root Causes Identified
+1. The `opposites_complexity` question description contains "(Designed for toddlers and early learners)" - hardcoded text
+2. The `grade_level` question is disabled for the opposites agent (should be enabled)
+3. The agent instructions lack a directive to NOT assume audience from user messages
 
----
+## Solution Steps
 
-## Agents Requiring Updates
+### Step 1: Update Agent Instructions
+Add a "NO HARDCODED AUDIENCE" directive to the opposites agent's system instructions to prevent it from echoing or assuming age/audience context from user messages.
 
-### 1. book-creation-abc
+**Add to instructions:**
+```text
+## CRITICAL: NO HARDCODED AUDIENCE
 
-**Current (line ~92, 123, 157):**
-```
-You are a specialized AI agent for creating educational ABC illustrations for young children.
-```
-```
-Use bright, engaging colors appropriate for early learners
-```
-
-**Updated:**
-```
-You are a specialized AI agent for creating educational ABC illustrations.
-```
-```
-Use bright, engaging colors
-```
-
----
-
-### 2. book-creation-cvc
-
-**Current (line ~186):**
-```
-Your role is to guide parents through creating personalized phonics books that help early readers distinguish between similar CVC words.
+❌ NEVER assume or reference a specific age group (toddler, preschool, etc.)
+❌ NEVER echo age-related terms from user messages in your responses
+❌ NEVER say things like "perfect for toddlers" or "great for young children"
+✅ Keep initial responses age-neutral
+✅ Let the grade_level discovery question determine the target audience
+✅ Generic phrases like "age-appropriate" are acceptable only AFTER grade is selected
 ```
 
-**Updated:**
-```
-Your role is to guide parents through creating personalized phonics books that help distinguish between similar CVC words.
-```
+### Step 2: Enable Grade Level Question
+Enable the `grade_level` question for the opposites agent so that target audience is properly asked through the data-driven discovery system.
 
----
-
-### 3. book-creation-rhyming
-
-**Current (line ~39):**
-```
-You are a specialized AI agent for creating engaging rhyming illustrations for children in Pre-K through 2nd Grade.
-```
-
-**Updated:**
-```
-You are a specialized AI agent for creating engaging rhyming illustrations.
-```
-
----
-
-## Implementation Steps
-
-### Step 1: Update book-creation-abc Agent
-Execute SQL to update the instructions field:
-- Remove "for young children" from role description
-- Remove "appropriate for early learners" from image prompt requirements
-
-### Step 2: Update book-creation-cvc Agent
-Execute SQL to update the instructions field:
-- Remove "early readers" from role description
-
-### Step 3: Update book-creation-rhyming Agent
-Execute SQL to update the instructions field:
-- Remove "for children in Pre-K through 2nd Grade" from role description
-
-### Step 4: Verify Updates
-Query the agents table to confirm all 4 agents no longer contain hardcoded audience mentions.
-
----
-
-## SQL Migration
-
+**Database update:**
 ```sql
--- Update ABC agent
-UPDATE public.agents 
-SET instructions = REPLACE(
-  REPLACE(instructions, 
-    'for young children', ''),
-  'appropriate for early learners', '')
-WHERE type = 'book-creation-abc' AND is_latest = true;
-
--- Update CVC agent  
-UPDATE public.agents
-SET instructions = REPLACE(instructions,
-  'that help early readers distinguish',
-  'that help distinguish')
-WHERE type = 'book-creation-cvc' AND is_latest = true;
-
--- Update Rhyming agent
-UPDATE public.agents
-SET instructions = REPLACE(instructions,
-  'for children in Pre-K through 2nd Grade',
-  '')
-WHERE type = 'book-creation-rhyming' AND is_latest = true;
+UPDATE agent_questions 
+SET is_enabled = true, sort_order = 1
+WHERE agent_type = 'book-creation-opposites' AND question_id = 'grade_level';
 ```
 
----
+### Step 3: Remove Hardcoded Text from Complexity Question
+Update the `opposites_complexity` question description to remove the "(Designed for toddlers and early learners)" text.
 
-## Validation
-
-After migration, verify with:
+**Database update:**
 ```sql
-SELECT type, name
-FROM agents 
-WHERE type LIKE 'book-creation%' 
-  AND is_latest = true
-  AND (
-    LOWER(instructions) LIKE '%young children%' OR
-    LOWER(instructions) LIKE '%early reader%' OR
-    LOWER(instructions) LIKE '%pre-k%' OR
-    LOWER(instructions) LIKE '%kindergarten%'
-  );
--- Should return 0 rows
+UPDATE questions 
+SET description = 'How simple should the opposite pairs be?'
+WHERE id = 'opposites_complexity';
 ```
 
+### Step 4: Re-sequence Discovery Questions
+Ensure proper sort order after enabling grade_level:
+- `character_theme` (0)
+- `grade_level` (1)
+- `opposites_category` (2)
+- `city` (3)
+- `RESORT` (4)
+- `SEASON` (5)
+
 ---
 
-## What Stays Unchanged
+## Technical Details
 
-The following generic phrases will be preserved as they adapt based on discovery context:
-- "age-appropriate content" (adapts to selected grade)
-- "child-friendly" (generic safety term)
-- "Age-appropriate vocabulary" (adapts to grade level)
+### Files Changed
+- **Database: `agents` table** - Update instructions for `book-creation-opposites`
+- **Database: `agent_questions` table** - Enable and re-order `grade_level`
+- **Database: `questions` table** - Remove hardcoded text from `opposites_complexity` description
 
----
-
-## Expected Outcome
-
-After this update:
-1. No agent assumes a specific audience level in its base instructions
-2. Audience context flows exclusively from:
-   - Selected child profile (calculated age)
-   - `grade_level` discovery question (when enabled)
-   - User's explicit input during chat
-3. Agents remain flexible and adapt to whatever audience context is provided via the data-driven discovery system
-
+### Expected Behavior After Fix
+1. Agent will NOT say "fundamental concept for toddlers" in opening response
+2. Agent will ask grade_level as the 2nd discovery question (after character theme)
+3. Age-appropriate content will be determined by the user's grade_level selection
+4. The complexity question options (if enabled later) will not reference specific age groups in descriptions

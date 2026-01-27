@@ -115,6 +115,50 @@ export async function fetchBookColoringImages(bookId: string): Promise<PageImage
 }
 
 /**
+ * Fetches all printable coloring book images for a book
+ * These are B&W line art with a small color reference thumbnail in the corner
+ */
+export async function fetchBookPrintableColoringImages(bookId: string): Promise<PageImageData[]> {
+  // Get pages for the book
+  const { data: pages, error: pagesError } = await supabase
+    .from('pages')
+    .select('id, page_number, letter, title')
+    .eq('book_id', bookId)
+    .order('page_number', { ascending: true });
+
+  if (pagesError) {
+    throw new Error(`Failed to fetch pages: ${pagesError.message}`);
+  }
+
+  if (!pages || pages.length === 0) {
+    return [];
+  }
+
+  // Get latest printable coloring image URLs for each page
+  const pageImagePromises = pages.map(async (page) => {
+    const { data: imageData } = await supabase
+      .from('page_image_urls')
+      .select('printable_coloring_image_url')
+      .eq('page_id', page.id)
+      .eq('is_latest', true)
+      .not('printable_coloring_image_url', 'is', null)
+      .maybeSingle();
+
+    return {
+      id: page.id,
+      page_number: page.page_number,
+      letter: page.letter,
+      title: page.title,
+      image_url: imageData?.printable_coloring_image_url || null
+    };
+  });
+
+  const allPages = await Promise.all(pageImagePromises);
+  // Only return pages that have printable coloring images
+  return allPages.filter(p => p.image_url);
+}
+
+/**
  * Fetches image data for a single page
  */
 export async function fetchPageImage(pageId: string): Promise<PageImageData | null> {
@@ -431,6 +475,49 @@ export async function generateBookPDF(
     console.log(`[PDF] Download initiated successfully`);
   } catch (error) {
     console.error('[PDF] Error during PDF generation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generates and downloads a coloring book PDF for a book
+ * Uses printable coloring images (B&W with color reference thumbnail)
+ */
+export async function generateColoringBookPDF(
+  bookId: string, 
+  bookName: string,
+  options: PDFGenerationOptions = {}
+): Promise<void> {
+  try {
+    // Fetch printable coloring images
+    console.log(`[PDF] Fetching printable coloring images for book ${bookId}...`);
+    const pages = await fetchBookPrintableColoringImages(bookId);
+    console.log(`[PDF] Found ${pages.length} pages with printable coloring images`);
+    
+    if (pages.length === 0) {
+      throw new Error('No printable coloring images found for this book');
+    }
+    
+    // Generate PDF
+    console.log(`[PDF] Starting coloring book PDF generation...`);
+    const pdfBytes = await generatePDF(pages, options);
+    console.log(`[PDF] Coloring book PDF generated successfully (${pdfBytes.length} bytes)`);
+    
+    // Create download with coloring book suffix
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${bookName.replace(/[^a-zA-Z0-9\s-]/g, '')}-Coloring-Book.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+    console.log(`[PDF] Coloring book download initiated successfully`);
+  } catch (error) {
+    console.error('[PDF] Error during coloring book PDF generation:', error);
     throw error;
   }
 }

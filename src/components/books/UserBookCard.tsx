@@ -26,7 +26,7 @@ import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphM
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
 import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2 } from 'lucide-react';
-import { generateBookPDF } from '@/services/pdfGenerator';
+import { generateBookPDF, generateColoringBookPDF } from '@/services/pdfGenerator';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -75,6 +75,7 @@ export function UserBookCard({
   const [isEtsyDrawerOpen, setIsEtsyDrawerOpen] = useState(false);
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
+  const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
   const coverImageUrl = book.coverImageUrl;
 
   // Check printable coloring status and missing images for this book
@@ -565,7 +566,42 @@ export function UserBookCard({
                 {isDownloadingColorPdf ? 'Generating...' : 'Download PDF'}
               </Button>
             )}
+
+            {/* Download Coloring Book PDF - Printable version with color thumbnail */}
+            {publicationStatus && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                disabled={isDownloadingColoringPdf}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setIsDownloadingColoringPdf(true);
+                  try {
+                    await generateColoringBookPDF(book.id, book.book_name);
+                    toast({ title: 'Coloring book PDF downloaded successfully' });
+                  } catch (error) {
+                    console.error('Failed to generate coloring book PDF:', error);
+                    toast({ 
+                      title: 'Failed to generate coloring book PDF',
+                      description: error instanceof Error ? error.message : 'Unknown error',
+                      variant: 'destructive'
+                    });
+                  } finally {
+                    setIsDownloadingColoringPdf(false);
+                  }
+                }}
+              >
+                {isDownloadingColoringPdf ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isDownloadingColoringPdf ? 'Generating...' : 'Download Color Book PDF'}
+              </Button>
+            )}
             
+
 {/* Social Post Tracker with OG Assets - Always visible for library books */}
             {publicationStatus && (
               <SocialPostTracker 

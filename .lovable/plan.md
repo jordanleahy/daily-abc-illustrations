@@ -1,201 +1,206 @@
 
-# PDF Caching and Storage Implementation Plan
+
+# Download Logic Refactoring Plan
 
 ## Summary
 
-Implement a system to store generated PDFs in Supabase Storage so they can be reused on subsequent downloads, eliminating redundant PDF generation. The system will support both **full-color book PDFs** and **coloring book PDFs**, with cache invalidation when underlying images change.
+Refactor the duplicated download logic across the codebase to follow the DRY (Don't Repeat Yourself) principle. This will create a single, reusable utility function for triggering browser downloads, which will be used by both the regular book PDF and coloring book PDF generation flows.
 
 ---
 
-## Architecture Overview
+## Current State Analysis
+
+### Duplicate Download Pattern Found in 6 Locations
+
+The same browser download pattern (create object URL, create anchor tag, click, cleanup) is repeated in:
+
+| Location | PDF Type | Notes |
+|----------|----------|-------|
+| `pdfStorageService.ts` (line 188-213) | `downloadFromUrl()` | Downloads cached PDFs |
+| `pdfGenerator.ts` (line 504-511) | Book PDF | In `generateBookPDF()` |
+| `pdfGenerator.ts` (line 577-584) | Coloring Book PDF | In `generateColoringBookPDF()` |
+| `pdfGenerator.ts` (line 614-623) | Single Page PDF | In `generatePagePDF()` |
+| `pdfGenerator.ts` (line 793-800) | ZIP Archive | In `downloadAllBookImages()` |
+| `PrintableColorBook.tsx` (line 94-101) | Public Coloring Book | Page-level handler |
+
+### The Repeated Code Block
+
+```typescript
+const url = URL.createObjectURL(blob);
+const link = document.createElement('a');
+link.href = url;
+link.download = filename;
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+URL.revokeObjectURL(url);
+```
+
+---
+
+## Proposed Solution
+
+### Create a Shared Download Utility
+
+Create a single `downloadBlob()` function in `pdfStorageService.ts` that handles all blob-to-browser-download logic.
 
 ```text
-User clicks "Download book"
-    ↓
-Check if cached PDF URL exists in books.pdf_url
-    ↓
-┌─────────────────────────────────────────┐
-│  PDF URL exists and is valid?           │
-│  ┌─ YES → Download directly from URL    │
-│  └─ NO  → Generate PDF                  │
-│           ↓                             │
-│           Upload to Supabase Storage    │
-│           ↓                             │
-│           Update books.pdf_url          │
-│           ↓                             │
-│           Download the new PDF          │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Download Flow                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Book PDF          Coloring PDF         Page PDF   ZIP      │
+│      │                  │                  │        │       │
+│      └────────┬─────────┴─────────┬────────┴────────┘       │
+│               │                   │                         │
+│               ▼                   ▼                         │
+│        downloadBlob()      downloadFromUrl()                │
+│        (for Blobs)         (fetches URL → Blob → download)  │
+│               │                   │                         │
+│               └─────────┬─────────┘                         │
+│                         │                                   │
+│                         ▼                                   │
+│              triggerBrowserDownload()                       │
+│              (internal helper - creates <a> tag)            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## Database Changes
-
-### Add Column for Coloring Book PDF URL
-
-The `books` table already has a `pdf_url` column for the main book PDF. We need to add a column for the coloring book PDF:
-
-```sql
-ALTER TABLE books ADD COLUMN coloring_pdf_url TEXT;
-```
-
-### Add PDF Version Tracking
-
-To detect when images have changed and PDFs need regeneration, add metadata tracking:
-
-```sql
-ALTER TABLE books ADD COLUMN pdf_generated_at TIMESTAMPTZ;
-ALTER TABLE books ADD COLUMN coloring_pdf_generated_at TIMESTAMPTZ;
-```
-
----
-
-## Storage Configuration
-
-### Create PDF Storage Bucket
-
-Create a new `book-pdfs` bucket for storing generated PDFs:
-
-```sql
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('book-pdfs', 'book-pdfs', true);
-```
-
-### RLS Policies for PDF Storage
-
-| Policy | Description |
-|--------|-------------|
-| Public read | Anyone can download PDFs (they're publicly accessible) |
-| Authenticated upload | Only authenticated users can upload PDFs |
-| Owner/Admin delete | Users can delete PDFs for their own books |
 
 ---
 
 ## Implementation Steps
 
-### Step 1: Database Migration
+### Step 1: Create Shared Download Utility
 
-Add the new columns and storage bucket:
-- `coloring_pdf_url` column on `books` table
-- `pdf_generated_at` and `coloring_pdf_generated_at` timestamps
-- `book-pdfs` storage bucket with RLS policies
-
-### Step 2: Create PDF Upload Service
-
-**File:** `src/services/pdfStorageService.ts`
-
-New service to handle PDF storage operations:
+Add new exported function to `pdfStorageService.ts`:
 
 ```typescript
-interface PDFUploadResult {
-  success: boolean;
-  publicUrl?: string;
-  error?: string;
+/**
+ * Triggers a browser download for a Blob
+ * This is the single source of truth for blob downloads
+ */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  console.log(`[Download] Download initiated: ${filename}`);
 }
-
-// Upload PDF to storage
-async function uploadPDFToStorage(
-  blob: Blob,
-  bookId: string,
-  type: 'book' | 'coloring'
-): Promise<PDFUploadResult>
-
-// Update the book record with the new PDF URL
-async function updateBookPDFUrl(
-  bookId: string,
-  pdfUrl: string,
-  type: 'book' | 'coloring'
-): Promise<void>
-
-// Check if cached PDF is still valid
-async function getCachedPDFUrl(
-  bookId: string,
-  type: 'book' | 'coloring'
-): Promise<string | null>
 ```
 
-### Step 3: Add Cache Invalidation Trigger
+### Step 2: Refactor `downloadFromUrl()` 
 
-Create a database trigger that clears `pdf_url` and `coloring_pdf_url` when page images are updated:
-
-```sql
-CREATE OR REPLACE FUNCTION invalidate_book_pdfs()
-RETURNS TRIGGER AS $$
-BEGIN
-  UPDATE books 
-  SET pdf_url = NULL, 
-      coloring_pdf_url = NULL,
-      pdf_generated_at = NULL,
-      coloring_pdf_generated_at = NULL
-  WHERE id = NEW.book_id;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER invalidate_pdfs_on_image_change
-AFTER INSERT OR UPDATE ON page_image_urls
-FOR EACH ROW
-EXECUTE FUNCTION invalidate_book_pdfs();
-```
-
-### Step 4: Update PDF Generator Functions
-
-**File:** `src/services/pdfGenerator.ts`
-
-Modify `generateBookPDF` and `generateColoringBookPDF` to:
-
-1. First check for cached PDF URL
-2. If cached and valid, download directly
-3. If not cached, generate the PDF
-4. Upload the generated PDF to storage
-5. Update the book record with the new URL
-6. Trigger the download
+Update `downloadFromUrl()` in `pdfStorageService.ts` to use the new shared function:
 
 ```typescript
-export async function generateBookPDF(
-  bookId: string, 
-  bookName: string,
-  options: PDFGenerationOptions = {}
-): Promise<void> {
-  // 1. Check for cached PDF
-  const cachedUrl = await getCachedPDFUrl(bookId, 'book');
-  if (cachedUrl) {
-    // Download directly from cache
-    await downloadFromUrl(cachedUrl, `${bookName}.pdf`);
-    return;
+export async function downloadFromUrl(url: string, filename: string): Promise<void> {
+  console.log(`[PDFStorage] Downloading cached PDF from ${url}...`);
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
   }
 
-  // 2. Generate PDF (existing logic)
-  const pages = await fetchBookPageImages(bookId, true);
-  const pdfBytes = await generatePDF(pages, options);
-  
-  // 3. Upload to storage
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-  const result = await uploadPDFToStorage(blob, bookId, 'book');
-  
-  // 4. Update book record
-  if (result.success && result.publicUrl) {
-    await updateBookPDFUrl(bookId, result.publicUrl, 'book');
-  }
-  
-  // 5. Download
-  await downloadBlob(blob, `${bookName}.pdf`);
+  const blob = await response.blob();
+  downloadBlob(blob, filename);  // Use shared utility
 }
+```
+
+### Step 3: Update `pdfGenerator.ts`
+
+Replace all inline download code with calls to `downloadBlob()`:
+
+**`generateBookPDF()` (lines 504-511)**
+```typescript
+// Before
+const url = URL.createObjectURL(blob);
+const link = document.createElement('a');
+// ... 6 more lines
+
+// After
+downloadBlob(blob, filename);
+```
+
+**`generateColoringBookPDF()` (lines 577-584)**
+```typescript
+// Same refactor - replace 8 lines with:
+downloadBlob(blob, filename);
+```
+
+**`generatePagePDF()` (lines 614-623)**
+```typescript
+// Same refactor
+downloadBlob(blob, filename);
+```
+
+**`downloadAllBookImages()` (lines 793-800)**
+```typescript
+// Same refactor for ZIP download
+downloadBlob(zipBlob, `${sanitizedBookName}-Images.zip`);
+```
+
+### Step 4: Update `PrintableColorBook.tsx`
+
+Import and use the shared utility:
+
+```typescript
+import { downloadBlob } from '@/services/pdfStorageService';
+
+// In handleDownloadPDF():
+const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+downloadBlob(blob, `${bookName || 'PrintableColorBook'}-Coloring-Pages.pdf`);
 ```
 
 ---
 
-## Cache Invalidation Strategy
+## Relationship: Regular Book vs Coloring Book PDFs
 
-PDFs will be automatically invalidated when:
+Both PDF types share the same download infrastructure:
 
-| Event | Action |
-|-------|--------|
-| New image uploaded to a page | Trigger clears `pdf_url` and `coloring_pdf_url` |
-| Image URL updated | Trigger clears cached URLs |
-| User regenerates an image | Trigger clears cached URLs |
+| Feature | Regular Book PDF | Coloring Book PDF |
+|---------|------------------|-------------------|
+| **Image Source** | `text_image_url` (color with text overlay) | `printable_coloring_image_url` (B&W with thumbnail) |
+| **Cache Column** | `books.pdf_url` | `books.coloring_pdf_url` |
+| **Storage Path** | `{bookId}/{bookId}.pdf` | `{bookId}/{bookId}-coloring.pdf` |
+| **Fetch Function** | `fetchBookPageImages(bookId, true)` | `fetchBookPrintableColoringImages(bookId)` |
+| **Download Function** | `downloadBlob()` | `downloadBlob()` (same) |
 
-This ensures users always get the latest version of the book while still benefiting from caching when content hasn't changed.
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                         PDF Generation Flow                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────────┐           ┌────────────────────────┐         │
+│  │ "Download Book"  │           │ "Download Coloring Book"│         │
+│  │     Button       │           │        Button           │         │
+│  └────────┬─────────┘           └───────────┬────────────┘         │
+│           │                                 │                       │
+│           ▼                                 ▼                       │
+│  getCachedPDFUrl('book')           getCachedPDFUrl('coloring')     │
+│           │                                 │                       │
+│    ┌──────┴──────┐                   ┌──────┴──────┐               │
+│    │             │                   │             │               │
+│    ▼             ▼                   ▼             ▼               │
+│  Cached?       Generate           Cached?       Generate           │
+│    │             │                   │             │               │
+│    │   fetchBookPageImages()         │   fetchBookPrintable...()   │
+│    │             │                   │             │               │
+│    │      generatePDF()              │      generatePDF()          │
+│    │             │                   │             │               │
+│    │   uploadPDFToStorage()          │   uploadPDFToStorage()      │
+│    │             │                   │             │               │
+│    └──────┬──────┘                   └──────┬──────┘               │
+│           │                                 │                       │
+│           ▼                                 ▼                       │
+│     downloadBlob()                    downloadBlob()                │
+│     (shared utility)                  (shared utility)              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -203,28 +208,26 @@ This ensures users always get the latest version of the book while still benefit
 
 | File | Changes |
 |------|---------|
-| **Database Migration** | Add `coloring_pdf_url`, `pdf_generated_at`, `coloring_pdf_generated_at` columns; create `book-pdfs` bucket; add invalidation trigger |
-| `src/services/pdfStorageService.ts` | **New file** - PDF upload, URL management, and cache checking |
-| `src/services/pdfGenerator.ts` | Add cache-first logic to `generateBookPDF` and `generateColoringBookPDF` |
+| `src/services/pdfStorageService.ts` | Add `downloadBlob()` function, refactor `downloadFromUrl()` |
+| `src/services/pdfGenerator.ts` | Replace 4 inline download blocks with `downloadBlob()` calls |
+| `src/pages/PrintableColorBook.tsx` | Import and use `downloadBlob()` |
 
 ---
 
-## Security Considerations
+## Benefits
 
-- PDFs are stored in a public bucket for easy download access
-- Upload is restricted to authenticated users only
-- Storage path includes `bookId` to organize files
-- RLS on `books` table already restricts who can update `pdf_url`
-- Only book owners and admins can trigger PDF regeneration
+1. **Single Source of Truth**: One function handles all blob downloads
+2. **Easier Maintenance**: Bug fixes or improvements only need to be made in one place
+3. **Consistent Logging**: All downloads will have uniform logging
+4. **Reduced Code**: ~40 lines of duplicate code removed
+5. **Extensibility**: Easy to add features like download tracking, analytics, or error handling in one place
 
 ---
 
-## Edge Cases Handled
+## Future Considerations
 
-| Scenario | Handling |
-|----------|----------|
-| Cached URL exists but file deleted | Check if URL is valid before returning, regenerate if 404 |
-| Upload fails | Still download the generated PDF locally, log error |
-| User downloads during generation | Loading state prevents double-clicks |
-| Book has no images | Error toast before attempting generation |
-| Storage quota exceeded | Fallback to local download only |
+After this refactoring, the same pattern can be applied to:
+- The 3 nearly-identical page fetching functions (`fetchBookPageImages`, `fetchBookColoringImages`, `fetchBookPrintableColoringImages`)
+- The WebP conversion functions (`convertWebPToPNG`, `convertWebPToJPG`)
+- The background upload pattern in both `generateBookPDF` and `generateColoringBookPDF`
+

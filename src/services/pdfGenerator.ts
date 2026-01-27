@@ -6,13 +6,15 @@
  * into the PDF for optimal memory usage and progress tracking.
  */
 
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { supabase } from '@/integrations/supabase/client';
 import JSZip from 'jszip';
 
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
   onError?: (error: string, pageId?: string) => void;
+  /** If true, adds the page title as text at the bottom of each page */
+  includeTextOverlay?: boolean;
 }
 
 export interface PageImageData {
@@ -270,7 +272,7 @@ export async function generatePDF(
   pages: PageImageData[], 
   options: PDFGenerationOptions = {}
 ): Promise<Uint8Array> {
-  const { onProgress, onError } = options;
+  const { onProgress, onError, includeTextOverlay = false } = options;
   
   // Filter pages with images
   const pagesWithImages = pages.filter(page => page.image_url);
@@ -282,6 +284,10 @@ export async function generatePDF(
   }
 
   const pdfDoc = await PDFDocument.create();
+  
+  // Embed font for text overlay if needed
+  const font = includeTextOverlay ? await pdfDoc.embedFont(StandardFonts.HelveticaBold) : null;
+  
   let processedCount = 0;
   const failedPages: string[] = [];
 
@@ -342,15 +348,34 @@ export async function generatePDF(
         continue;
       }
 
-      // Create page with image dimensions
-      const pdfPage = pdfDoc.addPage([image.width, image.height]);
+      // Create page with image dimensions + extra space for text if needed
+      const textAreaHeight = includeTextOverlay ? 60 : 0;
+      const pdfPage = pdfDoc.addPage([image.width, image.height + textAreaHeight]);
+      
+      // Draw image (offset up if we have text area)
       pdfPage.drawImage(image, {
         x: 0,
-        y: 0,
+        y: textAreaHeight,
         width: image.width,
         height: image.height,
       });
-      console.log(`[PDF] Added page ${page.letter} to PDF`);
+      
+      // Add text overlay at the bottom if enabled
+      if (includeTextOverlay && font && page.title) {
+        const fontSize = Math.min(32, image.width / 20); // Scale font based on image width
+        const textWidth = font.widthOfTextAtSize(page.title, fontSize);
+        const xPosition = (image.width - textWidth) / 2; // Center horizontally
+        
+        pdfPage.drawText(page.title, {
+          x: xPosition,
+          y: 20, // 20px from bottom
+          size: fontSize,
+          font: font,
+          color: rgb(0, 0, 0), // Black text
+        });
+      }
+      
+      console.log(`[PDF] Added page ${page.letter} to PDF${includeTextOverlay ? ' with title overlay' : ''}`);
 
       processedCount++;
     } catch (error) {

@@ -581,6 +581,8 @@ export type Database = {
           category: string | null
           chat_session_id: string | null
           city: string | null
+          coloring_pdf_generated_at: string | null
+          coloring_pdf_url: string | null
           created_at: string
           current_system_prompt_id: string | null
           educational_focus: Json | null
@@ -591,6 +593,7 @@ export type Database = {
           last_activity_at: string | null
           marketing_url: string | null
           metadata: Json | null
+          pdf_generated_at: string | null
           pdf_url: string | null
           product_description: string | null
           qr_code_config: Json | null
@@ -611,6 +614,8 @@ export type Database = {
           category?: string | null
           chat_session_id?: string | null
           city?: string | null
+          coloring_pdf_generated_at?: string | null
+          coloring_pdf_url?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
           educational_focus?: Json | null
@@ -621,6 +626,7 @@ export type Database = {
           last_activity_at?: string | null
           marketing_url?: string | null
           metadata?: Json | null
+          pdf_generated_at?: string | null
           pdf_url?: string | null
           product_description?: string | null
           qr_code_config?: Json | null
@@ -641,6 +647,8 @@ export type Database = {
           category?: string | null
           chat_session_id?: string | null
           city?: string | null
+          coloring_pdf_generated_at?: string | null
+          coloring_pdf_url?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
           educational_focus?: Json | null
@@ -651,6 +659,7 @@ export type Database = {
           last_activity_at?: string | null
           marketing_url?: string | null
           metadata?: Json | null
+          pdf_generated_at?: string | null
           pdf_url?: string | null
           product_description?: string | null
           qr_code_config?: Json | null

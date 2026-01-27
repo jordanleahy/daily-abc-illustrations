@@ -4,11 +4,19 @@
  * This service handles generating PDFs directly in the browser using pdf-lib,
  * eliminating server timeouts and resource issues. It streams images one-by-one
  * into the PDF for optimal memory usage and progress tracking.
+ * 
+ * PDFs are cached in Supabase Storage to avoid regeneration on subsequent downloads.
  */
 
 import { PDFDocument } from 'pdf-lib';
 import { supabase } from '@/integrations/supabase/client';
 import JSZip from 'jszip';
+import { 
+  getCachedPDFUrl, 
+  uploadPDFToStorage, 
+  updateBookPDFUrl, 
+  downloadFromUrl 
+} from './pdfStorageService';
 
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
@@ -433,16 +441,30 @@ export async function generatePDF(
 
 /**
  * Generates and downloads a PDF for a book
+ * Uses cached PDF if available, otherwise generates and caches a new one
  */
 export async function generateBookPDF(
   bookId: string, 
   bookName: string,
   options: PDFGenerationOptions = {}
 ): Promise<void> {
+  const sanitizedName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
+  const filename = `${sanitizedName}.pdf`;
+
   try {
-    // Fetch page images (use text images if requested)
+    // 1. Check for cached PDF first
+    console.log(`[PDF] Checking for cached PDF for book ${bookId}...`);
+    const cachedUrl = await getCachedPDFUrl(bookId, 'book');
+    
+    if (cachedUrl) {
+      console.log(`[PDF] Found cached PDF, downloading directly...`);
+      await downloadFromUrl(cachedUrl, filename);
+      return;
+    }
+
+    // 2. No cache found, generate the PDF
     const useTextImages = options.useTextImages ?? false;
-    console.log(`[PDF] Fetching images for book ${bookId}... (useTextImages: ${useTextImages})`);
+    console.log(`[PDF] No cache found. Fetching images for book ${bookId}... (useTextImages: ${useTextImages})`);
     const pages = await fetchBookPageImages(bookId, useTextImages);
     console.log(`[PDF] Found ${pages.length} total pages`);
     
@@ -460,18 +482,34 @@ export async function generateBookPDF(
     const pdfBytes = await generatePDF(pages, options);
     console.log(`[PDF] PDF generated successfully (${pdfBytes.length} bytes)`);
     
-    // Create download
+    // 3. Create blob for upload and download
     const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+
+    // 4. Upload to storage (in background, don't block download)
+    console.log(`[PDF] Uploading PDF to storage for caching...`);
+    uploadPDFToStorage(blob, bookId, 'book')
+      .then(async (result) => {
+        if (result.success && result.publicUrl) {
+          await updateBookPDFUrl(bookId, result.publicUrl, 'book');
+          console.log(`[PDF] PDF cached successfully at ${result.publicUrl}`);
+        } else {
+          console.warn(`[PDF] Failed to cache PDF: ${result.error}`);
+        }
+      })
+      .catch((err) => {
+        console.warn(`[PDF] Background upload failed:`, err);
+      });
+
+    // 5. Download immediately (don't wait for upload)
     const url = URL.createObjectURL(blob);
-    
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${bookName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
     URL.revokeObjectURL(url);
+    
     console.log(`[PDF] Download initiated successfully`);
   } catch (error) {
     console.error('[PDF] Error during PDF generation:', error);
@@ -482,15 +520,29 @@ export async function generateBookPDF(
 /**
  * Generates and downloads a coloring book PDF for a book
  * Uses printable coloring images (B&W with color reference thumbnail)
+ * Uses cached PDF if available, otherwise generates and caches a new one
  */
 export async function generateColoringBookPDF(
   bookId: string, 
   bookName: string,
   options: PDFGenerationOptions = {}
 ): Promise<void> {
+  const sanitizedName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
+  const filename = `${sanitizedName}-Coloring-Book.pdf`;
+
   try {
-    // Fetch printable coloring images
-    console.log(`[PDF] Fetching printable coloring images for book ${bookId}...`);
+    // 1. Check for cached coloring book PDF first
+    console.log(`[PDF] Checking for cached coloring book PDF for book ${bookId}...`);
+    const cachedUrl = await getCachedPDFUrl(bookId, 'coloring');
+    
+    if (cachedUrl) {
+      console.log(`[PDF] Found cached coloring book PDF, downloading directly...`);
+      await downloadFromUrl(cachedUrl, filename);
+      return;
+    }
+
+    // 2. No cache found, generate the PDF
+    console.log(`[PDF] No cache found. Fetching printable coloring images for book ${bookId}...`);
     const pages = await fetchBookPrintableColoringImages(bookId);
     console.log(`[PDF] Found ${pages.length} pages with printable coloring images`);
     
@@ -503,18 +555,34 @@ export async function generateColoringBookPDF(
     const pdfBytes = await generatePDF(pages, options);
     console.log(`[PDF] Coloring book PDF generated successfully (${pdfBytes.length} bytes)`);
     
-    // Create download with coloring book suffix
+    // 3. Create blob for upload and download
     const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+
+    // 4. Upload to storage (in background, don't block download)
+    console.log(`[PDF] Uploading coloring book PDF to storage for caching...`);
+    uploadPDFToStorage(blob, bookId, 'coloring')
+      .then(async (result) => {
+        if (result.success && result.publicUrl) {
+          await updateBookPDFUrl(bookId, result.publicUrl, 'coloring');
+          console.log(`[PDF] Coloring book PDF cached successfully at ${result.publicUrl}`);
+        } else {
+          console.warn(`[PDF] Failed to cache coloring book PDF: ${result.error}`);
+        }
+      })
+      .catch((err) => {
+        console.warn(`[PDF] Background coloring book upload failed:`, err);
+      });
+
+    // 5. Download immediately (don't wait for upload)
     const url = URL.createObjectURL(blob);
-    
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${bookName.replace(/[^a-zA-Z0-9\s-]/g, '')}-Coloring-Book.pdf`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
     URL.revokeObjectURL(url);
+    
     console.log(`[PDF] Coloring book download initiated successfully`);
   } catch (error) {
     console.error('[PDF] Error during coloring book PDF generation:', error);

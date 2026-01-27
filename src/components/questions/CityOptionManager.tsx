@@ -165,40 +165,65 @@ export function CityOptionManager({ questionId }: CityOptionManagerProps) {
         setIsAddDialogOpen(open);
         if (!open) resetDialog();
       }}>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle className="flex items-center gap-2">
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          {/* Fixed Header - Always visible */}
+          <div className="flex-shrink-0 px-4 pt-4 pb-2 border-b border-border bg-background sticky top-0 z-10">
+            <DrawerTitle className="flex items-center gap-2 mb-1">
               <MapPin className="h-5 w-5 text-primary" />
               Add New City
             </DrawerTitle>
-            <DrawerDescription>
-              Search for a city using Google Places to get accurate location data.
+            <DrawerDescription className="text-sm">
+              Search for a city using Google Places
             </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4 pb-4 space-y-4 overflow-y-auto">
-            <div className="space-y-2 relative">
-              <Label htmlFor="citySearch">Search City</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="citySearch"
-                  placeholder="Start typing a city name..."
-                  value={searchInput}
-                  onChange={(e) => {
-                    setSearchInput(e.target.value);
-                    setSelectedPlace(null);
-                  }}
-                  autoComplete="off"
-                  className="pl-9"
-                />
-                {(isSearching || isLoadingDetails) && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
+            
+            {/* Search Input - Pinned at top */}
+            <div className="mt-3 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="citySearch"
+                placeholder="Start typing a city name..."
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  setSelectedPlace(null);
+                }}
+                autoComplete="off"
+                className="pl-9 pr-10"
+              />
+              {(isSearching || isLoadingDetails) && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+              )}
+            </div>
+          </div>
+          
+          {/* Scrollable Results Area - Reserved space for keyboard */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 min-h-[200px]">
+            {/* Loading state with skeleton */}
+            {isSearching && predictions.length === 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Searching for cities...</span>
+                </div>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 animate-pulse">
+                    <div className="w-4 h-4 rounded bg-muted-foreground/20" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted-foreground/20 rounded w-3/4" />
+                      <div className="h-3 bg-muted-foreground/20 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
-              
-              {/* Autocomplete dropdown */}
-              {predictions.length > 0 && !selectedPlace && (
-                <div className="bg-muted border border-border rounded-lg max-h-48 overflow-auto">
+            )}
+            
+            {/* Autocomplete results */}
+            {predictions.length > 0 && !selectedPlace && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground mb-2">
+                  {predictions.length} result{predictions.length !== 1 ? 's' : ''} found
+                </p>
+                <div className="bg-muted/50 border border-border rounded-lg overflow-hidden">
                   {predictions.map((prediction) => (
                     <button
                       key={prediction.place_id}
@@ -213,22 +238,44 @@ export function CityOptionManager({ questionId }: CityOptionManagerProps) {
                     </button>
                   ))}
                 </div>
-              )}
-              
-              {searchInput.length > 0 && searchInput.length < 2 && !selectedPlace && (
-                <p className="text-xs text-muted-foreground">Type at least 2 characters to search...</p>
-              )}
-              {searchInput.length >= 2 && predictions.length === 0 && !isSearching && !selectedPlace && (
-                <p className="text-xs text-muted-foreground">No cities found. Try a different search term.</p>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {/* Hint text */}
+            {searchInput.length > 0 && searchInput.length < 2 && !selectedPlace && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                <Search className="h-4 w-4" />
+                <span>Type at least 2 characters to search...</span>
+              </div>
+            )}
+            
+            {/* No results state */}
+            {searchInput.length >= 2 && predictions.length === 0 && !isSearching && !selectedPlace && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <MapPin className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                <p className="text-sm font-medium text-muted-foreground">No cities found</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Try a different search term like "{searchInput} city"
+                </p>
+              </div>
+            )}
+            
+            {/* Empty state - before typing */}
+            {searchInput.length === 0 && !selectedPlace && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Search className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Start typing to search for a city
+                </p>
+              </div>
+            )}
 
             {/* Selected city details */}
             {selectedPlace && (
-              <div className="p-4 bg-muted rounded-lg space-y-2">
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg space-y-2">
                 <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">{selectedPlace.name}</span>
+                  <Check className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">{selectedPlace.name}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                   {selectedPlace.state && (
@@ -251,7 +298,9 @@ export function CityOptionManager({ questionId }: CityOptionManagerProps) {
               </div>
             )}
           </div>
-          <DrawerFooter className="pt-2">
+          
+          {/* Fixed Footer */}
+          <DrawerFooter className="flex-shrink-0 pt-2 border-t border-border bg-background">
             <Button 
               onClick={() => {
                 if (selectedPlace) {

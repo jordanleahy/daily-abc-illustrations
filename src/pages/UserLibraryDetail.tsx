@@ -275,18 +275,14 @@ export default function UserLibraryDetail() {
                   onClick={handleDownloadPDF}
                   disabled={isDownloading}
                   variant="outline"
-                  size="icon"
                   className={`shrink-0 ${isDownloading ? 'opacity-75 cursor-wait' : ''}`}
-                  title={isDownloading ? "Generating PDF..." : "Download as PDF"}
                 >
                   {isDownloading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     <Download className="h-5 w-5" />
                   )}
-                  <span className="sr-only">
-                    {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
-                  </span>
+                  {isDownloading ? 'Generating...' : 'Download book'}
                 </Button>
               </div>
             </div>

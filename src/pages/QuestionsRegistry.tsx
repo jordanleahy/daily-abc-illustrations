@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuestions } from '@/hooks/useQuestions';
+import { useQuestionsSubscription } from '@/hooks/useQuestionsSubscription';
 
 const QuestionsRegistry = () => {
   const navigate = useNavigate();
   const { data: questions, isLoading } = useQuestions();
+  
+  // Real-time sync across admin tabs
+  useQuestionsSubscription();
 
   if (isLoading) {
     return (

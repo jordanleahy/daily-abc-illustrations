@@ -9,11 +9,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { OptionManagerFactory } from '@/components/questions/OptionManagerFactory';
 import { StaticOptionManager } from '@/components/questions/StaticOptionManager';
+import { useQuestionsSubscription } from '@/hooks/useQuestionsSubscription';
 import type { Question, StaticOption } from '@/hooks/useQuestions';
 
 const QuestionDetail = () => {
   const navigate = useNavigate();
   const { questionId } = useParams<{ questionId: string }>();
+  
+  // Real-time sync across admin tabs
+  useQuestionsSubscription();
 
   // Fetch the question
   const { data: question, isLoading: isLoadingQuestion } = useQuery({

@@ -136,33 +136,64 @@ export const useGoogleChat = (
       // Prepare message for API (with actual content structure)
       const apiUserMessage: Message = { role: 'user', content };
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            messages: [...messagesWithoutSuggestions, apiUserMessage],
-            outlineReady: context?.outlineReady,
-            bookCreated: context?.bookCreated,
-            gradeLevel: context?.gradeLevel || gradeLevel, // Prefer context value for immediate updates
-            bookType: context?.bookType || bookType,
-            characterTheme: context?.characterTheme,
-            selectedCharacterIds: context?.selectedCharacterIds,
-            season: context?.season,
-            environment: context?.environment,
-            clothingBrand: context?.clothingBrand,
-            location: context?.location,
-            city: context?.city,
-            mannerType: context?.mannerType,
-            mannersSetting: context?.mannersSetting,
-            discoveryContext: context?.discoveryContext,
-          })
+      // Retry logic for transient network failures
+      const MAX_RETRIES = 3;
+      const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
+      
+      let response: Response | null = null;
+      let lastError: Error | null = null;
+      
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+          response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-chat`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                messages: [...messagesWithoutSuggestions, apiUserMessage],
+                outlineReady: context?.outlineReady,
+                bookCreated: context?.bookCreated,
+                gradeLevel: context?.gradeLevel || gradeLevel,
+                bookType: context?.bookType || bookType,
+                characterTheme: context?.characterTheme,
+                selectedCharacterIds: context?.selectedCharacterIds,
+                season: context?.season,
+                environment: context?.environment,
+                clothingBrand: context?.clothingBrand,
+                location: context?.location,
+                city: context?.city,
+                mannerType: context?.mannerType,
+                mannersSetting: context?.mannersSetting,
+                discoveryContext: context?.discoveryContext,
+              })
+            }
+          );
+          
+          // If we got a response (even an error response), break out of retry loop
+          break;
+        } catch (fetchError: any) {
+          lastError = fetchError;
+          const isNetworkError = fetchError.message?.includes('Load failed') || 
+                                 fetchError.message?.includes('Failed to fetch') ||
+                                 fetchError.message?.includes('NetworkError') ||
+                                 fetchError.name === 'TypeError';
+          
+          if (isNetworkError && attempt < MAX_RETRIES - 1) {
+            console.log(`[useGoogleChat] Network error on attempt ${attempt + 1}, retrying in ${RETRY_DELAYS[attempt]}ms...`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS[attempt]));
+          } else {
+            throw fetchError;
+          }
         }
-      );
+      }
+      
+      if (!response) {
+        throw lastError || new Error('Failed to get response after retries');
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -457,10 +488,19 @@ export const useGoogleChat = (
       // Create an error message to show the user (keep user message, add error response)
       const errorMessage = error?.message || 'Something went wrong';
       const isPaymentError = errorMessage.includes('payment') || errorMessage.includes('402') || errorMessage.includes('credits');
+      const isNetworkError = errorMessage.includes('Load failed') || 
+                             errorMessage.includes('Failed to fetch') ||
+                             errorMessage.includes('NetworkError') ||
+                             error.name === 'TypeError';
       
-      const errorResponseContent = isPaymentError
-        ? "I'm unable to respond right now due to a billing issue. Please check your Lovable AI Gateway credits and try again."
-        : `I encountered an error: ${errorMessage}. Please try again.`;
+      let errorResponseContent: string;
+      if (isPaymentError) {
+        errorResponseContent = "I'm unable to respond right now due to a billing issue. Please check your Lovable AI Gateway credits and try again.";
+      } else if (isNetworkError) {
+        errorResponseContent = "I couldn't connect due to a network issue. Please check your connection and try again.";
+      } else {
+        errorResponseContent = `I encountered an error: ${errorMessage}. Please try again.`;
+      }
       
       const messagesWithError = [
         ...updatedMessages,

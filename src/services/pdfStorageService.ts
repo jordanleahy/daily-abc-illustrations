@@ -183,6 +183,22 @@ async function clearPDFUrl(bookId: string, type: PDFType): Promise<void> {
 }
 
 /**
+ * Triggers a browser download for a Blob.
+ * This is the single source of truth for blob downloads.
+ */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  console.log(`[Download] Download initiated: ${filename}`);
+}
+
+/**
  * Downloads a file from a URL and triggers a browser download
  */
 export async function downloadFromUrl(url: string, filename: string): Promise<void> {
@@ -195,17 +211,7 @@ export async function downloadFromUrl(url: string, filename: string): Promise<vo
     }
 
     const blob = await response.blob();
-    const downloadUrl = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(downloadUrl);
-    console.log(`[PDFStorage] Download initiated successfully`);
+    downloadBlob(blob, filename);
   } catch (error) {
     console.error(`[PDFStorage] Download error:`, error);
     throw error;

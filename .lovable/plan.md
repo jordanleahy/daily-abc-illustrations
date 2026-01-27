@@ -1,51 +1,18 @@
 
-# Real-Time Subscription for Agent Questions
+# Real-Time Subscription for Questions Registry
 
 ## Overview
-Currently, the `agent_questions` table lacks a Supabase Realtime subscription. Changes made in one browser tab (or by another admin) won't reflect immediately in the UI - they require a manual refresh or waiting for the 2-minute cache `staleTime` to expire.
-
-This plan adds a dedicated real-time subscription hook that automatically syncs UI state when discovery questions are toggled, reordered, or modified.
+Add a dedicated Supabase Realtime subscription for the `questions` table to ensure that when questions are created, updated, or deleted, all admin browser tabs reflect the changes instantly.
 
 ---
 
 ## Implementation Approach
 
-### 1. Create New Hook: `useAgentQuestionsSubscription.ts`
+### 1. Create New Hook: `useQuestionsSubscription.ts`
 
-Create a new file following the established pattern (similar to `useDailyPublishedSubscription.ts`):
+A lightweight subscription hook that listens to changes on the `questions` table and invalidates the TanStack Query cache.
 
-```text
-src/hooks/useAgentQuestionsSubscription.ts
-```
-
-**Functionality:**
-- Subscribe to `postgres_changes` on the `agent_questions` table
-- Filter by specific `agent_type` when provided (scoped updates)
-- Invalidate the `['agent-questions', agentType]` query cache on any change
-- Clean up channel on unmount
-
-### 2. Hook Design
-
-**Parameters:**
-- `agentType` (optional): When provided, only listen for changes to that specific agent's questions
-
-**Behavior:**
-- If `agentType` is provided: Filter subscription with `agent_type=eq.{agentType}`
-- If no `agentType`: Listen to all `agent_questions` changes (for global admin views)
-- On any change (INSERT/UPDATE/DELETE): Invalidate the relevant TanStack Query cache
-
-### 3. Integration Points
-
-The hook will be consumed in:
-- `AgentQuestionsManager` component (embedded in agent detail pages)
-- `BookAgentsManager` component (for book type → agent mappings)
-- `AgentDetail` page
-
----
-
-## Technical Details
-
-### New File: `src/hooks/useAgentQuestionsSubscription.ts`
+**File:** `src/hooks/useQuestionsSubscription.ts`
 
 ```typescript
 import { useEffect, useRef } from 'react';
@@ -54,48 +21,39 @@ import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 /**
- * Real-time subscription for agent_questions table changes
- * Automatically invalidates queries when questions are toggled or reordered
+ * Real-time subscription for questions registry table changes
+ * Automatically invalidates queries when questions are created, updated, or deleted
  */
-export const useAgentQuestionsSubscription = (agentType?: string) => {
+export const useQuestionsSubscription = () => {
   const queryClient = useQueryClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    const channelName = agentType 
-      ? `agent-questions-${agentType}` 
-      : 'agent-questions-all';
-    
-    const filter = agentType 
-      ? { filter: `agent_type=eq.${agentType}` }
-      : {};
-
     channelRef.current = supabase
-      .channel(channelName)
+      .channel('questions-registry')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'agent_questions',
-          ...filter
+          table: 'questions',
         },
         (payload) => {
-          console.log('📡 Agent questions changed:', payload);
+          console.log('📡 Questions registry changed:', payload);
           
-          // Invalidate specific agent query if we know which one changed
-          const changedAgentType = 
-            (payload.new as any)?.agent_type || 
-            (payload.old as any)?.agent_type;
+          // Invalidate the global questions list
+          queryClient.invalidateQueries({ queryKey: ['questions'] });
           
-          if (changedAgentType) {
+          // If we know which question changed, also invalidate its detail query
+          const changedId = 
+            (payload.new as any)?.id || 
+            (payload.old as any)?.id;
+          
+          if (changedId) {
             queryClient.invalidateQueries({ 
-              queryKey: ['agent-questions', changedAgentType] 
+              queryKey: ['question', changedId] 
             });
           }
-          
-          // Also invalidate the global questions registry
-          queryClient.invalidateQueries({ queryKey: ['questions'] });
         }
       )
       .subscribe();
@@ -106,61 +64,53 @@ export const useAgentQuestionsSubscription = (agentType?: string) => {
         channelRef.current = null;
       }
     };
-  }, [agentType, queryClient]);
+  }, [queryClient]);
 };
-```
-
-### Update: `AgentQuestionsManager.tsx`
-
-Add the subscription hook to the component:
-
-```typescript
-import { useAgentQuestionsSubscription } from '@/hooks/useAgentQuestionsSubscription';
-
-export function AgentQuestionsManager({ agentType, ... }) {
-  // Existing hooks...
-  
-  // Add real-time subscription
-  useAgentQuestionsSubscription(agentType);
-  
-  // Rest of component...
-}
 ```
 
 ---
 
-## Architecture Diagram
+### 2. Integration Points
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                      Browser Tab A                               │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  AgentQuestionsManager                                   │    │
-│  │    └─> useAgentQuestionsSubscription('opposites')       │    │
-│  │           └─> supabase.channel('agent-questions-...')   │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ postgres_changes
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  Supabase Realtime                               │
-│                                                                  │
-│   agent_questions table                                          │
-│   ┌─────────────────────────────────────────────────────────┐   │
-│   │ UPDATE: is_enabled = false → true                        │   │
-│   │         agent_type = 'book-creation-opposites'          │   │
-│   └─────────────────────────────────────────────────────────┘   │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ broadcast
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      Browser Tab B                               │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  AgentQuestionsManager                                   │    │
-│  │    └─> Receives payload → invalidateQueries()           │    │
-│  │           └─> UI refreshes automatically                │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
+Add the subscription hook to these pages:
+
+| Page | Purpose |
+|------|---------|
+| `src/pages/QuestionsRegistry.tsx` | Main list of all questions |
+| `src/pages/QuestionDetail.tsx` | Individual question detail view |
+
+---
+
+### 3. Code Changes
+
+**QuestionsRegistry.tsx** - Add subscription near the top of the component:
+```typescript
+import { useQuestionsSubscription } from '@/hooks/useQuestionsSubscription';
+
+const QuestionsRegistry = () => {
+  const navigate = useNavigate();
+  const { data: questions, isLoading } = useQuestions();
+  
+  // Real-time sync across admin tabs
+  useQuestionsSubscription();
+  
+  // ... rest of component
+};
+```
+
+**QuestionDetail.tsx** - Same pattern:
+```typescript
+import { useQuestionsSubscription } from '@/hooks/useQuestionsSubscription';
+
+const QuestionDetail = () => {
+  const navigate = useNavigate();
+  const { questionId } = useParams<{ questionId: string }>();
+  
+  // Real-time sync across admin tabs
+  useQuestionsSubscription();
+  
+  // ... rest of component
+};
 ```
 
 ---
@@ -169,14 +119,53 @@ export function AgentQuestionsManager({ agentType, ... }) {
 
 | File | Action |
 |------|--------|
-| `src/hooks/useAgentQuestionsSubscription.ts` | Create new file |
-| `src/components/agents/AgentQuestionsManager.tsx` | Add hook import and usage |
+| `src/hooks/useQuestionsSubscription.ts` | Create new file |
+| `src/pages/QuestionsRegistry.tsx` | Add hook import and usage |
+| `src/pages/QuestionDetail.tsx` | Add hook import and usage |
+
+---
+
+## How It Works
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                      Admin Tab A                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  QuestionsRegistry                                       │    │
+│  │    └─> useQuestionsSubscription()                       │    │
+│  │           └─> supabase.channel('questions-registry')    │    │
+│  │                                                          │    │
+│  │  [Creates new question "ski_resort"]                    │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ INSERT event
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  Supabase Realtime                               │
+│                                                                  │
+│   questions table                                                │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │ INSERT: id = 'ski_resort', label = 'Ski Resort'          │   │
+│   └─────────────────────────────────────────────────────────┘   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │ broadcast to all subscribers
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      Admin Tab B                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  QuestionsRegistry                                       │    │
+│  │    └─> Receives INSERT payload                          │    │
+│  │           └─> invalidateQueries(['questions'])          │    │
+│  │                  └─> UI refreshes, shows new question   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Benefits
 
-1. **Immediate sync across tabs**: Changes in one admin tab reflect instantly in others
-2. **Multi-user collaboration**: If another admin toggles questions, your view updates
-3. **Consistent with existing patterns**: Follows the same architecture as 25+ other subscription hooks in the codebase
-4. **Minimal overhead**: Only subscribes to relevant agent type changes, not all table activity
+1. **Instant sync across tabs**: Create/edit/delete a question in one tab, see it immediately in others
+2. **Consistent pattern**: Follows the same architecture as `useAgentQuestionsSubscription`
+3. **Minimal overhead**: Single channel subscription per page
+4. **Detail page awareness**: Also invalidates individual question queries when a specific question changes

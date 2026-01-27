@@ -19,9 +19,18 @@ import {
   downloadBlob
 } from './pdfStorageService';
 
-// 4×6 Avery label dimensions at 72 DPI
-const STICKER_LABEL_WIDTH = 288;   // 4 inches
-const STICKER_LABEL_HEIGHT = 432;  // 6 inches
+// Letter-size sheet with 6 labels (2×3 grid) - Avery 5164/8164 compatible
+// Sheet: 8.5" × 11", Each label: 4" × 3⅓" (3.333...")
+const SHEET_WIDTH = 612;           // 8.5 inches at 72 DPI
+const SHEET_HEIGHT = 792;          // 11 inches at 72 DPI
+const LABEL_WIDTH = 288;           // 4 inches at 72 DPI
+const LABEL_HEIGHT = 240;          // 3.333 inches at 72 DPI
+const LABELS_PER_ROW = 2;
+const LABELS_PER_COL = 3;
+const LABELS_PER_SHEET = LABELS_PER_ROW * LABELS_PER_COL; // 6
+// Margins to center the 2×3 grid on the sheet
+const MARGIN_LEFT = (SHEET_WIDTH - (LABELS_PER_ROW * LABEL_WIDTH)) / 2;   // 18 pts = 0.25"
+const MARGIN_TOP = (SHEET_HEIGHT - (LABELS_PER_COL * LABEL_HEIGHT)) / 2;  // 36 pts = 0.5"
 
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
@@ -578,9 +587,9 @@ export async function generateColoringBookPDF(
 }
 
 /**
- * Generates a PDF formatted for 4×6 Avery shipping labels (stickers)
- * Each page is one sticker using text_image_url (color with text overlay)
- * Images are scaled to maximize size while fitting the 4×6 format
+ * Generates a PDF formatted for Avery 5164/8164 label sheets
+ * Letter-size sheet (8.5"×11") with 6 labels per sheet (2×3 grid)
+ * Each label: 4" × 3⅓" - uses text_image_url (color with text overlay)
  */
 export async function generateStickersPDF(
   bookId: string, 
@@ -604,6 +613,8 @@ export async function generateStickersPDF(
 
     const pdfDoc = await PDFDocument.create();
     let processedCount = 0;
+    let currentPage: ReturnType<typeof pdfDoc.addPage> | null = null;
+    let labelIndex = 0; // 0-5 position on current sheet
 
     for (const page of pagesWithImages) {
       try {
@@ -632,29 +643,46 @@ export async function generateStickersPDF(
           ? await pdfDoc.embedPng(imageBuffer)
           : await pdfDoc.embedJpg(imageBuffer);
 
-        // Calculate scaling to fit 4×6 while maximizing size
-        const scaleToFitHeight = STICKER_LABEL_HEIGHT / image.height;
-        const scaleToFitWidth = STICKER_LABEL_WIDTH / image.width;
+        // Create new sheet if needed (every 6 labels)
+        if (labelIndex % LABELS_PER_SHEET === 0) {
+          currentPage = pdfDoc.addPage([SHEET_WIDTH, SHEET_HEIGHT]);
+          console.log(`[PDF Stickers] Created new sheet page`);
+        }
+
+        if (!currentPage) continue;
+
+        // Calculate label position in the 2×3 grid
+        const positionOnSheet = labelIndex % LABELS_PER_SHEET;
+        const col = positionOnSheet % LABELS_PER_ROW;  // 0 or 1
+        const row = Math.floor(positionOnSheet / LABELS_PER_ROW);  // 0, 1, or 2
+
+        // Calculate label cell origin (top-left of label cell, but PDF y is from bottom)
+        const cellX = MARGIN_LEFT + (col * LABEL_WIDTH);
+        const cellY = SHEET_HEIGHT - MARGIN_TOP - ((row + 1) * LABEL_HEIGHT);
+
+        // Calculate scaling to fit image within label while maximizing size
+        const scaleToFitHeight = LABEL_HEIGHT / image.height;
+        const scaleToFitWidth = LABEL_WIDTH / image.width;
         const scale = Math.min(scaleToFitHeight, scaleToFitWidth);
 
         const scaledWidth = image.width * scale;
         const scaledHeight = image.height * scale;
 
-        // Center on the label
-        const x = (STICKER_LABEL_WIDTH - scaledWidth) / 2;
-        const y = (STICKER_LABEL_HEIGHT - scaledHeight) / 2;
+        // Center image within the label cell
+        const x = cellX + (LABEL_WIDTH - scaledWidth) / 2;
+        const y = cellY + (LABEL_HEIGHT - scaledHeight) / 2;
 
-        // Create 4×6 page and draw image
-        const pdfPage = pdfDoc.addPage([STICKER_LABEL_WIDTH, STICKER_LABEL_HEIGHT]);
-        pdfPage.drawImage(image, {
+        // Draw image in label cell
+        currentPage.drawImage(image, {
           x,
           y,
           width: scaledWidth,
           height: scaledHeight,
         });
 
+        labelIndex++;
         processedCount++;
-        console.log(`[PDF Stickers] Added page ${page.letter} to stickers PDF`);
+        console.log(`[PDF Stickers] Added ${page.letter} at position ${positionOnSheet} (row ${row}, col ${col})`);
       } catch (error) {
         console.error(`[PDF Stickers] Error processing page ${page.letter}:`, error);
         options.onError?.(error instanceof Error ? error.message : 'Unknown error', page.id);
@@ -667,7 +695,7 @@ export async function generateStickersPDF(
       throw new Error('No pages could be processed for stickers PDF');
     }
 
-    console.log(`[PDF Stickers] Saving PDF with ${processedCount} sticker pages...`);
+    console.log(`[PDF Stickers] Saving PDF with ${processedCount} stickers on ${Math.ceil(processedCount / LABELS_PER_SHEET)} sheets...`);
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
     downloadBlob(blob, filename);
@@ -678,7 +706,6 @@ export async function generateStickersPDF(
     throw error;
   }
 }
-
 /**
  * Generates and downloads a PDF for a single page
  */

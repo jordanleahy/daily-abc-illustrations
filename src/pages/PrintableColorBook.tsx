@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Printer, Download, Loader2, BookOpen } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePDF, PageImageData } from '@/services/pdfGenerator';
+import { downloadBlob } from '@/services/pdfStorageService';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function PrintableColorBook() {
@@ -88,17 +89,9 @@ export default function PrintableColorBook() {
         }
       });
       
-      // Create download - convert to ArrayBuffer for Blob compatibility
-      const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
-      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${bookName || 'PrintableColorBook'}-Coloring-Pages.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Create download using shared utility
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      downloadBlob(blob, `${bookName || 'PrintableColorBook'}-Coloring-Pages.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF:', error);
     } finally {

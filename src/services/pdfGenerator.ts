@@ -15,7 +15,8 @@ import {
   getCachedPDFUrl, 
   uploadPDFToStorage, 
   updateBookPDFUrl, 
-  downloadFromUrl 
+  downloadFromUrl,
+  downloadBlob
 } from './pdfStorageService';
 
 export interface PDFGenerationOptions {
@@ -501,16 +502,7 @@ export async function generateBookPDF(
       });
 
     // 5. Download immediately (don't wait for upload)
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    console.log(`[PDF] Download initiated successfully`);
+    downloadBlob(blob, filename);
   } catch (error) {
     console.error('[PDF] Error during PDF generation:', error);
     throw error;
@@ -574,16 +566,7 @@ export async function generateColoringBookPDF(
       });
 
     // 5. Download immediately (don't wait for upload)
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    console.log(`[PDF] Coloring book download initiated successfully`);
+    downloadBlob(blob, filename);
   } catch (error) {
     console.error('[PDF] Error during coloring book PDF generation:', error);
     throw error;
@@ -611,16 +594,8 @@ export async function generatePagePDF(
     
     // Create download
     const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${pageName.replace(/[^a-zA-Z0-9\s-]/g, '')}-page-${pageData.letter}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
+    const filename = `${pageName.replace(/[^a-zA-Z0-9\s-]/g, '')}-page-${pageData.letter}.pdf`;
+    downloadBlob(blob, filename);
   } catch (error) {
     throw error;
   }
@@ -790,16 +765,7 @@ export async function downloadAllBookImages(
     });
 
     // Create download
-    const url = URL.createObjectURL(zipBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${sanitizedBookName}-Images.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
-    console.log(`[ZIP] Download initiated successfully`);
+    downloadBlob(zipBlob, `${sanitizedBookName}-Images.zip`);
     
     return {
       totalCount: pagesWithImages.length,

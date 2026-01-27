@@ -1,88 +1,99 @@
 
-
-# Remove Letter Labels from Printable Colorbook Page
+# Add Coloring Book PDF Download Button
 
 ## Summary
 
-Remove the "Letter th", "Letter COVER", "Letter FOCUS" labels that appear below each coloring page image on the `/printable-colorbook/:bookId` route. The images already contain embedded text captions (visible in the screenshot), making the redundant letter labels unnecessary.
+Add a new "Download Color Book PDF" button below the existing "Download PDF" button in `UserBookCard.tsx`. This button will download the printable coloring book version (black-and-white line art with a small color reference thumbnail in the top-left corner).
 
 ---
 
-## Current State
+## Current Buttons
 
-Each image card currently displays:
-1. The printable coloring image (with embedded caption text like "th - Shelly thought about the snowy path")
-2. A footer label showing "Letter th", "Letter COVER", etc.
-
-The footer labels are redundant because:
-- The caption is already embedded in the image itself
-- For digraph books (like "th"), every card shows the same "Letter th" which adds no value
-- It clutters the clean visual presentation
+| Button | Function | Image Type |
+|--------|----------|------------|
+| "Download PDF" | `generateBookPDF` with `useTextImages: true` | Full-color images with text overlay |
+| **NEW** "Download Color Book PDF" | `generateColoringBookPDF` | B&W line art + color thumbnail |
 
 ---
 
 ## Implementation
 
-### File: `src/pages/PrintableColorBook.tsx`
+### File: `src/components/books/UserBookCard.tsx`
 
-**Remove lines 223-225** - Delete the footer div containing the letter label:
+**1. Update import (line 29)**
+
+Add `generateColoringBookPDF` to the existing import:
 
 ```typescript
-// REMOVE THIS BLOCK (lines 223-225):
-<div className="p-2 text-center">
-  <span className="text-sm font-medium">Letter {image.letter}</span>
-</div>
+import { generateBookPDF, generateColoringBookPDF } from '@/services/pdfGenerator';
 ```
 
-**Also remove the skeleton placeholder label** (lines 237-239):
+**2. Add new state variable (around line 77)**
+
+Add a loading state for the new button:
 
 ```typescript
-// REMOVE THIS BLOCK:
-<div className="p-2">
-  <Skeleton className="h-4 w-20 mx-auto" />
-</div>
+const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
 ```
 
-### Result
+**3. Add new button (after line 566)**
 
-After the change, the Card structure will be simplified to:
+Insert a new button immediately after the existing "Download PDF" button:
 
 ```typescript
-<Card key={image.page_id} className="overflow-hidden animate-in fade-in-0 duration-300">
-  <CardContent className="p-0">
-    <AspectRatio ratio={1} className="bg-white">
-      <OptimizedImage ... />
-    </AspectRatio>
-    {/* No footer label - cleaner presentation */}
-  </CardContent>
-</Card>
+{/* Download Coloring Book PDF - Printable version with color thumbnail */}
+{publicationStatus && (
+  <Button 
+    variant="outline"
+    size="sm"
+    className="w-full gap-2"
+    disabled={isDownloadingColoringPdf}
+    onClick={async (e) => {
+      e.stopPropagation();
+      setIsDownloadingColoringPdf(true);
+      try {
+        await generateColoringBookPDF(book.id, book.book_name);
+        toast({ title: 'Coloring book PDF downloaded successfully' });
+      } catch (error) {
+        console.error('Failed to generate coloring book PDF:', error);
+        toast({ 
+          title: 'Failed to generate coloring book PDF',
+          description: error instanceof Error ? error.message : 'Unknown error',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsDownloadingColoringPdf(false);
+      }
+    }}
+  >
+    {isDownloadingColoringPdf ? (
+      <Loader2 className="h-4 w-4 animate-spin" />
+    ) : (
+      <Download className="h-4 w-4" />
+    )}
+    {isDownloadingColoringPdf ? 'Generating...' : 'Download Color Book PDF'}
+  </Button>
+)}
 ```
 
 ---
 
-## Scope Clarification
+## Consolidated Code Verification
 
-This change applies **only** to `PrintableColorBook.tsx` (`/printable-colorbook/:bookId` route).
+The new button will use `generateColoringBookPDF` from `src/services/pdfGenerator.ts`, which:
+- Checks for cached PDF first (via `getCachedPDFUrl`)
+- Fetches `printable_coloring_image_url` images (B&W with color thumbnail)
+- Uses the consolidated `downloadBlob` utility from `pdfStorageService.ts`
+- Caches the generated PDF for future downloads
 
-The similar pattern exists in `PublicColorBook.tsx` (`/colorbook/:bookId` route) at lines 144-146. Let me know if you'd like that page updated as well for consistency.
-
----
-
-## Visual Impact
-
-| Before | After |
-|--------|-------|
-| Image + "Letter th" label | Image only |
-| Image + "Letter COVER" label | Image only |
-| Extra vertical space per card | More compact grid |
+This follows the same pattern already used in `UserLibraryDetail.tsx`.
 
 ---
 
-## Risk Assessment
+## Visual Result
 
-**Low Risk** - This is a purely cosmetic change:
-- No data fetching logic affected
-- No download functionality affected
-- No routing changes
-- The `image.letter` data is still available for the `alt` attribute on images (accessibility preserved)
+After implementation, the card will show:
+1. **Download PDF** - Full-color book
+2. **Download Color Book PDF** - Printable coloring pages with color reference
 
+Both buttons appear only for published books (when `publicationStatus` exists).

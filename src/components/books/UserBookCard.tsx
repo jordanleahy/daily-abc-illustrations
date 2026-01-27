@@ -24,7 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { SITE_CONFIG } from '@/config/site';
 import { BookOpen, Copy, Link2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2 } from 'lucide-react';
-import { generateBookPDF, generateColoringBookPDF } from '@/services/pdfGenerator';
+import { generateBookPDF, generateColoringBookPDF, generateStickersPDF } from '@/services/pdfGenerator';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -73,6 +73,7 @@ export function UserBookCard({
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
   const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
+  const [isDownloadingStickers, setIsDownloadingStickers] = useState(false);
   const coverImageUrl = book.coverImageUrl;
 
   // Check printable coloring status and missing images for this book
@@ -520,6 +521,40 @@ export function UserBookCard({
                   <Download className="h-4 w-4" />
                 )}
                 {isDownloadingColoringPdf ? 'Generating...' : 'Download Color Book PDF'}
+              </Button>
+            )}
+
+            {/* Download Stickers PDF - 4×6 Avery label format */}
+            {publicationStatus && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                disabled={isDownloadingStickers}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setIsDownloadingStickers(true);
+                  try {
+                    await generateStickersPDF(book.id, book.book_name);
+                    toast({ title: 'Stickers PDF downloaded successfully' });
+                  } catch (error) {
+                    console.error('Failed to generate stickers PDF:', error);
+                    toast({ 
+                      title: 'Failed to generate stickers PDF',
+                      description: error instanceof Error ? error.message : 'Unknown error',
+                      variant: 'destructive'
+                    });
+                  } finally {
+                    setIsDownloadingStickers(false);
+                  }
+                }}
+              >
+                {isDownloadingStickers ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isDownloadingStickers ? 'Generating...' : 'Download Stickers'}
               </Button>
             )}
             

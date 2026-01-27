@@ -19,6 +19,10 @@ import {
   downloadBlob
 } from './pdfStorageService';
 
+// 4×6 Avery label dimensions at 72 DPI
+const STICKER_LABEL_WIDTH = 288;   // 4 inches
+const STICKER_LABEL_HEIGHT = 432;  // 6 inches
+
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
   onError?: (error: string, pageId?: string) => void;
@@ -569,6 +573,108 @@ export async function generateColoringBookPDF(
     downloadBlob(blob, filename);
   } catch (error) {
     console.error('[PDF] Error during coloring book PDF generation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generates a PDF formatted for 4×6 Avery shipping labels (stickers)
+ * Each page is one sticker using text_image_url (color with text overlay)
+ * Images are scaled to maximize size while fitting the 4×6 format
+ */
+export async function generateStickersPDF(
+  bookId: string, 
+  bookName: string,
+  options: PDFGenerationOptions = {}
+): Promise<void> {
+  const sanitizedName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
+  const filename = `${sanitizedName}-Stickers.pdf`;
+
+  try {
+    // Fetch text_image_url for all pages (color images with text overlay)
+    console.log(`[PDF] Fetching images for stickers PDF for book ${bookId}...`);
+    const pages = await fetchBookPageImages(bookId, true); // useTextImages: true
+    const pagesWithImages = pages.filter(p => p.image_url);
+    
+    console.log(`[PDF] Found ${pagesWithImages.length} pages with images for stickers`);
+    
+    if (pagesWithImages.length === 0) {
+      throw new Error('No images found for stickers');
+    }
+
+    const pdfDoc = await PDFDocument.create();
+    let processedCount = 0;
+
+    for (const page of pagesWithImages) {
+      try {
+        console.log(`[PDF Stickers] Processing page ${page.letter}...`);
+        options.onProgress?.(processedCount, pagesWithImages.length, page.letter);
+
+        if (!page.image_url) continue;
+
+        // Download image
+        let imageBuffer = await downloadImage(page.image_url);
+        let format = detectImageFormat(imageBuffer);
+        
+        // Convert WebP to PNG if needed
+        if (format === 'webp') {
+          imageBuffer = await convertWebPToPNG(imageBuffer);
+          format = 'png';
+        }
+
+        if (!format || (format !== 'png' && format !== 'jpg' && format !== 'jpeg')) {
+          console.warn(`[PDF Stickers] Unsupported format for page ${page.letter}`);
+          continue;
+        }
+
+        // Embed image
+        const image = format === 'png' 
+          ? await pdfDoc.embedPng(imageBuffer)
+          : await pdfDoc.embedJpg(imageBuffer);
+
+        // Calculate scaling to fit 4×6 while maximizing size
+        const scaleToFitHeight = STICKER_LABEL_HEIGHT / image.height;
+        const scaleToFitWidth = STICKER_LABEL_WIDTH / image.width;
+        const scale = Math.min(scaleToFitHeight, scaleToFitWidth);
+
+        const scaledWidth = image.width * scale;
+        const scaledHeight = image.height * scale;
+
+        // Center on the label
+        const x = (STICKER_LABEL_WIDTH - scaledWidth) / 2;
+        const y = (STICKER_LABEL_HEIGHT - scaledHeight) / 2;
+
+        // Create 4×6 page and draw image
+        const pdfPage = pdfDoc.addPage([STICKER_LABEL_WIDTH, STICKER_LABEL_HEIGHT]);
+        pdfPage.drawImage(image, {
+          x,
+          y,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
+
+        processedCount++;
+        console.log(`[PDF Stickers] Added page ${page.letter} to stickers PDF`);
+      } catch (error) {
+        console.error(`[PDF Stickers] Error processing page ${page.letter}:`, error);
+        options.onError?.(error instanceof Error ? error.message : 'Unknown error', page.id);
+      }
+    }
+
+    options.onProgress?.(processedCount, pagesWithImages.length);
+
+    if (processedCount === 0) {
+      throw new Error('No pages could be processed for stickers PDF');
+    }
+
+    console.log(`[PDF Stickers] Saving PDF with ${processedCount} sticker pages...`);
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+    downloadBlob(blob, filename);
+    
+    console.log(`[PDF Stickers] Stickers PDF downloaded successfully`);
+  } catch (error) {
+    console.error('[PDF] Error during stickers PDF generation:', error);
     throw error;
   }
 }

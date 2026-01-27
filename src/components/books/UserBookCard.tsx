@@ -543,7 +543,7 @@ export function UserBookCard({
                   e.stopPropagation();
                   setIsDownloadingColorPdf(true);
                   try {
-                    await generateBookPDF(book.id, `${book.book_name}-Color`, { includeTextOverlay: true });
+                    await generateBookPDF(book.id, `${book.book_name}-Color`, { useTextImages: true });
                     toast({ title: 'PDF downloaded successfully' });
                   } catch (error) {
                     console.error('Failed to generate color PDF:', error);

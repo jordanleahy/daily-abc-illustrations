@@ -106,14 +106,19 @@ export function BookTypesManager() {
     }
   };
 
-  const handleDownloadImage = () => {
+  const handleDownloadImage = async () => {
     if (!generatedImage) return;
-    const link = document.createElement('a');
-    link.href = generatedImage;
-    link.download = `${imageLabel.toLowerCase().replace(/\s+/g, '-')}-icon.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    try {
+      // Convert data URL to blob
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const { downloadBlob } = await import('@/services/pdfStorageService');
+      downloadBlob(blob, `${imageLabel.toLowerCase().replace(/\s+/g, '-')}-icon.png`);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast.error('Failed to download image');
+    }
   };
 
   const openEditDialog = (bookType: DatabaseBookType) => {

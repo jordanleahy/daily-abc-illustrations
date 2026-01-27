@@ -4,6 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { QRCodeData, QRCodeDisplayStatus, QRCodeConfig } from '@/types/bookQRCode';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { downloadBlob } from '@/services/pdfStorageService';
 
 export const useBookQRCode = (bookId: string | undefined) => {
   const { user } = useAuthContext();
@@ -68,13 +69,19 @@ export const useBookQRCode = (bookId: string | undefined) => {
     // Determine file extension based on data URL type
     const isSVG = dailyPublishedData.qr_code_image.startsWith('data:image/svg+xml');
     const extension = isSVG ? 'svg' : 'png';
-
-    const link = document.createElement('a');
-    link.href = dailyPublishedData.qr_code_image;
-    link.download = `qr-code-${dailyPublishedData.title || 'book'}.${extension}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const mimeType = isSVG ? 'image/svg+xml' : 'image/png';
+    
+    // Convert data URL to blob
+    const dataUrl = dailyPublishedData.qr_code_image;
+    const base64 = dataUrl.split(',')[1];
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mimeType });
+    
+    downloadBlob(blob, `qr-code-${dailyPublishedData.title || 'book'}.${extension}`);
   };
 
   // Copy URL function

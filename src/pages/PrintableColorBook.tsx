@@ -220,9 +220,6 @@ export default function PrintableColorBook() {
                         quality={70}
                       />
                     </AspectRatio>
-                    <div className="p-2 text-center">
-                      <span className="text-sm font-medium">Letter {image.letter}</span>
-                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -234,9 +231,6 @@ export default function PrintableColorBook() {
                       <AspectRatio ratio={1} className="bg-muted">
                         <Skeleton className="w-full h-full" />
                       </AspectRatio>
-                      <div className="p-2">
-                        <Skeleton className="h-4 w-20 mx-auto" />
-                      </div>
                     </CardContent>
                   </Card>
                 ))

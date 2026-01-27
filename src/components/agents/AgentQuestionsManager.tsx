@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuestions, useAgentQuestions, useToggleAgentQuestion, useInitializeAgentQuestions, useReorderAgentQuestion } from '@/hooks/useQuestions';
+import { useAgentQuestionsSubscription } from '@/hooks/useAgentQuestionsSubscription';
 import { HelpCircle, Database, MapPin, Palette, GraduationCap, Users, Type, ChevronUp, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -29,6 +30,9 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
   const toggleMutation = useToggleAgentQuestion();
   const initializeMutation = useInitializeAgentQuestions();
   const reorderMutation = useReorderAgentQuestion();
+
+  // Real-time subscription for cross-tab/multi-user sync
+  useAgentQuestionsSubscription(agentType);
 
   // Initialize mappings when component loads
   useEffect(() => {

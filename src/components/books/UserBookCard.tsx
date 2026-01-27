@@ -562,7 +562,7 @@ export function UserBookCard({
                 ) : (
                   <Download className="h-4 w-4" />
                 )}
-                {isDownloadingColorPdf ? 'Generating...' : 'Download Color Book PDF'}
+                {isDownloadingColorPdf ? 'Generating...' : 'Download PDF'}
               </Button>
             )}
             

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { decode as decodePng, encode as encodePng } from "https://deno.land/x/pngs@0.1.1/mod.ts";
+import { decode as decodeJpeg } from "https://deno.land/x/jpegts@1.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,109 +9,256 @@ const corsHeaders = {
 };
 
 /**
- * Uses Lovable AI Gateway to composite a color reference thumbnail onto a B&W coloring page.
- * The AI places a small color reference in the top-left corner of the coloring page.
+ * Compositing configuration for the color reference thumbnail
  */
-// Helper to wait between requests
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+const THUMBNAIL_CONFIG = {
+  scale: 0.18,        // 18% of B&W image width
+  padding: 20,        // Pixels from edge (scaled)
+  borderWidth: 4,     // Border thickness (scaled)
+  borderColor: { r: 51, g: 51, b: 51 }, // Dark gray #333
+  shadowOffset: 3,
+  shadowBlur: 8,
+};
+
+/**
+ * Fetches an image from URL and returns raw pixel data with dimensions
+ */
+async function fetchImageData(url: string): Promise<{
+  data: Uint8Array;
+  width: number;
+  height: number;
+}> {
+  console.log(`📥 Fetching image: ${url.substring(0, 80)}...`);
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`);
+  }
+  
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  
+  // Detect format and decode
+  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
+  const isJpeg = bytes[0] === 0xFF && bytes[1] === 0xD8;
+  
+  if (isPng) {
+    console.log(`  📄 Detected PNG format`);
+    const decoded = decodePng(bytes);
+    return {
+      data: new Uint8Array(decoded.image),
+      width: decoded.width,
+      height: decoded.height,
+    };
+  } else if (isJpeg) {
+    console.log(`  📄 Detected JPEG format`);
+    const decoded = decodeJpeg(bytes);
+    // Convert RGB to RGBA
+    const rgba = new Uint8Array(decoded.width * decoded.height * 4);
+    for (let i = 0; i < decoded.width * decoded.height; i++) {
+      rgba[i * 4] = decoded.data[i * 3];
+      rgba[i * 4 + 1] = decoded.data[i * 3 + 1];
+      rgba[i * 4 + 2] = decoded.data[i * 3 + 2];
+      rgba[i * 4 + 3] = 255;
+    }
+    return {
+      data: rgba,
+      width: decoded.width,
+      height: decoded.height,
+    };
+  } else {
+    // Try WebP or other formats - fetch as PNG from a conversion service
+    throw new Error('Unsupported image format. Only PNG and JPEG are supported.');
+  }
 }
 
-async function compositeImagesWithAI(
-  bwImageUrl: string,
-  colorImageUrl: string,
-  maxRetries: number = 3
-): Promise<Uint8Array> {
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-  if (!lovableApiKey) {
-    throw new Error('LOVABLE_API_KEY not configured');
-  }
-
-  const prompt = `Create a printable coloring page by compositing these two images:
-1. Use the BLACK AND WHITE coloring image as the main background (full size)
-2. Place the COLOR image as a small reference thumbnail in the TOP-LEFT corner
-3. The thumbnail should be about 15-20% of the image width
-4. Add a thin dark border around the thumbnail
-5. Keep the rest of the coloring page exactly as-is
-6. Output should be a clean printable image`;
-
-  let lastError: Error | null = null;
+/**
+ * Draws a filled rectangle on the pixel buffer
+ */
+function fillRect(
+  buffer: Uint8Array,
+  canvasWidth: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  r: number,
+  g: number,
+  b: number,
+  a: number = 255
+) {
+  const x1 = Math.max(0, Math.floor(x));
+  const y1 = Math.max(0, Math.floor(y));
+  const x2 = Math.min(canvasWidth, Math.floor(x + width));
+  const y2 = Math.min(buffer.length / (canvasWidth * 4), Math.floor(y + height));
   
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`🔄 Attempt ${attempt}/${maxRetries} for AI compositing`);
+  for (let py = y1; py < y2; py++) {
+    for (let px = x1; px < x2; px++) {
+      const idx = (py * canvasWidth + px) * 4;
+      buffer[idx] = r;
+      buffer[idx + 1] = g;
+      buffer[idx + 2] = b;
+      buffer[idx + 3] = a;
+    }
+  }
+}
+
+/**
+ * Draws a source image onto the destination buffer with bilinear scaling
+ */
+function drawImageScaled(
+  dest: Uint8Array,
+  destWidth: number,
+  destHeight: number,
+  src: Uint8Array,
+  srcWidth: number,
+  srcHeight: number,
+  destX: number,
+  destY: number,
+  drawWidth: number,
+  drawHeight: number
+) {
+  const scaleX = srcWidth / drawWidth;
+  const scaleY = srcHeight / drawHeight;
+  
+  for (let dy = 0; dy < drawHeight; dy++) {
+    const py = destY + dy;
+    if (py < 0 || py >= destHeight) continue;
+    
+    for (let dx = 0; dx < drawWidth; dx++) {
+      const px = destX + dx;
+      if (px < 0 || px >= destWidth) continue;
       
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image-preview",
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "image_url", image_url: { url: bwImageUrl } },
-                { type: "image_url", image_url: { url: colorImageUrl } }
-              ]
-            }
-          ],
-          modalities: ["image", "text"]
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        
-        // Check for rate limiting
-        if (response.status === 429 || response.status === 500) {
-          const waitTime = attempt * 3000; // Exponential backoff: 3s, 6s, 9s
-          console.log(`⏳ Rate limited or server error, waiting ${waitTime}ms before retry...`);
-          await delay(waitTime);
-          lastError = new Error(`AI Gateway error: ${response.status}`);
-          continue;
-        }
-        
-        throw new Error(`AI Gateway error: ${response.status} - ${errorText.substring(0, 200)}`);
-      }
-
-      const data = await response.json();
-      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-      if (!imageUrl) {
-        throw new Error('No image returned from AI Gateway');
-      }
-
-      // Convert base64 data URL to Uint8Array
-      if (imageUrl.startsWith('data:image/')) {
-        const base64Data = imageUrl.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes;
-      }
-
-      // If it's a URL, fetch it
-      const imageResponse = await fetch(imageUrl);
-      const arrayBuffer = await imageResponse.arrayBuffer();
-      return new Uint8Array(arrayBuffer);
+      // Source coordinates with bilinear interpolation
+      const srcX = dx * scaleX;
+      const srcY = dy * scaleY;
       
-    } catch (error) {
-      lastError = error;
-      if (attempt < maxRetries) {
-        const waitTime = attempt * 2000;
-        console.log(`⏳ Error occurred, waiting ${waitTime}ms before retry: ${error.message}`);
-        await delay(waitTime);
+      const x0 = Math.floor(srcX);
+      const y0 = Math.floor(srcY);
+      const x1 = Math.min(x0 + 1, srcWidth - 1);
+      const y1 = Math.min(y0 + 1, srcHeight - 1);
+      
+      const xFrac = srcX - x0;
+      const yFrac = srcY - y0;
+      
+      // Get 4 source pixels
+      const idx00 = (y0 * srcWidth + x0) * 4;
+      const idx10 = (y0 * srcWidth + x1) * 4;
+      const idx01 = (y1 * srcWidth + x0) * 4;
+      const idx11 = (y1 * srcWidth + x1) * 4;
+      
+      // Bilinear interpolation for each channel
+      const destIdx = (py * destWidth + px) * 4;
+      for (let c = 0; c < 4; c++) {
+        const v00 = src[idx00 + c] || 0;
+        const v10 = src[idx10 + c] || 0;
+        const v01 = src[idx01 + c] || 0;
+        const v11 = src[idx11 + c] || 0;
+        
+        const top = v00 * (1 - xFrac) + v10 * xFrac;
+        const bottom = v01 * (1 - xFrac) + v11 * xFrac;
+        const value = top * (1 - yFrac) + bottom * yFrac;
+        
+        dest[destIdx + c] = Math.round(value);
       }
     }
   }
+}
+
+/**
+ * Composites color thumbnail onto B&W coloring page at native resolution
+ */
+async function compositeImagesCanvas(
+  bwImageUrl: string,
+  colorImageUrl: string
+): Promise<Uint8Array> {
+  console.log(`🎨 Starting canvas compositing...`);
   
-  throw lastError || new Error('Failed after max retries');
+  // Fetch both images
+  const [bwImage, colorImage] = await Promise.all([
+    fetchImageData(bwImageUrl),
+    fetchImageData(colorImageUrl),
+  ]);
+  
+  console.log(`📐 B&W image: ${bwImage.width}x${bwImage.height}`);
+  console.log(`📐 Color image: ${colorImage.width}x${colorImage.height}`);
+  
+  // Create output buffer at B&W native resolution
+  const outputWidth = bwImage.width;
+  const outputHeight = bwImage.height;
+  const outputBuffer = new Uint8Array(outputWidth * outputHeight * 4);
+  
+  // Copy B&W image as base (1:1, no scaling = no quality loss)
+  outputBuffer.set(bwImage.data);
+  
+  // Calculate thumbnail dimensions (scale based on image size)
+  const scaleFactor = outputWidth / 1024; // Reference size for scaling
+  const thumbnailWidth = Math.round(outputWidth * THUMBNAIL_CONFIG.scale);
+  const thumbnailHeight = Math.round((colorImage.height / colorImage.width) * thumbnailWidth);
+  
+  const padding = Math.round(THUMBNAIL_CONFIG.padding * scaleFactor);
+  const borderWidth = Math.max(2, Math.round(THUMBNAIL_CONFIG.borderWidth * scaleFactor));
+  
+  const thumbX = padding;
+  const thumbY = padding;
+  
+  // Draw white background (for any transparency in color image)
+  fillRect(
+    outputBuffer,
+    outputWidth,
+    thumbX - borderWidth,
+    thumbY - borderWidth,
+    thumbnailWidth + borderWidth * 2,
+    thumbnailHeight + borderWidth * 2,
+    255, 255, 255
+  );
+  
+  // Draw border
+  fillRect(
+    outputBuffer,
+    outputWidth,
+    thumbX - borderWidth,
+    thumbY - borderWidth,
+    thumbnailWidth + borderWidth * 2,
+    thumbnailHeight + borderWidth * 2,
+    THUMBNAIL_CONFIG.borderColor.r,
+    THUMBNAIL_CONFIG.borderColor.g,
+    THUMBNAIL_CONFIG.borderColor.b
+  );
+  
+  // Draw white inner area
+  fillRect(
+    outputBuffer,
+    outputWidth,
+    thumbX,
+    thumbY,
+    thumbnailWidth,
+    thumbnailHeight,
+    255, 255, 255
+  );
+  
+  // Draw color thumbnail with high-quality bilinear scaling
+  drawImageScaled(
+    outputBuffer,
+    outputWidth,
+    outputHeight,
+    colorImage.data,
+    colorImage.width,
+    colorImage.height,
+    thumbX,
+    thumbY,
+    thumbnailWidth,
+    thumbnailHeight
+  );
+  
+  console.log(`✅ Compositing complete, encoding PNG...`);
+  
+  // Encode as PNG
+  const pngBytes = encodePng(outputBuffer, outputWidth, outputHeight);
+  
+  console.log(`📦 Output PNG size: ${(pngBytes.length / 1024).toFixed(1)}KB`);
+  
+  return pngBytes;
 }
 
 serve(async (req) => {
@@ -167,19 +316,12 @@ serve(async (req) => {
         }
 
         try {
-          // Add delay between requests to avoid rate limiting (except for first)
-          if (processedCount > 0) {
-            console.log(`⏳ Waiting 2s between requests to avoid rate limiting...`);
-            await delay(2000);
-          }
+          console.log(`🎨 Processing page ${page.page_id} with canvas compositing`);
           
-          console.log(`🎨 Processing page ${page.page_id} with AI compositing`);
-          
-          // Use AI to composite the images
-          const compositedImage = await compositeImagesWithAI(
+          // Use canvas to composite the images
+          const compositedImage = await compositeImagesCanvas(
             page.coloring_image_url,
-            page.image_url,
-            3 // max retries
+            page.image_url
           );
 
           // Upload to storage
@@ -278,8 +420,8 @@ serve(async (req) => {
       );
     }
 
-    // Use AI to composite the images
-    const compositedImage = await compositeImagesWithAI(
+    // Use canvas to composite the images
+    const compositedImage = await compositeImagesCanvas(
       pageData.coloring_image_url,
       pageData.image_url
     );

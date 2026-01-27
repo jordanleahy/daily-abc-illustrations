@@ -6,15 +6,15 @@
  * into the PDF for optimal memory usage and progress tracking.
  */
 
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 import { supabase } from '@/integrations/supabase/client';
 import JSZip from 'jszip';
 
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
   onError?: (error: string, pageId?: string) => void;
-  /** If true, adds the page title as text at the bottom of each page */
-  includeTextOverlay?: boolean;
+  /** If true, uses text_image_url (images with title overlay) instead of plain image_url */
+  useTextImages?: boolean;
 }
 
 export interface PageImageData {
@@ -27,8 +27,9 @@ export interface PageImageData {
 
 /**
  * Fetches all pages with their latest image URLs for a book
+ * @param useTextImages - If true, fetches text_image_url (with title overlay) instead of image_url
  */
-export async function fetchBookPageImages(bookId: string): Promise<PageImageData[]> {
+export async function fetchBookPageImages(bookId: string, useTextImages: boolean = false): Promise<PageImageData[]> {
   // Get pages for the book
   const { data: pages, error: pagesError } = await supabase
     .from('pages')
@@ -48,17 +49,22 @@ export async function fetchBookPageImages(bookId: string): Promise<PageImageData
   const pageImagePromises = pages.map(async (page) => {
     const { data: imageData } = await supabase
       .from('page_image_urls')
-      .select('image_url')
+      .select('image_url, text_image_url')
       .eq('page_id', page.id)
       .eq('is_latest', true)
       .maybeSingle();
+
+    // Use text_image_url if requested and available, fallback to image_url
+    const selectedImageUrl = useTextImages 
+      ? (imageData?.text_image_url || imageData?.image_url || null)
+      : (imageData?.image_url || null);
 
     return {
       id: page.id,
       page_number: page.page_number,
       letter: page.letter,
       title: page.title,
-      image_url: imageData?.image_url || null
+      image_url: selectedImageUrl
     };
   });
 
@@ -272,7 +278,7 @@ export async function generatePDF(
   pages: PageImageData[], 
   options: PDFGenerationOptions = {}
 ): Promise<Uint8Array> {
-  const { onProgress, onError, includeTextOverlay = false } = options;
+  const { onProgress, onError } = options;
   
   // Filter pages with images
   const pagesWithImages = pages.filter(page => page.image_url);
@@ -284,9 +290,6 @@ export async function generatePDF(
   }
 
   const pdfDoc = await PDFDocument.create();
-  
-  // Embed font for text overlay if needed
-  const font = includeTextOverlay ? await pdfDoc.embedFont(StandardFonts.HelveticaBold) : null;
   
   let processedCount = 0;
   const failedPages: string[] = [];
@@ -348,34 +351,16 @@ export async function generatePDF(
         continue;
       }
 
-      // Create page with image dimensions + extra space for text if needed
-      const textAreaHeight = includeTextOverlay ? 60 : 0;
-      const pdfPage = pdfDoc.addPage([image.width, image.height + textAreaHeight]);
-      
-      // Draw image (offset up if we have text area)
+      // Create page with image dimensions
+      const pdfPage = pdfDoc.addPage([image.width, image.height]);
       pdfPage.drawImage(image, {
         x: 0,
-        y: textAreaHeight,
+        y: 0,
         width: image.width,
         height: image.height,
       });
       
-      // Add text overlay at the bottom if enabled
-      if (includeTextOverlay && font && page.title) {
-        const fontSize = Math.min(32, image.width / 20); // Scale font based on image width
-        const textWidth = font.widthOfTextAtSize(page.title, fontSize);
-        const xPosition = (image.width - textWidth) / 2; // Center horizontally
-        
-        pdfPage.drawText(page.title, {
-          x: xPosition,
-          y: 20, // 20px from bottom
-          size: fontSize,
-          font: font,
-          color: rgb(0, 0, 0), // Black text
-        });
-      }
-      
-      console.log(`[PDF] Added page ${page.letter} to PDF${includeTextOverlay ? ' with title overlay' : ''}`);
+      console.log(`[PDF] Added page ${page.letter} to PDF`);
 
       processedCount++;
     } catch (error) {
@@ -411,9 +396,10 @@ export async function generateBookPDF(
   options: PDFGenerationOptions = {}
 ): Promise<void> {
   try {
-    // Fetch page images
-    console.log(`[PDF] Fetching images for book ${bookId}...`);
-    const pages = await fetchBookPageImages(bookId);
+    // Fetch page images (use text images if requested)
+    const useTextImages = options.useTextImages ?? false;
+    console.log(`[PDF] Fetching images for book ${bookId}... (useTextImages: ${useTextImages})`);
+    const pages = await fetchBookPageImages(bookId, useTextImages);
     console.log(`[PDF] Found ${pages.length} total pages`);
     
     const pagesWithImages = pages.filter(p => p.image_url);

@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { PublicPageImage } from '@/components/daily-published';
 import { Calendar, BookOpen, Download, Plus, CheckCircle, Lock, Loader2 } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
-import { generateBookPDF } from '@/services/pdfGenerator';
+import { generateBookPDF, generateColoringBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
@@ -51,6 +51,7 @@ export default function UserLibraryDetail() {
   const { accessState, isReady } = useAccessResolver();
   
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingColoring, setIsDownloadingColoring] = useState(false);
   
   // Preload all page images for instant display (using joined data)
   useDailyPublishedImagePreloader(pages, dailyContent?.book_id, pageImages);
@@ -133,6 +134,36 @@ export default function UserLibraryDetail() {
       });
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadColoringPDF = async () => {
+    if (!dailyContent?.book_id || !pages.length) return;
+    
+    setIsDownloadingColoring(true);
+    try {
+      await generateColoringBookPDF(dailyContent.book_id, dailyContent.title, {
+        onProgress: (current, total, currentPage) => {
+          console.log(`Processing coloring page ${currentPage}: ${current} of ${total}`);
+        },
+        onError: (error, pageId) => {
+          console.error(`Error processing coloring page ${pageId}:`, error);
+        }
+      });
+
+      toast({
+        title: "Success",
+        description: "Coloring book PDF downloaded successfully!",
+      });
+    } catch (error) {
+      console.error('Error generating coloring book PDF:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate coloring book PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingColoring(false);
     }
   };
 
@@ -283,6 +314,23 @@ export default function UserLibraryDetail() {
                     <Download className="h-5 w-5" />
                   )}
                   {isDownloading ? 'Generating...' : 'Download book'}
+                </Button>
+              </div>
+              
+              {/* Second row for coloring book download */}
+              <div className="w-full flex justify-end">
+                <Button
+                  onClick={handleDownloadColoringPDF}
+                  disabled={isDownloadingColoring}
+                  variant="outline"
+                  className={`shrink-0 ${isDownloadingColoring ? 'opacity-75 cursor-wait' : ''}`}
+                >
+                  {isDownloadingColoring ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Download className="h-5 w-5" />
+                  )}
+                  {isDownloadingColoring ? 'Generating...' : 'Download Coloring Book'}
                 </Button>
               </div>
             </div>

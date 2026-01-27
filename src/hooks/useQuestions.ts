@@ -283,27 +283,34 @@ export function useReorderAgentQuestion() {
       const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
       if (targetIndex < 0 || targetIndex >= agentQuestions.length) return;
 
-      // Reassign sort_order values based on current positions, then swap
-      // This ensures unique sort_order values even if they were all 0
-      const updates: { id: string; sort_order: number }[] = agentQuestions.map((q, idx) => ({
-        id: q.id,
-        sort_order: idx,
-      }));
+      // Get the two items to swap
+      const currentItem = agentQuestions[currentIndex];
+      const targetItem = agentQuestions[targetIndex];
 
-      // Swap the positions
-      const temp = updates[currentIndex].sort_order;
-      updates[currentIndex].sort_order = updates[targetIndex].sort_order;
-      updates[targetIndex].sort_order = temp;
+      // Use a temporary negative value to avoid unique constraint violation during swap
+      // Step 1: Set current item to temporary value (-1)
+      const { error: tempError } = await supabase
+        .from('agent_questions')
+        .update({ sort_order: -1 })
+        .eq('id', currentItem.id);
+      
+      if (tempError) throw tempError;
 
-      // Update all items with their new sort_order
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('agent_questions')
-          .update({ sort_order: update.sort_order })
-          .eq('id', update.id);
-        
-        if (error) throw error;
-      }
+      // Step 2: Move target item to current's position
+      const { error: targetError } = await supabase
+        .from('agent_questions')
+        .update({ sort_order: currentIndex })
+        .eq('id', targetItem.id);
+      
+      if (targetError) throw targetError;
+
+      // Step 3: Move current item to target's position
+      const { error: currentError } = await supabase
+        .from('agent_questions')
+        .update({ sort_order: targetIndex })
+        .eq('id', currentItem.id);
+      
+      if (currentError) throw currentError;
     },
     onMutate: async (variables) => {
       // Cancel outgoing refetches

@@ -473,6 +473,9 @@ serve(async (req) => {
     // Determine which agent and system prompt to use
     let systemPromptContent: string;
     let agentSource: string;
+    
+    // Store agent data for model settings (accessible in API call)
+    let agent: { instructions: string; name: string; model: string; max_completion_tokens: number; top_p: number } | null = null;
 
     // Track enabled questions for this agent (will be populated if bookType is set)
     let enabledQuestions: Set<string> = new Set();
@@ -483,13 +486,15 @@ serve(async (req) => {
       const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
       console.log(`📚 Book type: ${bookType} → Agent: ${agentType}`);
       
-      // Query database for specialized agent
-      const { data: agent } = await supabase
+      // Query database for specialized agent (include model settings)
+      const { data: agentData } = await supabase
         .from('agents')
-        .select('instructions, name')
+        .select('instructions, name, model, max_completion_tokens, top_p')
         .eq('type', agentType)
         .eq('is_latest', true)
         .single();
+      
+      agent = agentData;
       
       // Fetch enabled questions for this agent type WITH full question details (including lookup columns and conditionals)
       const { data: agentQuestionsData } = await supabase
@@ -943,6 +948,13 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 
+    // Use agent model settings from database, with sensible defaults
+    const modelToUse = agent?.model || 'google/gemini-2.5-flash';
+    const maxTokens = agent?.max_completion_tokens || 8000;
+    const topP = agent?.top_p || 0.95;
+    
+    console.log(`🧠 Model config: ${modelToUse}, max_tokens: ${maxTokens}, top_p: ${topP}`);
+
     // Call Lovable AI Gateway with streaming
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -951,8 +963,10 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: modelToUse,
         messages: allMessages,
+        max_completion_tokens: maxTokens,
+        top_p: topP,
         stream: true,
       }),
     });

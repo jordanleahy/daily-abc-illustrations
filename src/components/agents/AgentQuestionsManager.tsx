@@ -101,15 +101,24 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
     );
   }
 
+  // Pre-compute enabled questions for boundary detection
+  const enabledQuestions = sortedQuestions.filter(q => q.isEnabled);
+
   const questionsList = (
     <div className="space-y-3">
-      {sortedQuestions.map((question, index) => {
+      {sortedQuestions.map((question) => {
         const isPending = toggleMutation.isPending && 
           toggleMutation.variables?.questionId === question.id;
         const isReordering = reorderMutation.isPending &&
           reorderMutation.variables?.questionId === question.id;
-        const isFirst = index === 0;
-        const isLast = index === sortedQuestions.length - 1;
+        
+        // Calculate position within enabled group only
+        const enabledIndex = enabledQuestions.findIndex(q => q.id === question.id);
+        const isInEnabledGroup = enabledIndex !== -1;
+        
+        // Reorder buttons only work within enabled group
+        const canMoveUp = isInEnabledGroup && enabledIndex > 0;
+        const canMoveDown = isInEnabledGroup && enabledIndex < enabledQuestions.length - 1;
 
         return (
           <div
@@ -163,8 +172,9 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                disabled={isFirst || isReordering}
+                disabled={!canMoveUp || isReordering}
                 onClick={() => handleReorder(question.id, 'up')}
+                title={!isInEnabledGroup ? 'Enable question to reorder' : undefined}
               >
                 <ChevronUp className="h-5 w-5" />
               </Button>
@@ -172,8 +182,9 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                disabled={isLast || isReordering}
+                disabled={!canMoveDown || isReordering}
                 onClick={() => handleReorder(question.id, 'down')}
+                title={!isInEnabledGroup ? 'Enable question to reorder' : undefined}
               >
                 <ChevronDown className="h-5 w-5" />
               </Button>

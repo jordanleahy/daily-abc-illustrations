@@ -264,18 +264,19 @@ export function useReorderAgentQuestion() {
       questionId: string;
       direction: 'up' | 'down';
     }) => {
-      // Get all agent questions sorted by sort_order, then by created_at for stable ordering
+      // Get ONLY ENABLED agent questions sorted by sort_order for reordering within enabled group
       const { data: agentQuestions, error: fetchError } = await supabase
         .from('agent_questions')
         .select('id, question_id, sort_order')
         .eq('agent_type', agentType)
+        .eq('is_enabled', true)  // Only enabled questions can be reordered
         .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (fetchError) throw fetchError;
       if (!agentQuestions || agentQuestions.length < 2) return;
 
-      // Find current index
+      // Find current index within enabled questions
       const currentIndex = agentQuestions.findIndex(q => q.question_id === questionId);
       if (currentIndex === -1) return;
 
@@ -287,6 +288,10 @@ export function useReorderAgentQuestion() {
       const currentItem = agentQuestions[currentIndex];
       const targetItem = agentQuestions[targetIndex];
 
+      // Swap actual sort_order VALUES (not array indices)
+      const currentSortOrder = currentItem.sort_order;
+      const targetSortOrder = targetItem.sort_order;
+
       // Use a temporary negative value to avoid unique constraint violation during swap
       // Step 1: Set current item to temporary value (-1)
       const { error: tempError } = await supabase
@@ -296,18 +301,18 @@ export function useReorderAgentQuestion() {
       
       if (tempError) throw tempError;
 
-      // Step 2: Move target item to current's position
+      // Step 2: Move target item to current's ACTUAL sort_order value
       const { error: targetError } = await supabase
         .from('agent_questions')
-        .update({ sort_order: currentIndex })
+        .update({ sort_order: currentSortOrder })
         .eq('id', targetItem.id);
       
       if (targetError) throw targetError;
 
-      // Step 3: Move current item to target's position
+      // Step 3: Move current item to target's ACTUAL sort_order value
       const { error: currentError } = await supabase
         .from('agent_questions')
-        .update({ sort_order: targetIndex })
+        .update({ sort_order: targetSortOrder })
         .eq('id', currentItem.id);
       
       if (currentError) throw currentError;

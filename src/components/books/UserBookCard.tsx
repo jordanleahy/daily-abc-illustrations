@@ -22,10 +22,8 @@ import { getClothingBrandLabel } from '@/types/clothingBrand';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
-import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
-import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2 } from 'lucide-react';
+import { BookOpen, Copy, Link2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2 } from 'lucide-react';
 import { generateBookPDF, generateColoringBookPDF } from '@/services/pdfGenerator';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
@@ -69,7 +67,6 @@ export function UserBookCard({
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const { mutate: archiveBook, isPending: isArchiving } = useArchiveBook();
-  const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const [isYouTubeDrawerOpen, setIsYouTubeDrawerOpen] = useState(false);
   const [isLinkedInDrawerOpen, setIsLinkedInDrawerOpen] = useState(false);
   const [isEtsyDrawerOpen, setIsEtsyDrawerOpen] = useState(false);
@@ -114,67 +111,6 @@ export function UserBookCard({
   
   const shouldLoadImmediately = index < 6;
   const shouldRender = shouldLoadImmediately || inView;
-
-  const handleCopyMarketingPost = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsCopyingMarketingPost(true);
-    
-    try {
-      // Create the text Promise immediately in user gesture context (iOS Safari fix)
-      const textPromise = async (): Promise<Blob> => {
-        // Fetch content pages inside the promise
-        const { data: pages, error } = await supabase
-          .from('pages')
-          .select('title, page_number')
-          .eq('book_id', book.id)
-          .gte('page_number', 3)
-          .order('page_number', { ascending: true });
-        
-        if (error) throw error;
-        
-        const pageTitles = pages?.map(p => p.title) || [];
-        // Use daily_published.slug for consistency with OG metadata, fallback to marketing_url
-        const slug = publicationStatus?.slug || book.marketing_url;
-        const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${slug}`;
-        const isDigraph = book.metadata?.bookType === 'digraphs';
-        
-        const post = isDigraph 
-          ? generateDigraphMarketingPost({
-              bookName: book.book_name,
-              bookDescription: book.book_description,
-              characterTheme: book.metadata?.characterTheme || null,
-              marketingUrl,
-              pageTitles,
-            })
-          : generateGenericMarketingPost({
-              bookName: book.book_name,
-              bookDescription: book.book_description,
-              characterTheme: book.metadata?.characterTheme || null,
-              marketingUrl,
-              bookType: book.metadata?.bookType || null,
-              // Discovery attributes for dynamic hashtags
-              season: book.metadata?.season || null,
-              environment: book.metadata?.environment || null,
-              clothingBrand: book.metadata?.clothingBrand || null,
-              location: book.metadata?.location || null,
-            });
-        
-        return new Blob([post], { type: 'text/plain' });
-      };
-      
-      // Call clipboard API immediately with the Promise (keeps user gesture context)
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'text/plain': textPromise() })
-      ]);
-      
-      toast({ title: "Marketing post copied!" });
-    } catch (error) {
-      console.error('Failed to copy marketing post:', error);
-      toast({ title: "Failed to copy", variant: "destructive" });
-    } finally {
-      setIsCopyingMarketingPost(false);
-    }
-  };
 
   const handleOpenYouTubeDrawer = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -448,20 +384,6 @@ export function UserBookCard({
               >
                 <Link2 className="h-4 w-4" />
                 Landing Page
-              </Button>
-            )}
-
-            {/* Marketing Post - All library books */}
-            {publicationStatus && book.marketing_url && (
-              <Button 
-                variant="outline"
-                size="sm"
-                className="w-full gap-2"
-                onClick={handleCopyMarketingPost}
-                disabled={isCopyingMarketingPost}
-              >
-                <Share2 className="h-4 w-4" />
-                {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
               </Button>
             )}
 

@@ -25,7 +25,8 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin, Store } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2 } from 'lucide-react';
+import { generateBookPDF } from '@/services/pdfGenerator';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -73,6 +74,7 @@ export function UserBookCard({
   const [isLinkedInDrawerOpen, setIsLinkedInDrawerOpen] = useState(false);
   const [isEtsyDrawerOpen, setIsEtsyDrawerOpen] = useState(false);
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
+  const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
   const coverImageUrl = book.coverImageUrl;
 
   // Check printable coloring status and missing images for this book
@@ -529,7 +531,40 @@ export function UserBookCard({
               onOpenChange={setIsEtsyDrawerOpen}
               book={book}
             />
-            
+
+            {/* Download Color PDF - All library books */}
+            {publicationStatus && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                disabled={isDownloadingColorPdf}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setIsDownloadingColorPdf(true);
+                  try {
+                    await generateBookPDF(book.id, `${book.book_name}-Color`);
+                    toast({ title: 'PDF downloaded successfully' });
+                  } catch (error) {
+                    console.error('Failed to generate color PDF:', error);
+                    toast({ 
+                      title: 'Failed to generate PDF',
+                      description: error instanceof Error ? error.message : 'Unknown error',
+                      variant: 'destructive'
+                    });
+                  } finally {
+                    setIsDownloadingColorPdf(false);
+                  }
+                }}
+              >
+                {isDownloadingColorPdf ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isDownloadingColorPdf ? 'Generating...' : 'Download Color PDF'}
+              </Button>
+            )}
             
 {/* Social Post Tracker with OG Assets - Always visible for library books */}
             {publicationStatus && (

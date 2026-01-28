@@ -7,6 +7,7 @@ import {
   logImageGenerationUsage,
   buildImageGenerationMetadata
 } from "../_shared/aiModelConstants.ts";
+import { OPPOSITES_SPLIT_SCREEN_RULES } from "../_shared/safeSpaceConfig.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -106,6 +107,16 @@ serve(async (req) => {
       );
     }
 
+    // Fetch book category to determine if this is an opposites book
+    const { data: bookData } = await supabase
+      .from('books')
+      .select('category')
+      .eq('id', bookId)
+      .single();
+    
+    const bookCategory = bookData?.category || '';
+    const isOppositesBook = bookCategory === 'opposites';
+
     // Determine which model to use based on page type
     const useProModel = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
     const selectedModel = useProModel ? IMAGE_GENERATION_MODEL_PRO : IMAGE_GENERATION_MODEL;
@@ -124,10 +135,17 @@ serve(async (req) => {
     
     // Sanitize the prompt to remove any text overlay instructions
     const sanitizedPrompt = sanitizeImagePrompt(prompt);
-    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + sanitizedPrompt;
+    
+    // Apply split-screen composition rules for opposites book content pages
+    const isOppositesContentPage = isOppositesBook && pageType === 'content';
+    const oppositesSuffix = isOppositesContentPage ? OPPOSITES_SPLIT_SCREEN_RULES : '';
+    
+    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + sanitizedPrompt + oppositesSuffix;
     
     console.log('🎨 Generating color image for page:', pageId);
     console.log('📄 Page type:', pageType || 'unknown');
+    console.log('📚 Book category:', bookCategory || 'unknown');
+    console.log('🔀 Opposites split-screen rules applied:', isOppositesContentPage);
     console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
     console.log('📐 Square format enforced:', requiresSquareFormat);
     console.log('📕 Cover title included:', isCoverPage && bookTitle ? bookTitle : 'N/A');

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/hooks/useGoogleChat';
 import type { SuggestedAction } from '@/hooks/useGoogleChat';
 import { ImageButton } from './ImageButton';
+import { SuggestionButton } from './SuggestionButton';
 import { characterThemes } from '@/config/characterThemes';
 import { BookRecommendationCard } from './BookRecommendationCard';
 import { parseRecommendations } from '@/utils/recommendationParser';
@@ -147,19 +148,15 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
                 </div>
               )}
               
-              {/* Text buttons - full width blocks */}
+              {/* Text buttons - full width blocks with info icons */}
               {textActions.length > 0 && (
                 <div className="flex flex-col gap-2 pt-2">
                   {textActions.map((action) => (
-                    <Button
+                    <SuggestionButton
                       key={action.id}
-                      variant="outline"
-                      size="sm"
+                      action={action}
                       onClick={() => onQuickReply?.(action)}
-                      className="text-xs w-full"
-                    >
-                      {action.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()}
-                    </Button>
+                    />
                   ))}
                   {/* Other button - focuses input for custom text */}
                   <Button

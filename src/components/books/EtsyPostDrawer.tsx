@@ -32,7 +32,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
   const { toast } = useToast();
   const [titleCopied, setTitleCopied] = useState(false);
   const [descriptionCopied, setDescriptionCopied] = useState(false);
-  const [tagsCopied, setTagsCopied] = useState(false);
+  const [copiedTagIndex, setCopiedTagIndex] = useState<number | null>(null);
   const [isMarkingListed, setIsMarkingListed] = useState(false);
   const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
   const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
@@ -48,7 +48,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
     resort: book.metadata?.resort || null,
   });
 
-  const handleCopy = async (e: React.MouseEvent, text: string, type: 'title' | 'description' | 'tags') => {
+  const handleCopy = async (e: React.MouseEvent, text: string, type: 'title' | 'description') => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -57,12 +57,9 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
       if (type === 'title') {
         setTitleCopied(true);
         setTimeout(() => setTitleCopied(false), 2000);
-      } else if (type === 'description') {
+      } else {
         setDescriptionCopied(true);
         setTimeout(() => setDescriptionCopied(false), 2000);
-      } else {
-        setTagsCopied(true);
-        setTimeout(() => setTagsCopied(false), 2000);
       }
       
       toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} copied!` });
@@ -144,8 +141,6 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
     }
   };
 
-  const tagsText = tags.join(', ');
-
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[90vh]">
@@ -219,30 +214,36 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
               <label className="text-sm font-medium text-foreground">
                 Tags <span className="text-muted-foreground font-normal">({tags.length}/13)</span>
               </label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={(e) => handleCopy(e, tagsText, 'tags')}
-              >
-                {tagsCopied ? (
-                  <>
-                    <Check className="h-3 w-3 text-primary" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
+              <span className="text-xs text-muted-foreground">Tap a tag to copy</span>
             </div>
             <div className="p-3 bg-muted rounded-lg">
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
-                    {tag}
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="text-xs cursor-pointer hover:bg-primary/20 active:scale-95 transition-all"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      try {
+                        await copyToClipboard(tag);
+                        setCopiedTagIndex(index);
+                        setTimeout(() => setCopiedTagIndex(null), 1500);
+                        toast({ title: `Copied "${tag}"` });
+                      } catch (error) {
+                        toast({ title: 'Failed to copy', variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    {copiedTagIndex === index ? (
+                      <span className="flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        {tag}
+                      </span>
+                    ) : (
+                      tag
+                    )}
                   </Badge>
                 ))}
               </div>

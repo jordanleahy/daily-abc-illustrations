@@ -15,6 +15,7 @@ import { EtsyPostDrawer } from '@/components/books/EtsyPostDrawer';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useArchiveBook } from '@/hooks/useArchiveBook';
+import { useSocialPostTracking } from '@/hooks/useSocialPostTracking';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getThemeDisplayName } from '@/types/characterTheme';
@@ -23,7 +24,7 @@ import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2 } from 'lucide-react';
+import { BookOpen, Copy, Link2, Archive, Palette, Printer, Youtube, Linkedin, Store, Download, Loader2, Check } from 'lucide-react';
 import { generateBookPDF, generateColoringBookPDF, generateStickersPDF } from '@/services/pdfGenerator';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
@@ -67,6 +68,8 @@ export function UserBookCard({
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const { mutate: archiveBook, isPending: isArchiving } = useArchiveBook();
+  const { postedPlatforms } = useSocialPostTracking(book.id);
+  const isEtsyPosted = postedPlatforms.includes('etsy');
   const [isYouTubeDrawerOpen, setIsYouTubeDrawerOpen] = useState(false);
   const [isLinkedInDrawerOpen, setIsLinkedInDrawerOpen] = useState(false);
   const [isEtsyDrawerOpen, setIsEtsyDrawerOpen] = useState(false);
@@ -438,7 +441,10 @@ export function UserBookCard({
               <Button 
                 variant="outline"
                 size="sm"
-                className="w-full gap-2"
+                className={cn(
+                  "w-full gap-2",
+                  isEtsyPosted && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsEtsyDrawerOpen(true);
@@ -446,6 +452,7 @@ export function UserBookCard({
               >
                 <Store className="h-4 w-4" />
                 Etsy
+                {isEtsyPosted && <Check className="h-3 w-3" />}
               </Button>
             )}
             
@@ -454,6 +461,7 @@ export function UserBookCard({
               open={isEtsyDrawerOpen}
               onOpenChange={setIsEtsyDrawerOpen}
               book={book}
+              onPosted={() => queryClient.invalidateQueries({ queryKey: ['social-posts', book.id] })}
             />
 
             {/* Download Color PDF - All library books */}

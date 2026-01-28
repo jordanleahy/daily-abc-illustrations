@@ -48,7 +48,9 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
     resort: book.metadata?.resort || null,
   });
 
-  const handleCopy = async (text: string, type: 'title' | 'description' | 'tags') => {
+  const handleCopy = async (e: React.MouseEvent, text: string, type: 'title' | 'description' | 'tags') => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await copyToClipboard(text);
       
@@ -172,7 +174,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
                 variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                onClick={() => handleCopy(title, 'title')}
+                onClick={(e) => handleCopy(e, title, 'title')}
               >
                 {titleCopied ? (
                   <Check className="h-4 w-4 text-primary" />
@@ -191,7 +193,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
                 variant="ghost"
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(description, 'description')}
+                onClick={(e) => handleCopy(e, description, 'description')}
               >
                 {descriptionCopied ? (
                   <>
@@ -221,7 +223,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
                 variant="ghost"
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(tagsText, 'tags')}
+                onClick={(e) => handleCopy(e, tagsText, 'tags')}
               >
                 {tagsCopied ? (
                   <>
@@ -255,7 +257,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
                 variant="outline"
                 size="sm"
                 className="w-full gap-2"
-                onClick={handleDownloadColorPdf}
+                onClick={(e) => { e.stopPropagation(); handleDownloadColorPdf(); }}
                 disabled={isDownloadingColorPdf}
               >
                 <Palette className="h-4 w-4" />
@@ -265,7 +267,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
                 variant="outline"
                 size="sm"
                 className="w-full gap-2"
-                onClick={handleDownloadColoringPdf}
+                onClick={(e) => { e.stopPropagation(); handleDownloadColoringPdf(); }}
                 disabled={isDownloadingColoringPdf}
               >
                 <FileText className="h-4 w-4" />
@@ -277,7 +279,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
 
         <DrawerFooter className="pt-4">
           <Button
-            onClick={handleMarkListed}
+            onClick={(e) => { e.stopPropagation(); handleMarkListed(); }}
             disabled={isMarkingListed}
             className="w-full gap-2"
           >
@@ -286,7 +288,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
           </Button>
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={(e) => { e.stopPropagation(); onOpenChange(false); }}
             className="w-full"
           >
             Close

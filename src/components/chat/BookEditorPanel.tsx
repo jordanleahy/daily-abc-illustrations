@@ -481,45 +481,48 @@ export function BookEditorPanel({
     if (!selectedCharacterIds || selectedCharacterIds.length === 0) {
       // Fallback to color-based detection if no characters selected
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with a white Samoyed dog
-- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog
+- Find ALL blue dogs in the image and replace EVERY ONE with a white Samoyed dog. There may be multiple blue dogs - replace ALL of them.
+- Find ALL orange or reddish-brown dogs in the image and replace EVERY ONE with a Bernese Mountain Dog. There may be multiple - replace ALL of them.
 
 CRITICAL REQUIREMENTS:
-1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
-2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
-3. POSITION & POSE: Keep the dog in the same position and body pose
-4. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
-5. PRESERVE SCENE: Keep all other elements unchanged`;
+1. MULTIPLE INSTANCES: The same character may appear multiple times in the image (e.g., split-screen scenes). You MUST replace EVERY instance.
+2. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
+3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
+4. POSITION & POSE: Keep each dog in the same position and body pose
+5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+6. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     // Build character-specific replacement instructions
     const replacements = selectedCharacterIds
       .map(id => CHARACTER_TO_WESTIN_BREED[id])
       .filter(Boolean)
-      .map(char => `- Replace ${char.name} with ${char.breed}`);
+      .map(char => `- Find ALL instances of ${char.name} in the image and replace EVERY ONE with ${char.breed}`);
 
     if (replacements.length === 0) {
       // Characters not in our mapping - use generic approach
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with a white Samoyed dog
-- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog
+- Find ALL blue dogs in the image and replace EVERY ONE with a white Samoyed dog. There may be multiple blue dogs - replace ALL of them.
+- Find ALL orange or reddish-brown dogs in the image and replace EVERY ONE with a Bernese Mountain Dog. There may be multiple - replace ALL of them.
 
 CRITICAL REQUIREMENTS:
-1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
-2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
-3. POSITION & POSE: Keep the dog in the same position and body pose
-4. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
-5. PRESERVE SCENE: Keep all other elements unchanged`;
+1. MULTIPLE INSTANCES: The same character may appear multiple times in the image (e.g., split-screen scenes). You MUST replace EVERY instance.
+2. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
+3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
+4. POSITION & POSE: Keep each dog in the same position and body pose
+5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+6. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     return `Please make these changes to the image:
 ${replacements.join('\n')}
 
 CRITICAL REQUIREMENTS:
-1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
-2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
-3. POSITION & POSE: Keep each dog in the same position and body pose
-4. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
+1. MULTIPLE INSTANCES: The same character may appear multiple times in the image (e.g., split-screen scenes). You MUST replace EVERY instance of each character.
+2. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
+3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
+4. POSITION & POSE: Keep each dog in the same position and body pose
+5. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
 6. PRESERVE SCENE: Keep all other elements unchanged`;
   };
 

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'linkedin' | 'ig_subscribers';
+export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'linkedin' | 'ig_subscribers' | 'etsy';
 
 interface SocialPost {
   id: string;

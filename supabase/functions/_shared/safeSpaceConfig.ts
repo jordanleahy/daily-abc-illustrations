@@ -33,6 +33,36 @@ export interface SafeSpaceConfig {
   negativePrompts: string;
 }
 
+/**
+ * Split-screen composition rules specifically for Opposites books
+ * Ensures left/right panels fill 100% height of the image
+ */
+export const OPPOSITES_SPLIT_SCREEN_RULES = `
+--- CRITICAL SPLIT-SCREEN COMPOSITION FOR OPPOSITES ---
+
+**MANDATORY FULL-HEIGHT PANELS:**
+1. The image MUST be divided into exactly TWO vertical panels (left and right)
+2. EACH panel MUST fill 100% of the image HEIGHT - no gaps at top or bottom
+3. The left and right scenes MUST extend from the very TOP edge to the very BOTTOM edge
+4. NO horizontal whitespace or padding between the panels and the image boundaries
+5. The dividing line between panels should be a clean vertical split at the center
+
+**PANEL COMPOSITION:**
+- LEFT PANEL: Shows the first opposite concept, fills entire left half from top to bottom
+- RIGHT PANEL: Shows the contrasting opposite concept, fills entire right half from top to bottom
+- Both panels share a continuous background that flows edge-to-edge
+- Characters and elements are positioned within each panel but the SCENE fills the full height
+
+**NEGATIVE CONSTRAINTS:**
+- NEVER leave empty space above or below the scene content
+- NEVER create "floating" panels with margins around them
+- NEVER add decorative borders that shrink the scene area
+- The sky/background MUST extend to the top edge
+- The ground/floor MUST extend to the bottom edge
+
+These split-screen rules are MANDATORY and override any conflicting composition instructions.
+`;
+
 const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
   '1:1': {
     aspectRatio: '1:1 Square Format',
@@ -132,4 +162,12 @@ These composition rules MUST override any conflicting instructions above. Ensure
  */
 export function getAllSafeSpaceConfigs(): Record<string, SafeSpaceConfig> {
   return { ...SAFE_SPACE_CONFIGS };
+}
+
+/**
+ * Append split-screen composition rules for Opposites book prompts
+ * This ensures left/right panels fill 100% height
+ */
+export function appendOppositesSplitScreenRules(originalPrompt: string): string {
+  return originalPrompt + OPPOSITES_SPLIT_SCREEN_RULES;
 }

@@ -32,6 +32,15 @@ function sanitizeImagePrompt(prompt: string): string {
   // Remove **Rhyme Pair:** lines
   clean = clean.replace(/\*\*Rhyme Pair:\*\*[^\n]*\n?/gi, '');
   
+  // Remove bullet-format Text Overlay lines (entire line including quoted content)
+  clean = clean.replace(/^-\s*\*{0,2}Text Overlay\*{0,2}:\s*[^\n]*\n?/gim, '');
+  
+  // Remove bullet-format Opposite Pair lines (entire line)
+  clean = clean.replace(/^-\s*\*{0,2}Opposite Pair\*{0,2}:\s*[^\n]*\n?/gim, '');
+  
+  // Remove any remaining "Text Overlay" references with quoted content
+  clean = clean.replace(/\bText Overlay\b[:\s]*["'][^"']*["']/gi, '');
+  
   // Remove standalone quoted text lines (rhymes in quotes)
   clean = clean.replace(/^[""][^""]+[""]\.?\s*$/gm, '');
   

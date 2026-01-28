@@ -53,9 +53,10 @@ function sanitizeImagePrompt(prompt: string): string {
   // Clean up extra whitespace
   clean = clean.replace(/\n{3,}/g, '\n\n').trim();
   
-  // Ensure proper ending if not present
-  if (!clean.toLowerCase().includes('no text overlay')) {
-    clean = clean.replace(/\.?\s*$/, '. No text overlays. Clean illustration only.');
+  // Append strong negative prompt enforcement for content pages
+  const negativePrompt = 'No text overlays. DO NOT add any text, labels, signs, words, letters, captions, or written content. Clean illustration only.';
+  if (!clean.toLowerCase().includes('do not add any text')) {
+    clean = clean.replace(/\.?\s*$/, '. ' + negativePrompt);
   }
   
   return clean;

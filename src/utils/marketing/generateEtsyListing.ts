@@ -12,6 +12,16 @@ interface EtsyListingParams {
   pageCount?: number;
   city?: string | null;
   resort?: string | null;
+  // Additional discovery attributes
+  season?: string | null;
+  location?: string | null;
+  environment?: string | null;
+  clothingBrand?: string | null;
+  gradeLevel?: string | null;
+  mannerType?: string | null;
+  mannersSetting?: string | null;
+  numberRange?: string | null;
+  letterCase?: string | null;
 }
 
 interface EtsyListing {
@@ -37,6 +47,11 @@ function getSubjectType(bookType: string | null): string {
     shapes: 'Shapes',
     bedtime: 'Bedtime',
     feelings: 'Feelings',
+    manners: 'Manners',
+    'sight-words': 'Sight Words',
+    'first-words': 'First Words',
+    animals: 'Animals',
+    cvc: 'CVC Words',
   };
   
   return subjectMap[bookType.toLowerCase()] || 'Coloring';
@@ -58,6 +73,11 @@ function getBookTypeKeyword(bookType: string | null): string {
     shapes: 'Shapes Coloring Book',
     bedtime: 'Bedtime Coloring Book',
     feelings: 'Feelings Coloring Book',
+    manners: 'Manners Coloring Book',
+    'sight-words': 'Sight Words Coloring Book',
+    'first-words': 'First Words Coloring Book',
+    animals: 'Animals Coloring Book',
+    cvc: 'CVC Words Coloring Book',
   };
   
   return typeMap[bookType.toLowerCase()] || 'Coloring Book';
@@ -78,6 +98,23 @@ function getAgeKeyword(targetAge: string | null): string {
   };
   
   return ageMap[targetAge] || 'Kids';
+}
+
+/**
+ * Format grade level for tags
+ */
+function formatGradeLevel(gradeLevel: string | null): string {
+  if (!gradeLevel) return '';
+  
+  const gradeMap: Record<string, string> = {
+    'pre-k': 'Pre-K',
+    'kindergarten': 'Kindergarten',
+    '1st': '1st Grade',
+    '2nd': '2nd Grade',
+    '3rd': '3rd Grade',
+  };
+  
+  return gradeMap[gradeLevel.toLowerCase()] || gradeLevel;
 }
 
 /**
@@ -104,6 +141,60 @@ function formatResort(resort: string | null): string {
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
+}
+
+/**
+ * Format season for display
+ */
+function formatSeason(season: string | null): string {
+  if (!season) return '';
+  
+  const seasonMap: Record<string, string> = {
+    'WINTER': 'Winter',
+    'SPRING': 'Spring',
+    'SUMMER': 'Summer',
+    'FALL': 'Fall',
+    'AUTUMN': 'Autumn',
+  };
+  
+  return seasonMap[season.toUpperCase()] || season.charAt(0).toUpperCase() + season.slice(1).toLowerCase();
+}
+
+/**
+ * Format environment for tags
+ */
+function formatEnvironment(environment: string | null): string {
+  if (!environment) return '';
+  
+  const envMap: Record<string, string> = {
+    'SNOWBOARD_RESORT': 'Snowboard',
+    'SKI_RESORT': 'Ski Resort',
+    'BEACH': 'Beach',
+    'FOREST': 'Forest',
+    'CITY': 'City',
+    'FARM': 'Farm',
+    'JUNGLE': 'Jungle',
+    'OCEAN': 'Ocean',
+    'MOUNTAIN': 'Mountain',
+  };
+  
+  return envMap[environment.toUpperCase()] || environment.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
+/**
+ * Format clothing brand for tags
+ */
+function formatClothingBrand(brand: string | null): string {
+  if (!brand) return '';
+  
+  const brandMap: Record<string, string> = {
+    'BURTON': 'Burton',
+    'PATAGONIA': 'Patagonia',
+    'NORTH_FACE': 'North Face',
+    'COLUMBIA': 'Columbia',
+  };
+  
+  return brandMap[brand.toUpperCase()] || brand.charAt(0).toUpperCase() + brand.slice(1).toLowerCase();
 }
 
 /**
@@ -267,6 +358,15 @@ function generateDescription(
       case 'shapes':
         description += `This shapes book helps children develop spatial awareness and shape recognition.\n\n`;
         break;
+      case 'sight-words':
+        description += `This sight words book helps early readers recognize high-frequency words for fluent reading.\n\n`;
+        break;
+      case 'opposites':
+        description += `This opposites book teaches comparison concepts and vocabulary building.\n\n`;
+        break;
+      case 'manners':
+        description += `This manners book teaches social skills and polite behavior through fun illustrations.\n\n`;
+        break;
       default:
         description += `This educational coloring book makes learning fun and accessible for young learners.\n\n`;
     }
@@ -281,20 +381,32 @@ function generateDescription(
 
 /**
  * Generate Etsy tags (max 13, each max 20 chars)
+ * Incorporates all discovery attributes: theme, book type, location, season, environment, brand, etc.
  */
 function generateTags(
   bookType: string | null,
   characterTheme: string | null,
   targetAge: string | null,
   city: string | null,
-  resort: string | null
+  resort: string | null,
+  season: string | null,
+  location: string | null,
+  environment: string | null,
+  clothingBrand: string | null,
+  gradeLevel: string | null,
+  mannerType: string | null,
+  mannersSetting: string | null
 ): string[] {
   const tags: string[] = [];
   const theme = formatTheme(characterTheme);
   const ageKeyword = getAgeKeyword(targetAge);
-  const location = formatResort(resort) || formatCity(city);
+  const locationName = formatResort(resort) || formatCity(city) || formatCity(location);
+  const seasonName = formatSeason(season);
+  const envName = formatEnvironment(environment);
+  const brandName = formatClothingBrand(clothingBrand);
+  const gradeName = formatGradeLevel(gradeLevel);
   
-  // Book type specific tags
+  // Book type specific tags - these are highest priority
   if (bookType) {
     switch (bookType.toLowerCase()) {
       case 'abc':
@@ -304,13 +416,13 @@ function generateTags(
         tags.push('counting book', 'numbers printable', 'math activities');
         break;
       case 'shapes':
-        tags.push('shapes printable', 'shape learning', 'preschool shapes');
+        tags.push('shapes printable', 'shape learning');
         break;
       case 'rhyming':
-        tags.push('rhyming book', 'phonics printable', 'rhyme learning');
+        tags.push('rhyming book', 'phonics printable');
         break;
       case 'opposites':
-        tags.push('opposites book', 'learning opposites', 'opposite words');
+        tags.push('opposites book', 'learning opposites');
         break;
       case 'digraphs':
         tags.push('phonics book', 'reading practice');
@@ -319,28 +431,83 @@ function generateTags(
         tags.push('feelings book', 'emotions learning');
         break;
       case 'bedtime':
-        tags.push('bedtime book', 'sleep time');
+        tags.push('bedtime book', 'sleep routine');
+        break;
+      case 'manners':
+        tags.push('manners book', 'social skills');
+        break;
+      case 'sight-words':
+        tags.push('sight words', 'reading practice');
+        break;
+      case 'first-words':
+        tags.push('first words', 'vocabulary book');
+        break;
+      case 'animals':
+        tags.push('animal coloring', 'animals printable');
+        break;
+      case 'cvc':
+        tags.push('cvc words', 'phonics practice');
         break;
       default:
         tags.push('kids coloring book');
     }
   }
   
-  // Location tag (city or resort)
-  if (location && location.length <= 20) {
-    tags.push(`${location.toLowerCase()} coloring`.substring(0, 20));
+  // Theme tag - important for character-based books
+  if (theme && theme.length <= 14) {
+    tags.push(`${theme.toLowerCase()} coloring`.substring(0, 20));
+    // Add theme alone if short enough
+    if (theme.length <= 20) {
+      tags.push(theme.toLowerCase());
+    }
   }
   
-  // Theme tag
-  if (theme && theme.length <= 20) {
-    tags.push(`${theme.toLowerCase()} coloring`.substring(0, 20));
+  // Location tag (city or resort) - great for local SEO
+  if (locationName && locationName.length <= 14) {
+    tags.push(`${locationName.toLowerCase()} book`.substring(0, 20));
+  }
+  
+  // Season tag - seasonal relevance
+  if (seasonName) {
+    tags.push(`${seasonName.toLowerCase()} coloring`.substring(0, 20));
+    tags.push(`${seasonName.toLowerCase()} activity`.substring(0, 20));
+  }
+  
+  // Environment tag
+  if (envName && envName.length <= 12) {
+    tags.push(`${envName.toLowerCase()} theme`.substring(0, 20));
+  }
+  
+  // Clothing brand tag - for branded content
+  if (brandName && brandName.length <= 12) {
+    tags.push(`${brandName.toLowerCase()} kids`.substring(0, 20));
+  }
+  
+  // Grade level tag
+  if (gradeName && gradeName.length <= 14) {
+    tags.push(`${gradeName.toLowerCase()}`.substring(0, 20));
+  }
+  
+  // Manners specific tags
+  if (mannerType) {
+    const mannerTag = mannerType.toLowerCase().replace(/_/g, ' ');
+    if (mannerTag.length <= 20) {
+      tags.push(mannerTag);
+    }
+  }
+  
+  if (mannersSetting) {
+    const settingTag = `${mannersSetting.toLowerCase().replace(/_/g, ' ')} manners`;
+    if (settingTag.length <= 20) {
+      tags.push(settingTag.substring(0, 20));
+    }
   }
   
   // Age group tags
   tags.push(`${ageKeyword.toLowerCase()} activities`.substring(0, 20));
   tags.push(`${ageKeyword.toLowerCase()} printable`.substring(0, 20));
   
-  // General tags
+  // General tags (fill remaining slots)
   tags.push('coloring pages');
   tags.push('digital download');
   tags.push('instant download');
@@ -350,7 +517,7 @@ function generateTags(
   
   // Dedupe and limit to 13
   const uniqueTags = [...new Set(tags)]
-    .filter(tag => tag.length <= 20)
+    .filter(tag => tag.length > 0 && tag.length <= 20)
     .slice(0, 13);
   
   return uniqueTags;
@@ -368,10 +535,30 @@ export function generateEtsyListing({
   pageCount = 12,
   city,
   resort,
+  season,
+  location,
+  environment,
+  clothingBrand,
+  gradeLevel,
+  mannerType,
+  mannersSetting,
 }: EtsyListingParams): EtsyListing {
   const title = generateTitle(bookName, bookType, characterTheme, targetAge, pageCount, city || null, resort || null);
   const description = generateDescription(bookName, bookDescription, bookType, characterTheme, targetAge, pageCount);
-  const tags = generateTags(bookType, characterTheme, targetAge, city || null, resort || null);
+  const tags = generateTags(
+    bookType, 
+    characterTheme, 
+    targetAge, 
+    city || null, 
+    resort || null,
+    season || null,
+    location || null,
+    environment || null,
+    clothingBrand || null,
+    gradeLevel || null,
+    mannerType || null,
+    mannersSetting || null
+  );
   
   return {
     title,

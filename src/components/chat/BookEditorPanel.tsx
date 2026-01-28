@@ -450,30 +450,31 @@ export function BookEditorPanel({
   };
 
 // Character to Westin breed mapping - simple breed replacements
+  // Note: Bernese Mountain Dogs have FLOPPY droopy ears, Samoyeds have pointed ears
   const CHARACTER_TO_WESTIN_BREED: Record<string, { name: string; breed: string }> = {
     'bluey': { 
       name: 'Bluey (a blue cartoon heeler dog)', 
-      breed: 'a white Samoyed dog' 
+      breed: 'a white fluffy Samoyed dog with pointed ears' 
     },
     'bingo': { 
       name: 'Bingo (an orange/tan cartoon heeler dog)', 
-      breed: 'a Bernese Mountain Dog' 
+      breed: 'a Bernese Mountain Dog (tri-color: black, white, rust) with floppy droopy ears' 
     },
     'bandit': { 
       name: 'Bandit (a blue adult cartoon heeler dog)', 
-      breed: 'an adult white Samoyed' 
+      breed: 'an adult white fluffy Samoyed with pointed ears' 
     },
     'chilli': { 
       name: 'Chilli (a red/orange adult cartoon heeler dog)', 
-      breed: 'an adult Bernese Mountain Dog' 
+      breed: 'an adult Bernese Mountain Dog (tri-color: black, white, rust) with floppy droopy ears' 
     },
     // Paw Patrol characters
-    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'a Bernese Mountain Dog' },
-    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'a white Samoyed' },
-    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'a white Samoyed' },
-    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'a Bernese Mountain Dog' },
-    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'a white Samoyed' },
-    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'a Bernese Mountain Dog' },
+    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'a Bernese Mountain Dog with floppy droopy ears' },
+    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'a white fluffy Samoyed with pointed ears' },
+    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'a white fluffy Samoyed with pointed ears' },
+    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'a Bernese Mountain Dog with floppy droopy ears' },
+    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'a white fluffy Samoyed with pointed ears' },
+    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'a Bernese Mountain Dog with floppy droopy ears' },
   };
 
   // Build character-aware edit prompt for Westin
@@ -481,16 +482,17 @@ export function BookEditorPanel({
     if (!selectedCharacterIds || selectedCharacterIds.length === 0) {
       // Fallback to color-based detection if no characters selected
       return `Please analyze this image and make ONLY these applicable changes:
-- Find ALL blue dogs in the image and replace EVERY ONE with a white Samoyed dog. There may be multiple blue dogs - replace ALL of them.
-- Find ALL orange or reddish-brown dogs in the image and replace EVERY ONE with a Bernese Mountain Dog. There may be multiple - replace ALL of them.
+- Find ALL blue dogs in the image and replace EVERY ONE with a white fluffy Samoyed dog with pointed ears. There may be multiple blue dogs - replace ALL of them.
+- Find ALL orange or reddish-brown dogs in the image and replace EVERY ONE with a Bernese Mountain Dog (tri-color: black, white, and rust with FLOPPY DROOPY EARS - NOT pointed ears). There may be multiple - replace ALL of them.
 
 CRITICAL REQUIREMENTS:
 1. MULTIPLE INSTANCES: The same character may appear multiple times in the image (e.g., split-screen scenes). You MUST replace EVERY instance.
-2. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
-3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
-4. POSITION & POSE: Keep each dog in the same position and body pose
-5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
-6. PRESERVE SCENE: Keep all other elements unchanged`;
+2. EAR SHAPE IS CRITICAL: Samoyeds have pointed/erect ears. Bernese Mountain Dogs have FLOPPY, DROOPY ears that hang down - NEVER pointed ears.
+3. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
+4. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
+5. POSITION & POSE: Keep each dog in the same position and body pose
+6. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+7. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     // Build character-specific replacement instructions
@@ -502,16 +504,17 @@ CRITICAL REQUIREMENTS:
     if (replacements.length === 0) {
       // Characters not in our mapping - use generic approach
       return `Please analyze this image and make ONLY these applicable changes:
-- Find ALL blue dogs in the image and replace EVERY ONE with a white Samoyed dog. There may be multiple blue dogs - replace ALL of them.
-- Find ALL orange or reddish-brown dogs in the image and replace EVERY ONE with a Bernese Mountain Dog. There may be multiple - replace ALL of them.
+- Find ALL blue dogs in the image and replace EVERY ONE with a white fluffy Samoyed dog with pointed ears. There may be multiple blue dogs - replace ALL of them.
+- Find ALL orange or reddish-brown dogs in the image and replace EVERY ONE with a Bernese Mountain Dog (tri-color: black, white, and rust with FLOPPY DROOPY EARS - NOT pointed ears). There may be multiple - replace ALL of them.
 
 CRITICAL REQUIREMENTS:
 1. MULTIPLE INSTANCES: The same character may appear multiple times in the image (e.g., split-screen scenes). You MUST replace EVERY instance.
-2. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
-3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
-4. POSITION & POSE: Keep each dog in the same position and body pose
-5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
-6. PRESERVE SCENE: Keep all other elements unchanged`;
+2. EAR SHAPE IS CRITICAL: Samoyeds have pointed/erect ears. Bernese Mountain Dogs have FLOPPY, DROOPY ears that hang down - NEVER pointed ears.
+3. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
+4. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
+5. POSITION & POSE: Keep each dog in the same position and body pose
+6. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+7. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     return `Please make these changes to the image:
@@ -519,11 +522,12 @@ ${replacements.join('\n')}
 
 CRITICAL REQUIREMENTS:
 1. MULTIPLE INSTANCES: The same character may appear multiple times in the image (e.g., split-screen scenes). You MUST replace EVERY instance of each character.
-2. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
-3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
-4. POSITION & POSE: Keep each dog in the same position and body pose
-5. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
-6. PRESERVE SCENE: Keep all other elements unchanged`;
+2. EAR SHAPE IS CRITICAL: Samoyeds have pointed/erect ears. Bernese Mountain Dogs have FLOPPY, DROOPY ears that hang down - NEVER pointed ears.
+3. FACIAL EXPRESSION: Each replacement dog MUST have the EXACT SAME facial expression as the original it replaces
+4. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn on each dog
+5. POSITION & POSE: Keep each dog in the same position and body pose
+6. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
+7. PRESERVE SCENE: Keep all other elements unchanged`;
   };
 
   // Handle Westin button click - edit image to replace characters with Westin breeds

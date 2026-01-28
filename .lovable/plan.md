@@ -1,144 +1,127 @@
 
-# Implementation Plan: Fix Opposites Agent Page Format for Editor Panel
+# Implementation Plan: Enhanced Sanitization Regex for Bullet-Format Text Instructions
 
 ## Problem Statement
 
-The Book Editor Panel (bottom sheet with Upload, Paste, Generate buttons) appears for the rhyming book but NOT for the opposites book, even though both agents generate 12 pages.
+The opposites agent uses bullet-format text instructions (`- Text Overlay:`, `- Opposite Pair:`) that bypass the current sanitization regex patterns, causing text to appear on content page images.
 
-## Root Cause
+## Current Sanitization (Lines 23-53)
 
-**Format Mismatch Between Agent Output and Parser**
+The existing `sanitizeImagePrompt` function handles:
+- `**Text Overlay:**` (bold format)
+- `**Rhyme Text:**` (bold format)  
+- `**Rhyme Pair:**` (bold format)
+- Quoted standalone text lines
+- `**Illustration:**` / `**Image Prompt:**` labels
 
-| Agent | Output Format | Parser Matches? |
-|-------|---------------|-----------------|
-| Rhyming | `**Page 1: Title**` | ✅ Yes |
-| Opposites | `## Page 10: Title` | ❌ No |
+**Gap**: It does NOT handle bullet-format patterns used by the opposites agent:
+- `- Text Overlay: "Shelly is hot! Now cold!"`
+- `- Opposite Pair: Hot / Cold`
+- `- Scene Description:` (content that should stay but labels removed)
 
-The `parseBookOutline()` function in `src/utils/pageHelpers.ts` only matches:
-- Bold format: `/\*\*Page\s+(\d+)[\s:-]+/` 
-- List format: `/- Page\s+(\d+):/`
+## Solution
 
-The opposites agent uses markdown heading format `## Page N:` which doesn't match either pattern.
-
-**Evidence from Screenshot:**
-```markdown
-## Page 12: Day and Night
-- **Opposite Pair:** Day / Night
-- **Scene Description:** A beautiful view of Aspen...
-```
-
-## Solution Options
-
-### Option A: Update Opposites Agent Instructions (Recommended)
-Modify the opposites agent's output format to match the rhyming agent (use `**Page N:**` instead of `## Page N:`).
-
-**Pros:**
-- Follows existing patterns
-- No code changes required
-- DRY - uses existing parser
-
-**Cons:**
-- Requires database update to agent instructions
-
-### Option B: Update Parser to Handle All Formats
-Add a third regex pattern to handle heading format.
-
-**Pros:**
-- More flexible parsing
-
-**Cons:**
-- Parser complexity increases
-- May match unintended content
-
-## Recommended Solution: Option A
-
-Update the opposites agent instructions to use the same output format as the rhyming agent.
+Add new regex patterns to `sanitizeImagePrompt` function to strip bullet-format text overlay instructions.
 
 ---
 
-## Implementation Steps
+## Implementation Details
 
-### Step 1: Update Opposites Agent Instructions
+### File to Modify
+`supabase/functions/generate-color-image/index.ts`
 
-**Target:** `agents` table, `type = 'book-creation-opposites'`
+### Changes to `sanitizeImagePrompt` Function
 
-**Change the Page Format section from:**
-```markdown
-### Page Format for Opposites Pages
-**Page N: [Word1] and [Word2]**
-- **Opposite Pair:** [Word1] / [Word2]
-```
-
-**To:**
-```markdown
-### Page Format for Opposites Pages  
-**CRITICAL OUTPUT FORMAT - Use this EXACT format:**
-
-**Page 1: [Cover Title]**
-[Cover description with character theme integration]
-
-**Page 2: Educational Focus**
-[Educational focus description]
-
-**Page 3: [Word1] and [Word2]**
-[Contrasting scene description]
-- Opposite Pair: [Word1] / [Word2]
-- Text Overlay: "[Character] is [word1]! Now [character] is [word2]!"
-
-...continue through Page 12...
-```
-
-The key change is ensuring the agent outputs `**Page N: Title**` (bold) format, NOT `## Page N: Title` (heading) format.
-
-### Step 2: Verify Parser Compatibility
-
-The existing parser in `src/utils/pageHelpers.ts` (line 40) already handles this format:
+Add the following regex patterns after line 33 (after the existing `**Rhyme Pair:**` removal):
 
 ```typescript
-// Parse bold format pages: **Page 1: Title** or **Page 1 - Cover**: Title
-const boldPagePattern = /\*\*Page\s+(\d+)[\s:-]+([^*]*?)\*\*:?\s*([\s\S]*?)(?=\n\*\*Page|\n- Page\s+\d+|$)/gi;
+// Remove bullet-format Text Overlay lines (entire line including quoted content)
+clean = clean.replace(/^-\s*\*{0,2}Text Overlay\*{0,2}:\s*[^\n]*\n?/gim, '');
+
+// Remove bullet-format Opposite Pair lines (entire line)
+clean = clean.replace(/^-\s*\*{0,2}Opposite Pair\*{0,2}:\s*[^\n]*\n?/gim, '');
+
+// Remove any remaining "Text Overlay" references regardless of format
+clean = clean.replace(/\bText Overlay\b[:\s]*["'][^"']*["']/gi, '');
 ```
 
-No code changes needed if the agent output matches this pattern.
+### Pattern Breakdown
 
----
+| Pattern | Matches | Example |
+|---------|---------|---------|
+| `^-\s*\*{0,2}Text Overlay\*{0,2}:` | Bullet with optional bold | `- Text Overlay:`, `- **Text Overlay:**` |
+| `^-\s*\*{0,2}Opposite Pair\*{0,2}:` | Bullet with optional bold | `- Opposite Pair: Hot / Cold` |
+| `\bText Overlay\b[:\s]*["'][^"']*["']` | Any remaining text overlay with quotes | `Text Overlay: "..."` |
 
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `agents` table (database) | Update `book-creation-opposites` instructions to use `**Page N:**` format |
-
-**No frontend code changes required** - the parser and editor panel are already shared and working correctly for the rhyming agent.
-
----
-
-## Alternative: Parser Enhancement (If Agent Update Not Preferred)
-
-If you prefer to keep the opposites agent's current format, add a third regex pattern to `src/utils/pageHelpers.ts`:
+### Updated Function (Full)
 
 ```typescript
-// Parse heading format pages: ## Page 1: Title
-const headingPagePattern = /##\s*Page\s+(\d+):\s*([^\n]+)/gi;
+function sanitizeImagePrompt(prompt: string): string {
+  let clean = prompt;
+  
+  // Remove **Text Overlay:** section and its content (until next ** or end)
+  clean = clean.replace(/\*\*Text Overlay:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+  
+  // Remove **Rhyme Text:** section and its content
+  clean = clean.replace(/\*\*Rhyme Text:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+  
+  // Remove **Rhyme Pair:** lines
+  clean = clean.replace(/\*\*Rhyme Pair:\*\*[^\n]*\n?/gi, '');
+  
+  // NEW: Remove bullet-format Text Overlay lines (entire line including quoted content)
+  clean = clean.replace(/^-\s*\*{0,2}Text Overlay\*{0,2}:\s*[^\n]*\n?/gim, '');
+  
+  // NEW: Remove bullet-format Opposite Pair lines (entire line)
+  clean = clean.replace(/^-\s*\*{0,2}Opposite Pair\*{0,2}:\s*[^\n]*\n?/gim, '');
+  
+  // NEW: Remove any remaining "Text Overlay" references with quoted content
+  clean = clean.replace(/\bText Overlay\b[:\s]*["'][^"']*["']/gi, '');
+  
+  // Remove standalone quoted text lines (rhymes in quotes)
+  clean = clean.replace(/^[""][^""]+[""]\.?\s*$/gm, '');
+  
+  // Remove **Illustration:** or **Image Prompt:** labels but keep content
+  clean = clean.replace(/\*\*(?:Illustration|Image Prompt):\*\*\s*/gi, '');
+  
+  // Remove bullet point markers at start of lines
+  clean = clean.replace(/^[-*]\s+/gm, '');
+  
+  // Clean up extra whitespace
+  clean = clean.replace(/\n{3,}/g, '\n\n').trim();
+  
+  // Ensure proper ending if not present
+  if (!clean.toLowerCase().includes('no text overlay')) {
+    clean = clean.replace(/\.?\s*$/, '. No text overlays. Clean illustration only.');
+  }
+  
+  return clean;
+}
 ```
-
-This would be added around line 62, with similar parsing logic.
-
----
-
-## DRY Principle Compliance
-
-The Book Editor Panel (`BookEditorPanel.tsx`) and trigger logic (`GoogleChat.tsx`) are already shared across all book types. The only inconsistency is the agent's output format.
-
-By aligning the opposites agent's output format with the rhyming agent, we maintain DRY principles without duplicating parser logic.
 
 ---
 
 ## Testing Checklist
 
-- [ ] Create a new opposites book
-- [ ] Complete all 12 pages in the discovery flow
-- [ ] Verify agent outputs `**Page 12: Day and Night**` format (not `## Page 12:`)
-- [ ] Confirm Book Editor Panel appears after outline is complete
-- [ ] Verify all 12 page thumbnails are shown in the editor
-- [ ] Test Upload, Paste, Generate, Copy Prompt buttons work correctly
+- [ ] Verify prompt with `- Text Overlay: "Shelly is hot!"` is stripped
+- [ ] Verify prompt with `- Opposite Pair: Hot / Cold` is stripped
+- [ ] Verify prompt with `- **Text Overlay:** "..."` (bold bullet) is stripped
+- [ ] Verify scene descriptions remain intact (only labels removed)
+- [ ] Verify existing rhyming agent prompts still sanitize correctly
+- [ ] Confirm log shows "YES (text content removed)" for opposites prompts
+- [ ] Generate test image and verify no text appears
+
+---
+
+## Expected Outcome
+
+**Before (Current Behavior)**:
+```
+🧹 Prompt sanitized: NO (already clean)
+```
+Result: Image contains "COLD" text
+
+**After (Fixed)**:
+```
+🧹 Prompt sanitized: YES (text content removed)
+```
+Result: Clean illustration without any text labels

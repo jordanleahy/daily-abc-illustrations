@@ -1,127 +1,48 @@
 
-# Implementation Plan: Enhanced Sanitization Regex for Bullet-Format Text Instructions
+## Fix: Etsy Drawer Copy Buttons Causing Unwanted Navigation
 
-## Problem Statement
+### Problem
+When tapping copy buttons in the Etsy Listing drawer on mobile, the app navigates to the book view instead of just copying the text and staying on the current page.
 
-The opposites agent uses bullet-format text instructions (`- Text Overlay:`, `- Opposite Pair:`) that bypass the current sanitization regex patterns, causing text to appear on content page images.
+### Root Cause
+The copy button handlers in `EtsyPostDrawer.tsx` do not prevent event propagation. On mobile devices, touch events can bubble up through the drawer portal or trigger unexpected navigation behavior. The drawer is rendered inside a `UserBookCard` that has an `onClick` handler which navigates to the book view.
 
-## Current Sanitization (Lines 23-53)
+While the Drawer uses a Portal (which should isolate clicks), mobile touch events can sometimes behave differently. The existing pattern in `SocialPostTracker.tsx` already uses `e.preventDefault()` and `e.stopPropagation()` to prevent this exact issue.
 
-The existing `sanitizeImagePrompt` function handles:
-- `**Text Overlay:**` (bold format)
-- `**Rhyme Text:**` (bold format)  
-- `**Rhyme Pair:**` (bold format)
-- Quoted standalone text lines
-- `**Illustration:**` / `**Image Prompt:**` labels
-
-**Gap**: It does NOT handle bullet-format patterns used by the opposites agent:
-- `- Text Overlay: "Shelly is hot! Now cold!"`
-- `- Opposite Pair: Hot / Cold`
-- `- Scene Description:` (content that should stay but labels removed)
-
-## Solution
-
-Add new regex patterns to `sanitizeImagePrompt` function to strip bullet-format text overlay instructions.
+### Solution
+Update the `handleCopy` function in `EtsyPostDrawer.tsx` to accept the React mouse event and call both `e.preventDefault()` and `e.stopPropagation()` before executing the copy logic. This prevents the touch/click event from bubbling up and triggering any parent handlers.
 
 ---
 
-## Implementation Details
+### Technical Details
 
-### File to Modify
-`supabase/functions/generate-color-image/index.ts`
+**File to modify:** `src/components/books/EtsyPostDrawer.tsx`
 
-### Changes to `sanitizeImagePrompt` Function
+**Changes:**
+1. Update the `handleCopy` function signature to accept the event parameter:
+   ```typescript
+   const handleCopy = async (
+     e: React.MouseEvent,
+     text: string,
+     type: 'title' | 'description' | 'tags'
+   ) => {
+     e.preventDefault();
+     e.stopPropagation();
+     // ... rest of existing logic
+   };
+   ```
 
-Add the following regex patterns after line 33 (after the existing `**Rhyme Pair:**` removal):
+2. Update all copy button onClick handlers to pass the event:
+   - Title copy button: `onClick={(e) => handleCopy(e, title, 'title')}`
+   - Description copy button: `onClick={(e) => handleCopy(e, description, 'description')}`
+   - Tags copy button: `onClick={(e) => handleCopy(e, tagsText, 'tags')}`
 
-```typescript
-// Remove bullet-format Text Overlay lines (entire line including quoted content)
-clean = clean.replace(/^-\s*\*{0,2}Text Overlay\*{0,2}:\s*[^\n]*\n?/gim, '');
+3. Also add event prevention to the PDF download buttons for consistency:
+   - Color PDF button: Add `e.stopPropagation()` to the existing onClick
+   - Coloring Book PDF button: Add `e.stopPropagation()` to the existing onClick
 
-// Remove bullet-format Opposite Pair lines (entire line)
-clean = clean.replace(/^-\s*\*{0,2}Opposite Pair\*{0,2}:\s*[^\n]*\n?/gim, '');
+4. Add event prevention to the footer buttons:
+   - "I've Listed on Etsy" button: Add `e.stopPropagation()`
+   - "Close" button: Add `e.stopPropagation()`
 
-// Remove any remaining "Text Overlay" references regardless of format
-clean = clean.replace(/\bText Overlay\b[:\s]*["'][^"']*["']/gi, '');
-```
-
-### Pattern Breakdown
-
-| Pattern | Matches | Example |
-|---------|---------|---------|
-| `^-\s*\*{0,2}Text Overlay\*{0,2}:` | Bullet with optional bold | `- Text Overlay:`, `- **Text Overlay:**` |
-| `^-\s*\*{0,2}Opposite Pair\*{0,2}:` | Bullet with optional bold | `- Opposite Pair: Hot / Cold` |
-| `\bText Overlay\b[:\s]*["'][^"']*["']` | Any remaining text overlay with quotes | `Text Overlay: "..."` |
-
-### Updated Function (Full)
-
-```typescript
-function sanitizeImagePrompt(prompt: string): string {
-  let clean = prompt;
-  
-  // Remove **Text Overlay:** section and its content (until next ** or end)
-  clean = clean.replace(/\*\*Text Overlay:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
-  
-  // Remove **Rhyme Text:** section and its content
-  clean = clean.replace(/\*\*Rhyme Text:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
-  
-  // Remove **Rhyme Pair:** lines
-  clean = clean.replace(/\*\*Rhyme Pair:\*\*[^\n]*\n?/gi, '');
-  
-  // NEW: Remove bullet-format Text Overlay lines (entire line including quoted content)
-  clean = clean.replace(/^-\s*\*{0,2}Text Overlay\*{0,2}:\s*[^\n]*\n?/gim, '');
-  
-  // NEW: Remove bullet-format Opposite Pair lines (entire line)
-  clean = clean.replace(/^-\s*\*{0,2}Opposite Pair\*{0,2}:\s*[^\n]*\n?/gim, '');
-  
-  // NEW: Remove any remaining "Text Overlay" references with quoted content
-  clean = clean.replace(/\bText Overlay\b[:\s]*["'][^"']*["']/gi, '');
-  
-  // Remove standalone quoted text lines (rhymes in quotes)
-  clean = clean.replace(/^[""][^""]+[""]\.?\s*$/gm, '');
-  
-  // Remove **Illustration:** or **Image Prompt:** labels but keep content
-  clean = clean.replace(/\*\*(?:Illustration|Image Prompt):\*\*\s*/gi, '');
-  
-  // Remove bullet point markers at start of lines
-  clean = clean.replace(/^[-*]\s+/gm, '');
-  
-  // Clean up extra whitespace
-  clean = clean.replace(/\n{3,}/g, '\n\n').trim();
-  
-  // Ensure proper ending if not present
-  if (!clean.toLowerCase().includes('no text overlay')) {
-    clean = clean.replace(/\.?\s*$/, '. No text overlays. Clean illustration only.');
-  }
-  
-  return clean;
-}
-```
-
----
-
-## Testing Checklist
-
-- [ ] Verify prompt with `- Text Overlay: "Shelly is hot!"` is stripped
-- [ ] Verify prompt with `- Opposite Pair: Hot / Cold` is stripped
-- [ ] Verify prompt with `- **Text Overlay:** "..."` (bold bullet) is stripped
-- [ ] Verify scene descriptions remain intact (only labels removed)
-- [ ] Verify existing rhyming agent prompts still sanitize correctly
-- [ ] Confirm log shows "YES (text content removed)" for opposites prompts
-- [ ] Generate test image and verify no text appears
-
----
-
-## Expected Outcome
-
-**Before (Current Behavior)**:
-```
-🧹 Prompt sanitized: NO (already clean)
-```
-Result: Image contains "COLD" text
-
-**After (Fixed)**:
-```
-🧹 Prompt sanitized: YES (text content removed)
-```
-Result: Clean illustration without any text labels
+This follows the established pattern used in `SocialPostTracker.tsx` for handling mobile touch events in drawer components.

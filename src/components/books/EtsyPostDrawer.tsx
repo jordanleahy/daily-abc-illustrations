@@ -39,12 +39,13 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
   const { toast } = useToast();
   const [titleCopied, setTitleCopied] = useState(false);
   const [descriptionCopied, setDescriptionCopied] = useState(false);
+  const [fileNameCopied, setFileNameCopied] = useState(false);
   const [copiedTagIndex, setCopiedTagIndex] = useState<number | null>(null);
   const [isMarkingListed, setIsMarkingListed] = useState(false);
   const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
   const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
 
-  const { title, description, tags } = generateEtsyListing({
+  const { title, description, tags, fileName } = generateEtsyListing({
     bookName: book.book_name,
     bookDescription: book.book_description,
     characterTheme: book.metadata?.characterTheme || null,
@@ -62,7 +63,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
     mannersSetting: book.metadata?.mannersSetting || null,
   });
 
-  const handleCopy = async (e: React.MouseEvent, text: string, type: 'title' | 'description') => {
+  const handleCopy = async (e: React.MouseEvent, text: string, type: 'title' | 'description' | 'fileName') => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -71,12 +72,15 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
       if (type === 'title') {
         setTitleCopied(true);
         setTimeout(() => setTitleCopied(false), 2000);
-      } else {
+      } else if (type === 'description') {
         setDescriptionCopied(true);
         setTimeout(() => setDescriptionCopied(false), 2000);
+      } else if (type === 'fileName') {
+        setFileNameCopied(true);
+        setTimeout(() => setFileNameCopied(false), 2000);
       }
       
-      toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} copied!` });
+      toast({ title: `${type === 'fileName' ? 'File name' : type.charAt(0).toUpperCase() + type.slice(1)} copied!` });
     } catch (error) {
       console.error('Failed to copy:', error);
       toast({ title: 'Failed to copy', variant: 'destructive' });
@@ -169,6 +173,34 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
         </DrawerHeader>
 
         <div className="px-4 space-y-4 overflow-y-auto flex-1">
+          {/* File Name Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">File Name</label>
+              <span className="text-xs text-muted-foreground">{fileName.length + 4}/70 chars</span>
+            </div>
+            <div className="relative">
+              <div className="p-3 pr-12 bg-muted rounded-lg text-sm font-mono break-all">
+                {fileName}.pdf
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                onClick={(e) => handleCopy(e, `${fileName}.pdf`, 'fileName')}
+              >
+                {fileNameCopied ? (
+                  <Check className="h-4 w-4 text-primary" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Rename your PDF to this before uploading to Etsy
+            </p>
+          </div>
+
           {/* Title Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">

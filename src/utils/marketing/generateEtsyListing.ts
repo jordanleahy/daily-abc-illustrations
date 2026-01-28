@@ -28,6 +28,41 @@ interface EtsyListing {
   title: string;
   description: string;
   tags: string[];
+  fileName: string;
+}
+
+/**
+ * Generate Etsy-compliant file name (3-70 chars, no spaces, alphanumeric + hyphens/underscores/periods only)
+ */
+function generateEtsyFileName(bookName: string): string {
+  // Start with book name, convert to valid characters
+  let fileName = bookName
+    .replace(/['']/g, '')           // Remove apostrophes
+    .replace(/\s+/g, '-')           // Replace spaces with hyphens
+    .replace(/[^a-zA-Z0-9._-]/g, '') // Remove invalid characters
+    .replace(/-+/g, '-')            // Collapse multiple hyphens
+    .replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+  
+  // Add suffix for clarity
+  const suffix = '-ColoringBook';
+  
+  // Ensure total length is 3-70 (accounting for .pdf extension = 4 chars)
+  // Max base name = 70 - 4 = 66 chars
+  const maxBaseLength = 66 - suffix.length; // 53 chars for name
+  
+  if (fileName.length > maxBaseLength) {
+    fileName = fileName.substring(0, maxBaseLength);
+    fileName = fileName.replace(/-$/, ''); // Clean trailing hyphen after truncation
+  }
+  
+  fileName = `${fileName}${suffix}`;
+  
+  // Ensure minimum 3 chars (before .pdf)
+  if (fileName.length < 3) {
+    fileName = 'ColoringBook';
+  }
+  
+  return fileName;
 }
 
 /**
@@ -560,9 +595,12 @@ export function generateEtsyListing({
     mannersSetting || null
   );
   
+  const fileName = generateEtsyFileName(bookName);
+  
   return {
     title,
     description,
     tags,
+    fileName,
   };
 }

@@ -1,178 +1,105 @@
 
+# Implementation Plan: Fix Opposites Agent Page Format for Editor Panel
 
-# Fix Plan: Persistent Real-Time Questions for Opposites Agent
+## Problem Statement
 
-## Problem Summary
+The Book Editor Panel (bottom sheet with Upload, Paste, Generate buttons) appears for the rhyming book but NOT for the opposites book, even though both agents generate 12 pages.
 
-The `book-creation-opposites` agent has **19 questions** with corrupt `sort_order` values. When you toggle or reorder questions, changes don't persist correctly because:
+## Root Cause
 
-1. **Duplicate sort_order values**: 4 different questions all have `sort_order: 5`
-2. **Reorder fetches ALL questions** (enabled + disabled) but the UI only shows enabled first
-3. **Array indices used instead of actual values** when swapping positions
+**Format Mismatch Between Agent Output and Parser**
 
----
+| Agent | Output Format | Parser Matches? |
+|-------|---------------|-----------------|
+| Rhyming | `**Page 1: Title**` | ✅ Yes |
+| Opposites | `## Page 10: Title` | ❌ No |
 
-## Current Database State (Corrupt)
+The `parseBookOutline()` function in `src/utils/pageHelpers.ts` only matches:
+- Bold format: `/\*\*Page\s+(\d+)[\s:-]+/` 
+- List format: `/- Page\s+(\d+):/`
 
-| Question | Enabled | sort_order | Problem |
-|----------|---------|------------|---------|
-| character_theme | ✅ | 0 | OK |
-| opposites_category | ✅ | 1 | OK |
-| grade_level | ✅ | 2 | OK |
-| city | ✅ | 3 | OK |
-| RESORT | ✅ | 4 | OK |
-| **SEASON** | ✅ | **5** | Duplicate! |
-| **manner_type** | ❌ | **5** | Duplicate! |
-| **CUSTOM_NUMBER_RANGE** | ❌ | **5** | Duplicate! |
-| **DIGRAPH_FOCUS** | ❌ | **5** | Duplicate! |
-| manner_setting | ❌ | 7 | Gap |
-| letter_case | ❌ | 8 | |
-| ... | ❌ | 100+ | |
+The opposites agent uses markdown heading format `## Page N:` which doesn't match either pattern.
 
----
-
-## Solution: 3 Files, 1 Migration
-
-### Step 1: Database Cleanup Migration
-
-Normalize all `sort_order` values for the opposites agent:
-
-```sql
--- Re-sequence ENABLED questions to [0, 1, 2, 3, 4, 5]
-WITH ranked_enabled AS (
-  SELECT id, ROW_NUMBER() OVER (ORDER BY sort_order, created_at) - 1 as new_order
-  FROM agent_questions
-  WHERE agent_type = 'book-creation-opposites' AND is_enabled = true
-)
-UPDATE agent_questions aq
-SET sort_order = r.new_order
-FROM ranked_enabled r WHERE aq.id = r.id;
-
--- Set DISABLED questions to high values [100, 101, 102...]
-WITH ranked_disabled AS (
-  SELECT id, ROW_NUMBER() OVER (ORDER BY sort_order, created_at) + 99 as new_order
-  FROM agent_questions
-  WHERE agent_type = 'book-creation-opposites' AND is_enabled = false
-)
-UPDATE agent_questions aq
-SET sort_order = r.new_order
-FROM ranked_disabled r WHERE aq.id = r.id;
+**Evidence from Screenshot:**
+```markdown
+## Page 12: Day and Night
+- **Opposite Pair:** Day / Night
+- **Scene Description:** A beautiful view of Aspen...
 ```
 
-**Expected Result:**
-| Question | Enabled | sort_order |
-|----------|---------|------------|
-| character_theme | ✅ | 0 |
-| opposites_category | ✅ | 1 |
-| grade_level | ✅ | 2 |
-| city | ✅ | 3 |
-| RESORT | ✅ | 4 |
-| SEASON | ✅ | 5 |
-| manner_type | ❌ | 100 |
-| CUSTOM_NUMBER_RANGE | ❌ | 101 |
-| ... | ❌ | 102+ |
+## Solution Options
+
+### Option A: Update Opposites Agent Instructions (Recommended)
+Modify the opposites agent's output format to match the rhyming agent (use `**Page N:**` instead of `## Page N:`).
+
+**Pros:**
+- Follows existing patterns
+- No code changes required
+- DRY - uses existing parser
+
+**Cons:**
+- Requires database update to agent instructions
+
+### Option B: Update Parser to Handle All Formats
+Add a third regex pattern to handle heading format.
+
+**Pros:**
+- More flexible parsing
+
+**Cons:**
+- Parser complexity increases
+- May match unintended content
+
+## Recommended Solution: Option A
+
+Update the opposites agent instructions to use the same output format as the rhyming agent.
 
 ---
 
-### Step 2: Fix Reorder Mutation
+## Implementation Steps
 
-**File:** `src/hooks/useQuestions.ts`
+### Step 1: Update Opposites Agent Instructions
 
-**Problem (lines 268-276):** Fetches ALL questions, uses array indices.
+**Target:** `agents` table, `type = 'book-creation-opposites'`
 
-**Fix:** Filter by `is_enabled = true` and swap actual `sort_order` VALUES:
+**Change the Page Format section from:**
+```markdown
+### Page Format for Opposites Pages
+**Page N: [Word1] and [Word2]**
+- **Opposite Pair:** [Word1] / [Word2]
+```
+
+**To:**
+```markdown
+### Page Format for Opposites Pages  
+**CRITICAL OUTPUT FORMAT - Use this EXACT format:**
+
+**Page 1: [Cover Title]**
+[Cover description with character theme integration]
+
+**Page 2: Educational Focus**
+[Educational focus description]
+
+**Page 3: [Word1] and [Word2]**
+[Contrasting scene description]
+- Opposite Pair: [Word1] / [Word2]
+- Text Overlay: "[Character] is [word1]! Now [character] is [word2]!"
+
+...continue through Page 12...
+```
+
+The key change is ensuring the agent outputs `**Page N: Title**` (bold) format, NOT `## Page N: Title` (heading) format.
+
+### Step 2: Verify Parser Compatibility
+
+The existing parser in `src/utils/pageHelpers.ts` (line 40) already handles this format:
 
 ```typescript
-// BEFORE (broken)
-const { data: agentQuestions } = await supabase
-  .from('agent_questions')
-  .select('id, question_id, sort_order')
-  .eq('agent_type', agentType)  // Fetches ALL 19 questions
-  .order('sort_order', { ascending: true });
-
-// Swap uses array indices
-.update({ sort_order: currentIndex })  // ❌ Index 1, not value 1
-
-// AFTER (fixed)
-const { data: agentQuestions } = await supabase
-  .from('agent_questions')
-  .select('id, question_id, sort_order')
-  .eq('agent_type', agentType)
-  .eq('is_enabled', true)  // ✅ Only 6 enabled questions
-  .order('sort_order', { ascending: true });
-
-// Swap uses actual values
-const currentSortOrder = currentItem.sort_order;
-const targetSortOrder = targetItem.sort_order;
-.update({ sort_order: currentSortOrder })  // ✅ Actual value
+// Parse bold format pages: **Page 1: Title** or **Page 1 - Cover**: Title
+const boldPagePattern = /\*\*Page\s+(\d+)[\s:-]+([^*]*?)\*\*:?\s*([\s\S]*?)(?=\n\*\*Page|\n- Page\s+\d+|$)/gi;
 ```
 
----
-
-### Step 3: Fix UI Button Boundaries
-
-**File:** `src/components/agents/AgentQuestionsManager.tsx`
-
-**Problem (lines 111-112):** Uses global list index for first/last detection, but the list contains both enabled AND disabled questions.
-
-```typescript
-// BEFORE (broken)
-const isFirst = index === 0;  // Global index
-const isLast = index === sortedQuestions.length - 1;  // Global index
-
-// AFTER (fixed)
-const enabledQuestions = sortedQuestions.filter(q => q.isEnabled);
-const enabledIndex = enabledQuestions.findIndex(q => q.id === question.id);
-const isInEnabledGroup = enabledIndex !== -1;
-
-// Reorder only within enabled group
-const isFirstEnabled = isInEnabledGroup && enabledIndex === 0;
-const isLastEnabled = isInEnabledGroup && enabledIndex === enabledQuestions.length - 1;
-
-// Disabled questions cannot be reordered at all
-const canMoveUp = isInEnabledGroup && !isFirstEnabled;
-const canMoveDown = isInEnabledGroup && !isLastEnabled;
-```
-
----
-
-### Step 4: Enhance Real-Time Subscription
-
-**File:** `src/hooks/useAgentQuestionsSubscription.ts`
-
-**Problem:** Only invalidates queries on change, causing UI flicker.
-
-**Fix:** Add optimistic cache merge for instant updates:
-
-```typescript
-// AFTER subscription receives UPDATE event
-if (payload.eventType === 'UPDATE' && payload.new) {
-  queryClient.setQueryData(
-    ['agent-questions', changedAgentType],
-    (old: AgentQuestionWithDetails[] | undefined) => {
-      if (!old) return old;
-      
-      // Merge the updated record immediately
-      return old.map(item => 
-        item.id === (payload.new as any).id
-          ? { 
-              ...item, 
-              is_enabled: (payload.new as any).is_enabled,
-              sort_order: (payload.new as any).sort_order 
-            }
-          : item
-      ).sort((a, b) => {
-        // Re-sort: enabled first, then by sort_order
-        if (a.is_enabled !== b.is_enabled) return a.is_enabled ? -1 : 1;
-        return a.sort_order - b.sort_order;
-      });
-    }
-  );
-}
-
-// Then also refetch for consistency
-queryClient.invalidateQueries({ queryKey: ['agent-questions', changedAgentType] });
-```
+No code changes needed if the agent output matches this pattern.
 
 ---
 
@@ -180,29 +107,38 @@ queryClient.invalidateQueries({ queryKey: ['agent-questions', changedAgentType] 
 
 | File | Change |
 |------|--------|
-| `supabase/migrations/XXXXX_fix_opposites_sort_order.sql` | One-time data normalization |
-| `src/hooks/useQuestions.ts` | Filter by `is_enabled`, swap actual values |
-| `src/components/agents/AgentQuestionsManager.tsx` | Respect enabled/disabled boundary |
-| `src/hooks/useAgentQuestionsSubscription.ts` | Optimistic cache merge |
+| `agents` table (database) | Update `book-creation-opposites` instructions to use `**Page N:**` format |
+
+**No frontend code changes required** - the parser and editor panel are already shared and working correctly for the rhyming agent.
 
 ---
 
-## Expected Behavior After Fix
+## Alternative: Parser Enhancement (If Agent Update Not Preferred)
 
-1. **Toggle persists**: Enable/disable updates correctly, re-sequences enabled to `[0,1,2...]`
-2. **Reorder persists**: Moving up/down swaps only within enabled group
-3. **Real-time sync**: Changes appear instantly across tabs/users
-4. **Disabled questions stay put**: Cannot accidentally swap enabled with disabled
-5. **Page refresh**: All settings remain exactly as configured
+If you prefer to keep the opposites agent's current format, add a third regex pattern to `src/utils/pageHelpers.ts`:
+
+```typescript
+// Parse heading format pages: ## Page 1: Title
+const headingPagePattern = /##\s*Page\s+(\d+):\s*([^\n]+)/gi;
+```
+
+This would be added around line 62, with similar parsing logic.
+
+---
+
+## DRY Principle Compliance
+
+The Book Editor Panel (`BookEditorPanel.tsx`) and trigger logic (`GoogleChat.tsx`) are already shared across all book types. The only inconsistency is the agent's output format.
+
+By aligning the opposites agent's output format with the rhyming agent, we maintain DRY principles without duplicating parser logic.
 
 ---
 
 ## Testing Checklist
 
-- [ ] Refresh page → enabled questions still in correct order
-- [ ] Move "grade_level" up → swaps with "opposites_category", persists on refresh
-- [ ] Disable "city" → remaining 5 enabled questions re-sequence to [0,1,2,3,4]
-- [ ] Enable "THEME" → appears at end of enabled list with sort_order 6
-- [ ] Open in 2 browser tabs → toggle in tab A → tab B updates within 1 second
-- [ ] Disabled questions show grayed-out reorder buttons (cannot move)
-
+- [ ] Create a new opposites book
+- [ ] Complete all 12 pages in the discovery flow
+- [ ] Verify agent outputs `**Page 12: Day and Night**` format (not `## Page 12:`)
+- [ ] Confirm Book Editor Panel appears after outline is complete
+- [ ] Verify all 12 page thumbnails are shown in the editor
+- [ ] Test Upload, Paste, Generate, Copy Prompt buttons work correctly

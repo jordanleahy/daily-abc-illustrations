@@ -23,6 +23,13 @@ interface EtsyPostDrawerProps {
       pageCount?: number;
       city?: string;
       resort?: string;
+      season?: string;
+      location?: string;
+      environment?: string;
+      clothingBrand?: string;
+      gradeLevel?: string;
+      mannerType?: string;
+      mannersSetting?: string;
     };
   };
   onPosted?: () => void;
@@ -46,6 +53,13 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
     pageCount: book.metadata?.pageCount || 12,
     city: book.metadata?.city || null,
     resort: book.metadata?.resort || null,
+    season: book.metadata?.season || null,
+    location: book.metadata?.location || null,
+    environment: book.metadata?.environment || null,
+    clothingBrand: book.metadata?.clothingBrand || null,
+    gradeLevel: book.metadata?.gradeLevel || null,
+    mannerType: book.metadata?.mannerType || null,
+    mannersSetting: book.metadata?.mannersSetting || null,
   });
 
   const handleCopy = async (e: React.MouseEvent, text: string, type: 'title' | 'description') => {

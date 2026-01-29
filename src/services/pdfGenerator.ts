@@ -462,7 +462,13 @@ export async function generateBookPDF(
   bookName: string,
   options: PDFGenerationOptions = {}
 ): Promise<void> {
-  const sanitizedName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
+  // Sanitize: remove special chars, replace spaces with hyphens, collapse multiple hyphens
+  const sanitizedName = bookName
+    .replace(/['']/g, '')           // Remove apostrophes
+    .replace(/[^a-zA-Z0-9\s-]/g, '')  // Remove other special chars
+    .replace(/\s+/g, '-')           // Replace spaces with hyphens
+    .replace(/-+/g, '-')            // Collapse multiple hyphens
+    .replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
   const filename = `${sanitizedName}.pdf`;
 
   try {
@@ -532,7 +538,13 @@ export async function generateColoringBookPDF(
   bookName: string,
   options: PDFGenerationOptions = {}
 ): Promise<void> {
-  const sanitizedName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
+  // Sanitize: remove special chars, replace spaces with hyphens, collapse multiple hyphens
+  const sanitizedName = bookName
+    .replace(/['']/g, '')           // Remove apostrophes
+    .replace(/[^a-zA-Z0-9\s-]/g, '')  // Remove other special chars
+    .replace(/\s+/g, '-')           // Replace spaces with hyphens
+    .replace(/-+/g, '-')            // Collapse multiple hyphens
+    .replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
   const filename = `${sanitizedName}-Coloring-Book.pdf`;
 
   try {

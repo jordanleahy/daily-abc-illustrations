@@ -519,6 +519,7 @@ export type Database = {
       }
       book_types: {
         Row: {
+          agent_type_suffix: string | null
           clarification_context: string | null
           color: string | null
           created_at: string | null
@@ -537,6 +538,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          agent_type_suffix?: string | null
           clarification_context?: string | null
           color?: string | null
           created_at?: string | null
@@ -555,6 +557,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          agent_type_suffix?: string | null
           clarification_context?: string | null
           color?: string | null
           created_at?: string | null

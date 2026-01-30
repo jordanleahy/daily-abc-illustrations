@@ -1,35 +1,32 @@
+/**
+ * Shared Agent Types
+ * 
+ * Re-exports dynamic agent type utilities from the single source of truth.
+ * The database `book_types` table drives agent type generation.
+ * 
+ * @sync supabase/functions/_shared/agentTypes.ts for backend equivalent
+ */
+
 import { AgentStatus } from './status';
 import { BaseEntity, VersionTracked, DeploymentTracked, Optional } from './base';
 
-/**
- * Agent type enumeration for specialized capabilities
- * Expanded to support theme-specific book creation agents
- */
-export type AgentType = 
-  | 'chat' 
-  | 'book-creation'                  // Generic fallback
-  | 'book-creation-numbers'          // Numbers/counting
-  | 'book-creation-rhyming'          // Rhymes/phonics
-  | 'book-creation-colors'           // Color learning
-  | 'book-creation-abc'              // Alphabet
-  | 'book-creation-shapes'
-  | 'book-creation-animals'
-  | 'book-creation-sight-words'
-  | 'book-creation-emotions'
-  | 'book-creation-cvc'
-  | 'book-creation-opposites'
-  | 'book-creation-first-words'
-  | 'book-creation-bedtime'
-  | 'book-creation-general'          // Custom topic books
-  | 'book-creation-digraphs'         // Digraph phonics
-  | 'book-creation-dr-seuss'         // Dr. Seuss whimsical style
-  | 'book-creation-manners'          // Social skills and manners
-  | 'book-creation-parent-education'; // Parent literacy education
+// Re-export dynamic utilities from the single source of truth
+export { 
+  type AgentType, 
+  type StaticAgentType,
+  type AIProvider,
+  bookTypeToAgentType,
+  buildAgentTypeMap,
+  isValidAgentType,
+  STATIC_AGENT_TYPES,
+  STATIC_BOOK_TYPE_TO_AGENT_TYPE,
+} from '@/utils/agentTypeUtils';
 
 /**
- * Maps book types to specialized agent types for orchestration
+ * @deprecated Use `buildAgentTypeMap()` from useBookTypes hook for dynamic mapping
+ * This static mapping is kept for backward compatibility only
  */
-export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
+export const BOOK_TYPE_TO_AGENT_TYPE = {
   'numbers': 'book-creation-numbers',
   'rhyming': 'book-creation-rhyming',
   'colors': 'book-creation-colors',
@@ -47,14 +44,8 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'dr-seuss': 'book-creation-dr-seuss',
   'manners': 'book-creation-manners',
   'parent-education': 'book-creation-parent-education',
-  // Fallback for unknown types
   'other': 'book-creation'
 } as const;
-
-/**
- * AI provider types
- */
-export type AIProvider = 'openai' | 'deepseek' | 'google';
 
 /**
  * Base agent model settings shared between frontend and backend
@@ -75,15 +66,15 @@ export interface BaseAgentConfig {
   /** Display name shown to users */
   name: string;
   /** Agent type determining its specialized capabilities and role */
-  type: AgentType;
+  type: import('@/utils/agentTypeUtils').AgentType;
   /** Description of the agent's purpose and goals */
   intent: string;
   /** Current operational status */
   status: AgentStatus;
   /** System instructions that define the agent's behavior and responses */
   instructions: string;
-  /** AI provider (OpenAI or DeepSeek) */
-  provider: AIProvider;
+  /** AI provider (OpenAI, DeepSeek, or Google) */
+  provider: import('@/utils/agentTypeUtils').AIProvider;
   /** Configuration for the underlying AI model */
   modelSettings: BaseModelSettings;
 }

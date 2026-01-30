@@ -270,44 +270,15 @@ export enum PublicationStatus {
  */
 export type PageType = 'cover' | 'educational' | 'content';
 
-/**
- * AI provider types
- * NOTE: Must stay in sync with src/types/shared/agent.ts
- * Edge functions run in Deno, frontend types run in different environment
- */
-export type AIProvider = 'openai' | 'deepseek' | 'google';
+// Import dynamic agent type utilities from the single source of truth
+// Re-export for backward compatibility with existing edge functions
+export { type AgentType, type AIProvider, fetchAgentTypeMap } from './agentTypes.ts';
 
 /**
- * Agent configuration structure for edge functions
- * Represents a configured AI agent with its behavior and model settings
+ * @deprecated Use `fetchAgentTypeMap()` for dynamic mapping from database
+ * This static mapping is kept for backward compatibility only
  */
-/**
- * Agent type enumeration matching frontend types
- */
-export type AgentType = 
-  | 'chat' 
-  | 'book-creation'
-  | 'book-creation-numbers'
-  | 'book-creation-rhyming'
-  | 'book-creation-colors'
-  | 'book-creation-abc'
-  | 'book-creation-shapes'
-  | 'book-creation-animals'
-  | 'book-creation-sight-words'
-  | 'book-creation-emotions'
-  | 'book-creation-cvc'
-  | 'book-creation-opposites'
-  | 'book-creation-first-words'
-  | 'book-creation-bedtime'
-  | 'book-creation-general'
-  | 'book-creation-digraphs'
-  | 'book-creation-parent-education'
-  | 'book-creation-manners';
-
-/**
- * Maps book types to specialized agent types
- */
-export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
+export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, string> = {
   'numbers': 'book-creation-numbers',
   'rhyming': 'book-creation-rhyming',
   'colors': 'book-creation-colors',
@@ -322,8 +293,9 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'bedtime': 'book-creation-bedtime',
   'general': 'book-creation-general',
   'digraphs': 'book-creation-digraphs',
-  'parent-education': 'book-creation-parent-education',
+  'dr-seuss': 'book-creation-dr-seuss',
   'manners': 'book-creation-manners',
+  'parent-education': 'book-creation-parent-education',
   'other': 'book-creation'
 } as const;
 

@@ -2,7 +2,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
-import { BOOK_TYPE_TO_AGENT_TYPE, getBookTypeCategoryWord, normalizeBookType } from '../_shared/types.ts';
+import { fetchAgentTypeMap } from '../_shared/agentTypes.ts';
+import { getBookTypeCategoryWord, normalizeBookType } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
 import { buildCharacterConstraints, fetchCharactersForTheme } from '../_shared/characterConstraints.ts';
 import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
@@ -483,7 +484,9 @@ serve(async (req) => {
 
     if (bookType) {
       // Book type selected - route to specialized agent
-      const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
+      // Use dynamic agent type mapping from database (single source of truth)
+      const agentTypeMap = await fetchAgentTypeMap(supabase);
+      const agentType = agentTypeMap[bookType] || 'book-creation';
       console.log(`📚 Book type: ${bookType} → Agent: ${agentType}`);
       
       // Query database for specialized agent (include model settings)

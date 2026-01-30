@@ -274,9 +274,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Batch processing mode - process all pages for a book
+    // Batch processing mode - process pages for a book in chunks to avoid CPU timeout
     if (batchProcess && bookId) {
-      console.log(`📚 Batch processing printable coloring images for book: ${bookId}`);
+      const MAX_PAGES_PER_BATCH = 3; // Process max 3 pages per invocation to stay under CPU limits
+      
+      console.log(`📚 Batch processing printable coloring images for book: ${bookId} (max ${MAX_PAGES_PER_BATCH} pages)`);
       
       // Get all pages with both color and coloring images
       const { data: pages, error: pagesError } = await supabase
@@ -296,25 +298,39 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             message: 'No pages found with both color and coloring images',
-            processed: 0 
+            processed: 0,
+            hasMore: false
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log(`📄 Found ${pages.length} pages to process`);
+      // Filter to only pages that need processing (no printable image yet)
+      const pagesToProcess = pages
+        .filter(p => !p.printable_coloring_image_url)
+        .slice(0, MAX_PAGES_PER_BATCH);
+      
+      const totalRemaining = pages.filter(p => !p.printable_coloring_image_url).length;
+      
+      console.log(`📄 Found ${pages.length} total pages, ${totalRemaining} need processing, processing ${pagesToProcess.length} this batch`);
+
+      // If no pages need processing, return early
+      if (pagesToProcess.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'All pages already have printable images',
+            summary: { success: 0, skipped: pages.length, errors: 0, remaining: 0 },
+            hasMore: false,
+            results: []
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const results = [];
-      let processedCount = 0;
       
-      for (const page of pages) {
-        // Skip if already has printable image
-        if (page.printable_coloring_image_url) {
-          console.log(`⏭️ Skipping page ${page.page_id} - already has printable image`);
-          results.push({ pageId: page.page_id, status: 'skipped', reason: 'already exists' });
-          continue;
-        }
-
+      for (const page of pagesToProcess) {
         try {
           console.log(`🎨 Processing page ${page.page_id} with canvas compositing`);
           
@@ -358,7 +374,6 @@ serve(async (req) => {
             status: 'success', 
             url: urlData.publicUrl 
           });
-          processedCount++;
 
         } catch (pageError) {
           console.error(`❌ Error processing page ${page.page_id}:`, pageError);
@@ -371,14 +386,20 @@ serve(async (req) => {
       }
 
       const successCount = results.filter(r => r.status === 'success').length;
-      const skippedCount = results.filter(r => r.status === 'skipped').length;
       const errorCount = results.filter(r => r.status === 'error').length;
+      const remainingAfterBatch = totalRemaining - successCount;
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: `Processed ${pages.length} pages`,
-          summary: { success: successCount, skipped: skippedCount, errors: errorCount },
+          message: `Processed ${pagesToProcess.length} pages this batch`,
+          summary: { 
+            success: successCount, 
+            skipped: 0, 
+            errors: errorCount, 
+            remaining: remainingAfterBatch 
+          },
+          hasMore: remainingAfterBatch > 0,
           results
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

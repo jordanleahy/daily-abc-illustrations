@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { IMAGE_GENERATION_MODEL } from "../_shared/aiModelConstants.ts";
+import { 
+  generateCoverTitleInstruction,
+  COVER_ASPECT_RATIOS,
+  COVER_STYLE_DEFAULTS 
+} from "../_shared/coverPromptConstants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,18 +31,25 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Build the prompt for thumbnail generation
+    // Build the prompt for thumbnail generation using shared cover constants
     const themeStyle = characterTheme && characterTheme !== 'no-theme' 
       ? `${characterTheme} style, ` 
       : '';
     
+    // Use shared constants for consistent cover generation
+    const titleInstruction = generateCoverTitleInstruction(bookTitle);
+    
     const prompt = `Generate an image: Create a vibrant children's book cover thumbnail in landscape format (1200x630 ratio).
 
-CRITICAL TITLE REQUIREMENT: The book title "${bookTitle}" MUST be displayed as LARGE, BOLD text CENTERED horizontally and vertically in the image, taking up 50-60% of the visual space. Use a fun, playful, child-friendly font style. The title is the most important visual element.
+${titleInstruction}
 
 ${bookDescription ? `Book theme: ${bookDescription}` : ''}
 
-Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, warm inviting colors, playful educational theme. Create a colorful, engaging background scene that complements but does not overshadow the centered title text.`;
+Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, warm inviting colors, playful educational theme.
+
+Background: ${COVER_STYLE_DEFAULTS.backgroundColor}. Around the edges: ${COVER_STYLE_DEFAULTS.decorativeElements}.
+
+The design should be ${COVER_STYLE_DEFAULTS.mood}.`;
 
     console.log("Generating thumbnail for:", bookTitle);
 

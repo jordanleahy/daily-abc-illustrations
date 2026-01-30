@@ -11,6 +11,10 @@ import {
   getCriticalConstraints 
 } from './styleGuides.ts';
 import { stripHexCodes, enforceBearStoriesSnowboarding } from './templateProcessor.ts';
+import { 
+  generateCoverTitleInstruction,
+  COVER_TITLE_INSTRUCTION 
+} from './coverPromptConstants.ts';
 
 /**
  * Generate a style header line based on character theme
@@ -467,7 +471,8 @@ function generateCoverPromptLayered(
   if (!textOverlayEnabled) {
     sceneDescription += ' CRITICAL: Generate cover illustration WITHOUT the book title text. No visible text of any kind - pure visual cover design. Title will be added as overlay later.';
   } else {
-    sceneDescription += ` Include the title "${book.bookName}" as a BIG, BUBBLY, CENTERED text overlay: extra large bubble-letter font, centered horizontally in the upper-middle area, rounded playful style, high contrast, simple and bold like a classic children's book cover.`;
+    // Use centralized cover title instruction
+    sceneDescription += ` ${generateCoverTitleInstruction(book.bookName)}`;
   }
   
   // Use layered architecture if style guide provided

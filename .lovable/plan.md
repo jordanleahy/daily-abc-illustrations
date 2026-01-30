@@ -1,135 +1,81 @@
 
 # Plan: Centralize Cover Page Prompt Utility
 
+## Status: ✅ COMPLETED
+
 ## Overview
-Create a shared utility for cover page image generation that consolidates the scattered cover prompt logic into a single source of truth. This ensures consistent cover page styling across all agents and edge functions.
+Created a shared utility for cover page image generation that consolidates the scattered cover prompt logic into a single source of truth. This ensures consistent cover page styling across all agents and edge functions.
 
-## Current Problem
-Cover page title display instructions are duplicated across 5+ files with inconsistent wording:
-- "upper-middle area" vs "at the center"
-- "50-60% of visual space" appears in some but not all
-- No shared constants or utility functions for cover prompts
+## What Was Done
 
-## Proposed Solution
+### Phase 1: Created Shared Cover Constants ✅
 
-### Phase 1: Create Shared Cover Constants
-
-Create a new file `supabase/functions/_shared/coverPromptConstants.ts` containing:
+Created `supabase/functions/_shared/coverPromptConstants.ts` containing:
 
 1. **COVER_TITLE_INSTRUCTION** - The canonical title display instruction
-2. **COVER_STYLE_DEFAULTS** - Default styling constants
-3. **generateCoverTitleInstruction(bookTitle)** - Function to generate title instruction with variable title
-4. **getCoverPromptEnding()** - Returns the correct ending for cover prompts (title instruction, not "No text overlays")
+2. **NO_TEXT_INSTRUCTION** - Strong negative prompt for content pages
+3. **COVER_ASPECT_RATIOS** - Aspect ratio instructions for different formats
+4. **COVER_STYLE_DEFAULTS** - Default styling constants
+5. **generateCoverTitleInstruction(bookTitle)** - Function to generate title instruction with variable title
+6. **getCoverPromptEnding()** - Returns the cover title instruction
+7. **getContentPromptEnding()** - Returns the no-text instruction
+8. **buildCoverPromptPrefix(config)** - Builds complete cover prompt prefix
+9. **buildCoverPrompt(config)** - Builds full cover prompt from config
+10. **getPromptEndingForPage(pageType, pageNumber)** - Determines correct ending
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                 coverPromptConstants.ts (NEW)                   │
-├─────────────────────────────────────────────────────────────────┤
-│ COVER_TITLE_INSTRUCTION                                         │
-│ COVER_STYLE_DEFAULTS                                            │
-│ generateCoverTitleInstruction(title: string): string            │
-│ getCoverPromptEnding(): string                                  │
-│ buildCoverPrompt(config: CoverPromptConfig): string             │
-└─────────────────────────────────────────────────────────────────┘
-                              ▲
-                              │ imports
-            ┌─────────────────┼─────────────────┐
-            │                 │                 │
-┌───────────┴────┐  ┌────────┴────────┐  ┌────┴───────────────┐
-│ promptTemplates│  │ generate-color  │  │ instructionTemplates│
-│      .ts       │  │   -image        │  │        .ts         │
-└────────────────┘  └─────────────────┘  └────────────────────┘
-```
+### Phase 2: Standardized Cover Title Instruction ✅
 
-### Phase 2: Standardize Cover Title Instruction
-
-Adopt a single, canonical instruction format:
-
+Adopted canonical instruction format:
 > **CRITICAL INSTRUCTION: Display the book title "[TITLE]" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space. Use a playful, bubble-letter font style (rounded, child-friendly). The title must be the most prominent visual element.**
 
-### Phase 3: Refactor Existing Files
+### Phase 3: Refactored Existing Files ✅
 
-**Files to update:**
+**Files updated:**
 
 1. **`supabase/functions/_shared/promptTemplates.ts`**
-   - Import from `coverPromptConstants.ts`
-   - Replace inline title instructions in `generateCoverPrompt()` and `generateCoverPromptLayered()`
+   - Added import from `coverPromptConstants.ts`
+   - Updated `generateCoverPromptLayered()` to use `generateCoverTitleInstruction()`
 
 2. **`supabase/functions/generate-color-image/index.ts`**
-   - Import `generateCoverTitleInstruction()` 
-   - Replace the hardcoded `coverTitlePrefix` constant
+   - Added import from `coverPromptConstants.ts`
+   - Updated aspect ratio prefix to use `COVER_ASPECT_RATIOS.square`
+   - Updated cover title prefix to use `generateCoverTitleInstruction()`
 
 3. **`supabase/functions/generate-thumbnail/index.ts`**
-   - Import shared constants
-   - Use `generateCoverTitleInstruction()` for consistency
+   - Added imports from `coverPromptConstants.ts`
+   - Updated prompt to use `generateCoverTitleInstruction()`
+   - Updated styling to use `COVER_STYLE_DEFAULTS`
 
 4. **`supabase/functions/_shared/instructionTemplates.ts`**
-   - Import shared constant for the cover page template
-   - Replace inline instruction in `TEMPLATES.coverPage()`
+   - Added import from `coverPromptConstants.ts`
+   - Updated `TEMPLATES.coverPage()` to use `COVER_TITLE_INSTRUCTION`
 
 5. **`supabase/functions/google-create-book/agent-prompts.ts`**
-   - Import and use shared constant for ABC agent cover guidelines
+   - Added import from `coverPromptConstants.ts`
+   - Updated `BASE_BOOK_STRUCTURE` to use `COVER_TITLE_INSTRUCTION`
+   - Added documentation noting centralized location
 
-### Phase 4: Add Cover Format Configuration
+### Phase 4: Cover Format Configuration ✅
 
-Add optional configuration for different cover formats:
-
+Added support for different cover formats:
 - **SQUARE** (1:1): Default for book pages
 - **LANDSCAPE** (1200x630): For thumbnails/OG images
 - **PORTRAIT** (3:4): Future consideration
 
 ---
 
-## Technical Details
+## Benefits Achieved
 
-### New File Structure
-```
-supabase/functions/_shared/
-├── coverPromptConstants.ts  (NEW)
-├── promptTemplates.ts       (MODIFIED - import from cover constants)
-├── instructionTemplates.ts  (MODIFIED - import from cover constants)
-└── ...
-```
-
-### Interface Definition
-```typescript
-interface CoverPromptConfig {
-  bookTitle: string;
-  characterTheme?: string;
-  bookDescription?: string;
-  aspectRatio?: 'square' | 'landscape' | 'portrait';
-  includeTitle?: boolean;  // false for text-overlay-later approach
-}
-```
-
-### Constant Definitions
-```typescript
-export const COVER_TITLE_INSTRUCTION = 
-  'CRITICAL INSTRUCTION: Display the book title in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space. Use a playful, bubble-letter font style (rounded, child-friendly). The title must be the most prominent visual element.';
-
-export const COVER_ASPECT_RATIOS = {
-  square: 'Generate a SQUARE image with 1:1 aspect ratio.',
-  landscape: 'Generate a landscape image at 1200x630 ratio.',
-} as const;
-```
-
----
-
-## Benefits
-
-1. **Single Source of Truth**: All cover prompt logic in one file
-2. **Consistency**: Same title instruction used everywhere
-3. **Maintainability**: Change once, applies everywhere
-4. **Testability**: Easier to unit test isolated utilities
-5. **Documentation**: Centralized place to document cover requirements
+1. ✅ **Single Source of Truth**: All cover prompt logic in `coverPromptConstants.ts`
+2. ✅ **Consistency**: Same title instruction used everywhere
+3. ✅ **Maintainability**: Change once, applies everywhere
+4. ✅ **Testability**: Easier to unit test isolated utilities
+5. ✅ **Documentation**: Centralized place to document cover requirements
 
 ## Files Affected
-- `supabase/functions/_shared/coverPromptConstants.ts` (new)
-- `supabase/functions/_shared/promptTemplates.ts` (modify)
-- `supabase/functions/_shared/instructionTemplates.ts` (modify)
-- `supabase/functions/generate-color-image/index.ts` (modify)
-- `supabase/functions/generate-thumbnail/index.ts` (modify)
-- `supabase/functions/google-create-book/agent-prompts.ts` (modify)
-
-## Estimated Complexity
-Medium - primarily refactoring with no new features, but touches multiple files
+- `supabase/functions/_shared/coverPromptConstants.ts` (new - 145 lines)
+- `supabase/functions/_shared/promptTemplates.ts` (modified)
+- `supabase/functions/_shared/instructionTemplates.ts` (modified)
+- `supabase/functions/generate-color-image/index.ts` (modified)
+- `supabase/functions/generate-thumbnail/index.ts` (modified)
+- `supabase/functions/google-create-book/agent-prompts.ts` (modified)

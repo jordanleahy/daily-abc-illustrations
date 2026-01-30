@@ -1,330 +1,463 @@
 
-# Recommendation: Approach A (Database-Driven Shared Templates) is Best
+# Shared Agent Orchestration Utility for Edge Functions
 
-## Why Approach A is the Correct Choice
+## Problem Statement
 
-Based on your requirement for **UI-editable shared prompts**, here's the comparison:
+Agent selection, fallback logic, and performance metrics tracking are currently **duplicated** across two major edge functions:
 
-| Criteria | Approach A: DB Templates | Approach B: Code Assembler | Approach C: Fragments |
-|----------|-------------------------|---------------------------|----------------------|
-| **UI Editing** | ✅ Full UI editing | ❌ Requires code deploy | ✅ Full UI editing |
-| **Complexity** | ⭐⭐ Medium | ⭐ Simple | ⭐⭐⭐ High |
-| **Versioning** | ✅ Built-in | ❌ Git only | ✅ Built-in |
-| **Real-time Updates** | ✅ Yes | ❌ No | ✅ Yes |
-| **A/B Testing** | ✅ Easy | ❌ Hard | ✅ Easy |
-| **Risk of Drift** | None | Medium | None |
-| **Fits Existing Patterns** | ✅ Matches agents UI | ❌ Different pattern | ⚠️ New complexity |
+| Function | Lines of Agent Logic | Duplication |
+|----------|---------------------|-------------|
+| `google-chat/index.ts` | ~100 lines | Agent fetch, fallback prompt, model config |
+| `google-create-book/index.ts` | ~100 lines | Agent fetch, fallback, metrics, validation |
 
-**Approach A wins** because:
-1. You already have a proven admin UI pattern for editing agents (AgentIdentityCard, ConfigurationTabs)
-2. You already have versioned tables (`book_system_prompts`, `page_system_prompts`) as precedent
-3. Real-time subscriptions are already implemented for agents and book types
-4. It's simpler than Approach C while still being fully UI-editable
+This creates:
+- Maintenance burden when updating agent selection logic
+- Inconsistent error handling between functions
+- Risk of logic drift (one function handles edge cases differently)
+- Duplicated performance metrics code
 
-Approach C (Fragments) is overkill unless you need granular A/B testing of individual prompt sentences.
+## Current Architecture (Identified Issues)
 
----
-
-## Implementation Plan
-
-### Phase 1: Create Database Schema
-
-Create a new `shared_page_templates` table to store cover and educational page templates:
-
-```sql
-CREATE TABLE shared_page_templates (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  template_key TEXT NOT NULL,           -- 'cover' or 'educational'
-  version_number INT NOT NULL DEFAULT 1,
-  content TEXT NOT NULL,                -- The template with {{placeholders}}
-  is_latest BOOLEAN NOT NULL DEFAULT true,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_by UUID REFERENCES auth.users(id),
-  change_notes TEXT,                    -- What changed in this version
-  
-  UNIQUE(template_key, version_number)
-);
-
--- Enable RLS
-ALTER TABLE shared_page_templates ENABLE ROW LEVEL SECURITY;
-
--- Admins can manage templates
-CREATE POLICY "Admins can manage shared templates" ON shared_page_templates
-  FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- All authenticated users can read active templates
-CREATE POLICY "Authenticated users can read active templates" ON shared_page_templates
-  FOR SELECT USING (is_active = true AND is_latest = true);
+```text
+┌─────────────────────────────────────────────────────────────┐
+│              google-chat/index.ts                            │
+│  ├── fetchAgentTypeMap() call                               │
+│  ├── supabase.from('agents').select().eq('type')           │
+│  ├── Inline fallback prompt                                 │
+│  ├── Model settings extraction (model, max_tokens, top_p)  │
+│  └── Shared template interpolation                          │
+└─────────────────────────────────────────────────────────────┘
+                              ↓ (Duplicated)
+┌─────────────────────────────────────────────────────────────┐
+│           google-create-book/index.ts                        │
+│  ├── fetchAgentTypeMap() call                               │
+│  ├── supabase.from('agents').select().eq('type')           │
+│  ├── supabase.from('agents').select().eq('type')           │ ← Fallback query
+│  ├── Performance metrics insert                             │
+│  ├── Prompt length validation                               │
+│  └── Detailed orchestration logging                         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Phase 2: Seed Initial Templates
+## Proposed Solution
 
-Insert the canonical cover and educational templates:
+Create `supabase/functions/_shared/agentOrchestration.ts` as a centralized utility that:
 
-**Cover Template** (`template_key = 'cover'`):
-```
-## Cover Page (Page 1)
+1. **Selects agents** with fallback logic (specialized → generic → inline fallback)
+2. **Tracks performance metrics** consistently across all functions
+3. **Validates agent configuration** (prompt length, required fields)
+4. **Provides structured logging** for debugging and monitoring
+5. **Handles model settings** extraction with safe defaults
 
-Generate a cover page with:
-- Book title prominently displayed (MUST include "{{bookTypeWord}}" in the title)
-- Character theme integration (if selected)
-- Engaging, colorful illustration
+## Implementation Details
 
-⚠️ TITLE FORMAT (PRIORITY ORDER):
-1. **With Resort:** "[Resort Name] {{bookTypeWord}}" (e.g., "Killington {{bookTypeWord}}")
-2. **With City:** "[City] {{bookTypeWord}}" (e.g., "Jersey City {{bookTypeWord}}")
-3. **Character Only:** "[Character]'s {{bookTypeWord}}" (e.g., "Bluey's {{bookTypeWord}}")
-
-⚠️ FORBIDDEN TITLES:
-- ❌ Verbose titles like "Magical Snowy Adventure at Killington"
-- ❌ Titles longer than 5-6 words
-- ❌ Titles without "{{bookTypeWord}}"
-
-{{COVER_TITLE_INSTRUCTION}}
-```
-
-**Educational Template** (`template_key = 'educational'`):
-```
-## Educational Focus Page (Page 2)
-
-Generate Page 2 with three vertically-stacked colorful badges:
-- **Grade Level Badge** (teal background): "{{gradeLevel}}"
-- **Learning Type Badge** (coral background): "{{learningType}}"
-- **Skill Focus Badge** (gold background): "{{skillFocus}}"
-
-Image prompt for educational focus page must be 200-350 characters describing the badges with theme-specific styling. End with "No text overlays. Clean illustration only."
-```
-
-### Phase 3: Create Admin UI Components
-
-**New Route**: `/admin/shared-templates`
-
-**New Components**:
-- `SharedTemplatesManager.tsx` - List view with edit buttons
-- `SharedTemplateEditor.tsx` - Markdown editor with live preview and placeholder validation
-- `TemplateVersionHistory.tsx` - View/restore previous versions
-
-The UI will follow the existing `AgentIdentityCard` pattern:
-- Inline editing with InlineEditTextarea
-- Version display and history
-- Character counter
-- Placeholder validation (shows which `{{placeholders}}` are available)
-
-### Phase 4: Update Backend to Fetch Shared Templates
-
-Create `supabase/functions/_shared/sharedTemplates.ts`:
+### New File: `supabase/functions/_shared/agentOrchestration.ts`
 
 ```typescript
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+/**
+ * Shared Agent Orchestration Utility
+ * 
+ * Centralizes agent selection, fallback logic, and performance metrics
+ * for all edge functions that use AI agents.
+ */
 
-interface SharedTemplate {
-  template_key: string;
-  content: string;
-  version_number: number;
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { fetchAgentTypeMap, type AgentType } from './agentTypes.ts';
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface AgentRecord {
+  id: string;
+  name: string;
+  type: AgentType;
+  version: string;
+  instructions: string;
+  model: string;
+  max_completion_tokens: number;
+  top_p: number;
+  provider: string;
 }
 
-// Cache with 5-minute TTL
-let cachedTemplates: Record<string, string> | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-export async function fetchSharedTemplates(
-  supabase: ReturnType<typeof createClient>
-): Promise<Record<string, string>> {
-  const now = Date.now();
-  
-  if (cachedTemplates && (now - cacheTimestamp) < CACHE_TTL) {
-    return cachedTemplates;
-  }
-  
-  const { data, error } = await supabase
-    .from('shared_page_templates')
-    .select('template_key, content')
-    .eq('is_active', true)
-    .eq('is_latest', true);
-    
-  if (error) {
-    console.error('[SharedTemplates] Failed to fetch:', error);
-    return FALLBACK_TEMPLATES;
-  }
-  
-  const templates: Record<string, string> = {};
-  for (const row of data || []) {
-    templates[row.template_key] = row.content;
-  }
-  
-  cachedTemplates = templates;
-  cacheTimestamp = now;
-  
-  return templates;
+export interface AgentSelectionResult {
+  agent: AgentRecord | null;
+  source: 'specialized' | 'generic-fallback' | 'inline-fallback';
+  agentType: AgentType;
+  error?: string;
 }
 
-// Fallback for when DB is unreachable
-const FALLBACK_TEMPLATES: Record<string, string> = {
-  'cover': `## Cover Page (Page 1)...`, // Static fallback
-  'educational': `## Educational Focus Page (Page 2)...`, // Static fallback
-};
+export interface OrchestrationConfig {
+  bookType?: string;
+  requireAgent?: boolean;  // If true, fails when no agent found
+  minPromptLength?: number; // Minimum instruction length (default: 500)
+}
+
+export interface PerformanceMetricData {
+  agentId: string;
+  agentType: AgentType;
+  agentSource: string;
+  bookType?: string;
+  targetAge?: string;
+  characterTheme?: string;
+  sessionId?: string;
+  additionalMetadata?: Record<string, unknown>;
+}
+
+// ============================================
+// AGENT SELECTION
+// ============================================
 
 /**
- * Interpolates placeholders in template with actual values
+ * Selects the appropriate agent based on book type with fallback logic
+ * 
+ * Priority order:
+ * 1. Specialized agent for the book type
+ * 2. Generic book-creation agent
+ * 3. Inline fallback (if allowed)
  */
-export function interpolateTemplate(
-  template: string,
-  values: Record<string, string>
-): string {
-  let result = template;
-  for (const [key, value] of Object.entries(values)) {
-    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
+export async function selectAgent(
+  supabase: SupabaseClient,
+  config: OrchestrationConfig = {}
+): Promise<AgentSelectionResult> {
+  const { bookType, requireAgent = false, minPromptLength = 500 } = config;
+  
+  console.log('[AgentOrchestration] Starting agent selection', { bookType });
+  
+  // Get dynamic agent type mapping from database
+  const agentTypeMap = await fetchAgentTypeMap(supabase);
+  const agentType: AgentType = agentTypeMap[bookType || 'other'] || 'book-creation';
+  
+  console.log('[AgentOrchestration] Mapped to agent type:', agentType);
+  
+  // Try specialized agent first (if not generic)
+  if (agentType !== 'book-creation') {
+    const { data: specialized, error } = await supabase
+      .from('agents')
+      .select('id, name, type, version, instructions, model, max_completion_tokens, top_p, provider')
+      .eq('type', agentType)
+      .eq('is_latest', true)
+      .maybeSingle();
+    
+    if (specialized && !error && validateAgent(specialized, minPromptLength)) {
+      console.log('[AgentOrchestration] ✓ Using specialized agent:', specialized.name);
+      return { agent: specialized, source: 'specialized', agentType };
+    }
+    
+    console.log('[AgentOrchestration] ⚠ Specialized agent not found or invalid, falling back');
   }
-  return result;
+  
+  // Fallback to generic book-creation agent
+  const { data: generic, error: genericError } = await supabase
+    .from('agents')
+    .select('id, name, type, version, instructions, model, max_completion_tokens, top_p, provider')
+    .eq('type', 'book-creation')
+    .eq('is_latest', true)
+    .maybeSingle();
+  
+  if (generic && !genericError && validateAgent(generic, minPromptLength)) {
+    console.log('[AgentOrchestration] ✓ Using generic agent:', generic.name);
+    return { agent: generic, source: 'generic-fallback', agentType };
+  }
+  
+  // No agent found
+  if (requireAgent) {
+    console.error('[AgentOrchestration] ✗ No agents found and requireAgent=true');
+    return { 
+      agent: null, 
+      source: 'inline-fallback', 
+      agentType,
+      error: 'No book creation agent configured. Please set up agents in the admin panel.'
+    };
+  }
+  
+  console.log('[AgentOrchestration] ⚠ No agent found, using inline fallback');
+  return { agent: null, source: 'inline-fallback', agentType };
+}
+
+/**
+ * Validates an agent configuration meets minimum requirements
+ */
+function validateAgent(agent: AgentRecord, minPromptLength: number): boolean {
+  if (!agent.instructions || agent.instructions.length < minPromptLength) {
+    console.warn(`[AgentOrchestration] Agent ${agent.name} has invalid prompt (${agent.instructions?.length || 0} chars)`);
+    return false;
+  }
+  return true;
+}
+
+// ============================================
+// MODEL SETTINGS
+// ============================================
+
+export interface ModelSettings {
+  model: string;
+  maxCompletionTokens: number;
+  topP: number;
+}
+
+/**
+ * Extracts model settings from agent with safe defaults
+ */
+export function getModelSettings(
+  agent: AgentRecord | null,
+  overrides: Partial<ModelSettings> = {}
+): ModelSettings {
+  const defaults = {
+    model: 'google/gemini-2.5-flash',
+    maxCompletionTokens: 8000,
+    topP: 0.95
+  };
+  
+  return {
+    model: overrides.model || agent?.model || defaults.model,
+    maxCompletionTokens: overrides.maxCompletionTokens || agent?.max_completion_tokens || defaults.maxCompletionTokens,
+    topP: overrides.topP || agent?.top_p || defaults.topP
+  };
+}
+
+// ============================================
+// PERFORMANCE METRICS
+// ============================================
+
+/**
+ * Creates a performance metric record for agent usage tracking
+ * Returns the metric ID for later updates
+ */
+export async function createPerformanceMetric(
+  supabase: SupabaseClient,
+  data: PerformanceMetricData
+): Promise<string | null> {
+  const { data: result, error } = await supabase
+    .from('agent_performance_metrics')
+    .insert({
+      agent_id: data.agentId,
+      agent_type: data.agentType,
+      metadata_captured: {
+        bookType: data.bookType,
+        targetAge: data.targetAge,
+        characterTheme: data.characterTheme,
+        agentSource: data.agentSource,
+        sessionId: data.sessionId,
+        ...data.additionalMetadata
+      }
+    })
+    .select('id')
+    .single();
+  
+  if (error) {
+    console.error('[AgentOrchestration] Failed to create performance metric:', error.message);
+    return null;
+  }
+  
+  console.log('[AgentOrchestration] Created performance metric:', result.id);
+  return result.id;
+}
+
+/**
+ * Updates a performance metric with completion data
+ */
+export async function completePerformanceMetric(
+  supabase: SupabaseClient,
+  metricId: string,
+  data: {
+    bookId?: string;
+    bookCreated?: boolean;
+    totalPages?: number;
+    userEditedPages?: number;
+    userSatisfaction?: number;
+  }
+): Promise<void> {
+  const { error } = await supabase
+    .from('agent_performance_metrics')
+    .update({
+      book_id: data.bookId,
+      book_created: data.bookCreated,
+      total_pages: data.totalPages,
+      user_edited_pages: data.userEditedPages,
+      user_satisfaction: data.userSatisfaction,
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', metricId);
+  
+  if (error) {
+    console.error('[AgentOrchestration] Failed to update performance metric:', error.message);
+  }
+}
+
+// ============================================
+// INLINE FALLBACK PROMPTS
+// ============================================
+
+/**
+ * Returns inline fallback prompt when no agent is configured
+ */
+export function getInlineFallbackPrompt(bookType?: string): string {
+  if (!bookType) {
+    return `You are a helpful AI assistant for creating children's educational books. Help users explore different book types: ABC, Numbers, Colors, Shapes, Animals, Rhyming, Emotions, Opposites, First Words, CVC Words, Sight Words, and Bedtime stories. Ask which type interests them.`;
+  }
+  
+  return `You are an AI assistant specializing in creating ${bookType} educational books for children. Guide the user through creating their book step by step.`;
+}
+
+// ============================================
+// LOGGING UTILITIES
+// ============================================
+
+export interface OrchestrationLog {
+  agentId?: string;
+  agentName?: string;
+  agentType: AgentType;
+  version?: string;
+  source: string;
+  promptLength: number;
+}
+
+/**
+ * Logs orchestration details in a consistent format
+ */
+export function logOrchestration(log: OrchestrationLog): void {
+  console.log('[AgentOrchestration] Agent selected:', {
+    agentId: log.agentId || 'N/A',
+    agentName: log.agentName || 'Inline Fallback',
+    agentType: log.agentType,
+    version: log.version || 'N/A',
+    source: log.source,
+    promptLength: log.promptLength
+  });
 }
 ```
 
-### Phase 5: Update Agent Instructions Migration
-
-Create an edge function `update-agents-with-shared-templates` that:
-
-1. Fetches all book-creation agents
-2. Removes embedded cover/educational sections
-3. Replaces with placeholder references: `{{SHARED_COVER_TEMPLATE}}` and `{{SHARED_EDUCATIONAL_TEMPLATE}}`
-4. Reduces instruction bloat by ~40%
-
-### Phase 6: Update google-chat Edge Function
-
-Modify the agent instruction injection to:
-
-1. Fetch shared templates from database
-2. Interpolate placeholders with book-type-specific values
-3. Inject into agent context before calling AI
-
-```typescript
-// In google-chat/index.ts
-const sharedTemplates = await fetchSharedTemplates(supabase);
-const bookTypeConfig = BOOK_TYPE_TITLE_WORDS[bookType] || { word: 'Adventure' };
-
-const resolvedInstructions = agent.instructions
-  .replace('{{SHARED_COVER_TEMPLATE}}', interpolateTemplate(
-    sharedTemplates['cover'],
-    { bookTypeWord: bookTypeConfig.word, COVER_TITLE_INSTRUCTION }
-  ))
-  .replace('{{SHARED_EDUCATIONAL_TEMPLATE}}', interpolateTemplate(
-    sharedTemplates['educational'],
-    { gradeLevel, learningType, skillFocus }
-  ));
-```
-
-### Phase 7: Add Real-time Subscription
-
-Create `useSharedTemplatesSubscription.ts`:
-
-```typescript
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-export const useSharedTemplatesSubscription = () => {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('shared-templates-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'shared_page_templates',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['shared-templates'] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-};
-```
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/xxx_create_shared_page_templates.sql` | Database table and seed data |
-| `src/pages/admin/SharedTemplates.tsx` | Admin UI page |
-| `src/components/admin/SharedTemplatesManager.tsx` | Template list and management |
-| `src/components/admin/SharedTemplateEditor.tsx` | Template editing with preview |
-| `src/hooks/useSharedTemplates.ts` | Query hook for fetching templates |
-| `src/hooks/useSharedTemplatesSubscription.ts` | Real-time subscription hook |
-| `supabase/functions/_shared/sharedTemplates.ts` | Backend template fetching utility |
-
-## Files to Modify
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `supabase/functions/google-chat/index.ts` | Fetch and interpolate shared templates |
-| `supabase/functions/_shared/instructionTemplates.ts` | Remove duplicate template code, use shared templates |
-| `agents` table (17+ records) | Replace embedded sections with placeholder references |
-| `src/App.tsx` or routing | Add `/admin/shared-templates` route |
+| `supabase/functions/google-chat/index.ts` | Replace inline agent selection with `selectAgent()` and `getModelSettings()` |
+| `supabase/functions/google-create-book/index.ts` | Replace inline orchestration with shared utility calls |
 
----
+### Example Usage (google-chat refactor)
+
+**Before (current code, ~50 lines):**
+```typescript
+// Lines 487-632 of google-chat/index.ts
+const agentTypeMap = await fetchAgentTypeMap(supabase);
+const agentType = agentTypeMap[bookType] || 'book-creation';
+const { data: agentData } = await supabase
+  .from('agents')
+  .select('instructions, name, model, max_completion_tokens, top_p')
+  .eq('type', agentType)
+  .eq('is_latest', true)
+  .single();
+// ... more inline logic
+```
+
+**After (using shared utility, ~10 lines):**
+```typescript
+import { selectAgent, getModelSettings, logOrchestration, getInlineFallbackPrompt } from '../_shared/agentOrchestration.ts';
+
+const { agent, source, agentType, error } = await selectAgent(supabase, { bookType });
+
+if (error) {
+  return new Response(JSON.stringify({ error }), { status: 500, headers });
+}
+
+const modelSettings = getModelSettings(agent);
+const systemPrompt = agent?.instructions || getInlineFallbackPrompt(bookType);
+
+logOrchestration({
+  agentId: agent?.id,
+  agentName: agent?.name,
+  agentType,
+  version: agent?.version,
+  source,
+  promptLength: systemPrompt.length
+});
+```
+
+### Example Usage (google-create-book refactor)
+
+**After:**
+```typescript
+import { 
+  selectAgent, 
+  getModelSettings, 
+  createPerformanceMetric, 
+  completePerformanceMetric,
+  logOrchestration 
+} from '../_shared/agentOrchestration.ts';
+
+// Agent selection
+const { agent, source, agentType, error } = await selectAgent(supabase, { 
+  bookType, 
+  requireAgent: true,
+  minPromptLength: 500 
+});
+
+if (error || !agent) {
+  return new Response(JSON.stringify({ success: false, error }), { status: 500, headers });
+}
+
+// Performance tracking
+const metricId = await createPerformanceMetric(supabase, {
+  agentId: agent.id,
+  agentType,
+  agentSource: source,
+  bookType,
+  targetAge,
+  characterTheme,
+  sessionId
+});
+
+// ... book creation logic ...
+
+// Complete metrics on success
+if (metricId && book) {
+  await completePerformanceMetric(supabase, metricId, {
+    bookId: book.id,
+    bookCreated: true,
+    totalPages: book.pages.length
+  });
+}
+```
 
 ## Expected Outcomes
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Cover page definitions | 17+ copies across agents | 1 shared template (UI-editable) |
-| Educational page definitions | 17+ copies across agents | 1 shared template (UI-editable) |
-| Average agent instruction size | ~3,000 chars | ~1,800 chars |
-| Time to update cover format | ~1 hour (edit 17 agents) | ~1 minute (edit 1 template) |
-| Update propagation | Immediate per agent | Real-time via subscription |
-| Version history | Per-agent | Centralized with rollback |
+| Agent selection code | ~100 lines × 2 functions | ~50 lines shared |
+| Performance tracking | Duplicated, inconsistent | Unified utility |
+| Error handling | Function-specific | Standardized |
+| Adding new functions | Copy/paste agent logic | Import utility |
+| Logging format | Inconsistent | Structured, consistent |
 
----
+## Files to Create
 
-## Admin UI Preview
+| File | Purpose |
+|------|---------|
+| `supabase/functions/_shared/agentOrchestration.ts` | Core orchestration utility |
 
-The new `/admin/shared-templates` page will show:
+## Files to Modify
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Shared Page Templates                                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ 📄 Cover Page Template                    v3 (Latest)│    │
-│  │ Last updated: 2 hours ago                            │    │
-│  │ [Edit] [View History] [Preview]                      │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ 📄 Educational Focus Template             v2 (Latest)│    │
-│  │ Last updated: 3 days ago                             │    │
-│  │ [Edit] [View History] [Preview]                      │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  Available Placeholders:                                     │
-│  • {{bookTypeWord}} - The book type display word             │
-│  • {{gradeLevel}} - Selected grade level                     │
-│  • {{learningType}} - Learning type badge text               │
-│  • {{skillFocus}} - Skill focus badge text                   │
-│  • {{COVER_TITLE_INSTRUCTION}} - Standard title instruction  │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
+| File | Change |
+|------|--------|
+| `supabase/functions/google-chat/index.ts` | Use `selectAgent()`, `getModelSettings()`, remove inline logic |
+| `supabase/functions/google-create-book/index.ts` | Use full orchestration suite including metrics |
 
----
+## Technical Considerations
+
+1. **Cache Coordination**: The existing `fetchAgentTypeMap()` already has a 1-minute TTL cache. The orchestration utility will leverage this.
+
+2. **Backward Compatibility**: Functions can adopt the utility incrementally—no breaking changes.
+
+3. **Metrics Table**: Uses existing `agent_performance_metrics` table (already in schema).
+
+4. **Fallback Chain**: Clear priority: specialized → generic → inline fallback (with configurable `requireAgent` flag).
+
+5. **Validation**: Configurable minimum prompt length to catch misconfigured agents early.
 
 ## Risk Mitigation
 
-1. **Fallback Templates**: Edge functions have hardcoded fallbacks if DB fetch fails
-2. **Gradual Migration**: Test with 3 agents before migrating all 17+
-3. **Version History**: Easy rollback to previous template versions
-4. **Validation**: UI validates that all required placeholders are present
-5. **Cache TTL**: 5-minute cache prevents excessive DB queries while allowing updates
+1. **Gradual Rollout**: Refactor `google-create-book` first (it has the most complete orchestration), then `google-chat`
+2. **Preserve Existing Behavior**: All current logic is captured in utility functions
+3. **Detailed Logging**: Consistent `[AgentOrchestration]` prefix for easy debugging
+4. **Fallback Safety**: Inline prompts still available when no agents configured

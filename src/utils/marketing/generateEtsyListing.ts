@@ -328,6 +328,7 @@ function generateTitle(
 
 /**
  * Generate detailed Etsy description
+ * Advertises 2 books: 1 full-color book + 1 coloring book
  */
 function generateDescription(
   bookName: string,
@@ -341,7 +342,7 @@ function generateDescription(
   const theme = formatTheme(characterTheme);
   const bookTypeDisplay = getBookTypeKeyword(bookType);
   
-  let description = `✨ INSTANT DOWNLOAD - ${pageCount} Printable Coloring Pages! ✨\n\n`;
+  let description = `✨ INSTANT DOWNLOAD - 2 BOOKS INCLUDED! ✨\n\n`;
   
   // Add book name
   description += `"${bookName}"\n\n`;
@@ -355,9 +356,10 @@ function generateDescription(
     }
   }
   
-  // What You Get section
-  description += `📦 WHAT YOU GET:\n`;
-  description += `• ${pageCount} high-quality coloring pages\n`;
+  // What You Get section - emphasize 2 books
+  description += `📦 WHAT YOU GET (2 BOOKS!):\n`;
+  description += `• 1 Full-Color Picture Book (${pageCount} pages) - Beautiful illustrations to read and enjoy\n`;
+  description += `• 1 Coloring Book (${pageCount} pages) - Black & white pages ready to color\n`;
   description += `• Print as many times as you like\n`;
   description += `• Perfect for ${ageGroup} children\n`;
   if (theme) {
@@ -367,18 +369,18 @@ function generateDescription(
   
   // Perfect For section
   description += `🎨 PERFECT FOR:\n`;
-  description += `• Quiet time activities\n`;
+  description += `• Reading time with full-color book\n`;
+  description += `• Coloring activities with printable book\n`;
   description += `• Homeschool learning\n`;
   description += `• Travel entertainment\n`;
-  description += `• Rainy day fun\n`;
   description += `• Classroom activities\n`;
   description += `• Birthday party favors\n\n`;
   
   // How It Works section
   description += `📋 HOW IT WORKS:\n`;
-  description += `1. Purchase and download instantly\n`;
-  description += `2. Print at home on letter-size paper\n`;
-  description += `3. Start coloring!\n\n`;
+  description += `1. Purchase and download instantly (2 PDF files)\n`;
+  description += `2. Enjoy the full-color book on screen or print it\n`;
+  description += `3. Print the coloring book and start coloring!\n\n`;
   
   // Educational focus based on book type
   if (bookType) {
@@ -408,7 +410,8 @@ function generateDescription(
   }
   
   // Disclaimer
-  description += `⚠️ This is a DIGITAL DOWNLOAD - no physical product will be shipped.\n\n`;
+  description += `⚠️ This is a DIGITAL DOWNLOAD - no physical product will be shipped.\n`;
+  description += `📁 You will receive 2 PDF files: 1 full-color book + 1 coloring book.\n\n`;
   description += `💖 Thank you for supporting Daily ABC Illustrations!`;
   
   return description;

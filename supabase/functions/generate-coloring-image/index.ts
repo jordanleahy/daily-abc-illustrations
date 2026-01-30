@@ -6,11 +6,7 @@ import {
   logImageGenerationUsage,
   buildImageGenerationMetadata
 } from "../_shared/aiModelConstants.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 /**
  * Convert an image to pure grayscale using pngjs

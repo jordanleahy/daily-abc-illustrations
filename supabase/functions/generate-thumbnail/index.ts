@@ -5,11 +5,7 @@ import {
   COVER_ASPECT_RATIOS,
   COVER_STYLE_DEFAULTS 
 } from "../_shared/coverPromptConstants.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

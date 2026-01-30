@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { parseEducationalFocus } from '@/utils/chatHelpers';
+import { sanitizeImagePrompt } from '@/utils/promptSanitizer';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -72,23 +73,23 @@ export const useGoogleCreateBook = () => {
           .map(m => m.content)
           .join('\n');
         
-        // Extract cover prompt
+        // Extract cover prompt and sanitize
         const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
         if (coverMatch) {
-          fullPrompts[1] = coverMatch[0];
+          fullPrompts[1] = sanitizeImagePrompt(coverMatch[0]);
         }
         
-        // Extract educational focus prompt
+        // Extract educational focus prompt and sanitize
         const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
         if (eduMatch) {
-          fullPrompts[2] = eduMatch[0];
+          fullPrompts[2] = sanitizeImagePrompt(eduMatch[0]);
         }
         
         // Extract numbered page prompts - use page numbers directly from agent output
         const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
         for (const match of pageMatches) {
           const pageNum = parseInt(match[1]); // Use actual page number from agent
-          fullPrompts[pageNum] = match[0];
+          fullPrompts[pageNum] = sanitizeImagePrompt(match[0]);
         }
       }
 

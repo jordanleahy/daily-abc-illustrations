@@ -778,36 +778,8 @@ CRITICAL REQUIREMENTS:
     );
   };
 
-  // Helper function to extract only the image prompt content, removing instructional sections
-  const stripTitleFromPrompt = (prompt: string): string => {
-    // First, try to extract content after "**Image Prompt:**" marker
-    const imagePromptMatch = prompt.match(/\*\*Image Prompt:\*\*\s*([\s\S]*?)(?=\n\*\*|$)/i);
-    if (imagePromptMatch && imagePromptMatch[1].trim()) {
-      return imagePromptMatch[1].trim();
-    }
-    
-    // Fallback: Remove all instructional sections if no explicit Image Prompt marker
-    return prompt
-      // Remove JSON metadata prefix: [pageType: "cover", pageNumber: 0]
-      .replace(/^\[pageType:\s*"[^"]*",\s*pageNumber:\s*\d+\]\s*/gi, '')
-      // Remove pagetype metadata at the beginning
-      .replace(/^pagetype:\s*"[^"]*"\s*/gi, '')
-      // Remove title headers: **Page N: Title**, **Cover: Title**, etc.
-      .replace(/^\*\*(?:Page\s+\d+|Cover|Educational Focus):[^\n*]*\*\*\s*/gi, '')
-      // Remove character section: **Paw Patrol Character(s):** ...
-      .replace(/\*\*(?:Paw Patrol |Disney |Frozen |Peppa Pig |Bluey |Cocomelon |Moana |Mickey Mouse |Mario |Sesame Street |)Character\(?s?\)?:\*\*[^\n]*\n?/gi, '')
-      // Remove educational content section
-      .replace(/\*\*Educational Content:\*\*[\s\S]*?(?=\n\*\*|$)/gi, '')
-      // Remove activity section  
-      .replace(/\*\*Activity:\*\*[\s\S]*?(?=\n\*\*|$)/gi, '')
-      // Remove "Image Prompt:" label if present but keep the content
-      .replace(/\*\*Image Prompt:\*\*\s*/gi, '')
-      // Remove DISPLAY TITLE instructions and everything after
-      .replace(/\n*DISPLAY TITLE:[\s\S]*$/gi, '')
-      // Clean up bullet points and extra whitespace
-      .replace(/^\s*\*\s+/gm, '')
-      .trim();
-  };
+  // Prompts are now sanitized at extraction time (in pageHelpers.ts)
+  // No need for stripTitleFromPrompt - prompts are already clean
 
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = async () => {
@@ -851,9 +823,8 @@ CRITICAL REQUIREMENTS:
           });
         }
 
-        // Strip title header before copying to prevent AI from adding text to images
-        const cleanPrompt = stripTitleFromPrompt(prompt);
-        await copyToClipboard(cleanPrompt);
+        // Prompts are pre-sanitized at extraction time, copy directly
+        await copyToClipboard(prompt);
         setShowConfirmation(true);
       
         // Mark this page as copied

@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
 import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
 import { parseBookOutline, getPagePrompt, extractPromptsRecord } from '@/utils/pageHelpers';
+import { sanitizeImagePrompt } from '@/utils/promptSanitizer';
 import { BOOK_TYPES, BookType } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -327,10 +328,12 @@ export default function GoogleChat() {
   }, [isBookCreated, dbPages, pageCount]);
 
   // Helper to get current page prompt - ALWAYS prioritizes stored prompts from qa_page_prompts
+  // Applies fallback sanitization for legacy unsanitized prompts
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
     // PRIORITY 1: Always check stored prompts from "View Outline" first
+    // Apply sanitization as fallback for legacy unsanitized prompts
     if (editorPagePrompts[pageNum]) {
-      return editorPagePrompts[pageNum];
+      return sanitizeImagePrompt(editorPagePrompts[pageNum]);
     }
 
     // PRIORITY 2: If book is created, get from database
@@ -341,23 +344,29 @@ export default function GoogleChat() {
       // Try to get full prompt from content.imagePrompt (stores unlimited text)
       const fullPrompt = (page.content as any)?.imagePrompt;
       if (fullPrompt) {
-        return fullPrompt;
+        // Apply sanitization for legacy data
+        return sanitizeImagePrompt(fullPrompt);
       }
       
       // Fallback to page description (may be truncated)
       if (page.description) {
-        return page.description;
+        return sanitizeImagePrompt(page.description);
       }
       
       return null;
     }
     
     // PRIORITY 3: Pre-creation - use new structured outline with direct lookup
+    // Note: extractPromptsRecord already sanitizes at extraction time,
+    // but getPagePrompt returns raw description, so sanitize here too
     const prompt = getPagePrompt(bookOutline, pageNum);
+    if (!prompt) return null;
+    
+    const sanitized = sanitizeImagePrompt(prompt);
     
     // Special handling for cover page - ensure centered title
-    if (pageNum === 1 && prompt) {
-      let description = prompt;
+    if (pageNum === 1) {
+      let description = sanitized;
       
       // Replace "book cover" with "square card cover"
       description = description.replace(/\bbook cover\b/gi, 'square card cover');
@@ -371,7 +380,7 @@ export default function GoogleChat() {
       return description;
     }
     
-    return prompt;
+    return sanitized;
   }, [isBookCreated, dbPages, editorPagePrompts, bookOutline]);
 
   // Helper to get current page title - mirrors getCurrentPagePrompt pattern

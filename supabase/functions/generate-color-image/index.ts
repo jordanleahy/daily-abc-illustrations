@@ -12,11 +12,7 @@ import {
   generateCoverTitleInstruction,
   COVER_ASPECT_RATIOS 
 } from "../_shared/coverPromptConstants.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 // Page types that use the pro model for better text accuracy
 const PRO_MODEL_PAGE_TYPES = ['cover', 'educational'];

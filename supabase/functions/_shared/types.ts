@@ -216,15 +216,6 @@ export enum ProcessStatus {
 }
 
 /**
- * Standard CORS headers used by all edge functions
- * Enables cross-origin requests from web browsers
- */
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-/**
  * Structured logging function for edge functions
  * Provides consistent logging format across all edge functions for monitoring and debugging
  * 

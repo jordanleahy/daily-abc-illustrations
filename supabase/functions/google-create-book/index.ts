@@ -5,7 +5,12 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange } from '../_shared/types.ts';
-import { fetchAgentTypeMap, type AgentType } from '../_shared/agentTypes.ts';
+import { 
+  selectAgent, 
+  createPerformanceMetric, 
+  logOrchestration,
+  type AgentRecord
+} from '../_shared/agentOrchestration.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
@@ -263,118 +268,49 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
     };
 
     // ============================================================================
-    // ORCHESTRATION: Agent Selection Based on Book Type
+    // ORCHESTRATION: Agent Selection via Shared Utility
     // ============================================================================
-    console.log('[Orchestration] Starting agent selection for book type:', bookType);
+    const { agent: selectedAgent, source: agentSource, agentType, error: agentError } = await selectAgent(supabase, {
+      bookType,
+      requireAgent: true,
+      minPromptLength: 500
+    });
 
-    // Map book type to agent type (dynamic mapping from database - single source of truth)
-    const agentTypeMap = await fetchAgentTypeMap(supabase);
-    const agentType: AgentType = agentTypeMap[bookType || 'other'] || 'book-creation';
-    console.log('[Orchestration] Mapped to agent type:', agentType);
-
-    // Attempt to fetch specialized agent
-    let selectedAgent: any = null;
-    let agentSource = 'none';
-
-    // Try specialized agent first (if not generic)
-    if (agentType !== 'book-creation') {
-      const { data: specializedAgent, error: specializedError } = await supabase
-        .from('agents')
-        .select('*')
-        .eq('type', agentType)
-        .eq('is_latest', true)
-        .maybeSingle();
-      
-      if (specializedAgent && !specializedError) {
-        selectedAgent = specializedAgent;
-        agentSource = 'specialized';
-        console.log('[Orchestration] ✓ Using specialized agent:', specializedAgent.name, 'version:', specializedAgent.version);
-      } else {
-        console.log('[Orchestration] ⚠ Specialized agent not found, falling back to generic');
-      }
-    }
-
-    // Fallback to generic book-creation agent
-    if (!selectedAgent) {
-      const { data: genericAgent, error: genericError } = await supabase
-        .from('agents')
-        .select('*')
-        .eq('type', 'book-creation')
-        .eq('is_latest', true)
-        .maybeSingle();
-      
-      if (genericAgent && !genericError) {
-        selectedAgent = genericAgent;
-        agentSource = 'generic-fallback';
-        console.log('[Orchestration] ✓ Using generic agent:', genericAgent.name);
-      } else {
-        console.error('[Orchestration] ✗ No agents found! Aborting.');
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: 'No book creation agent configured. Please set up agents in the admin panel.' 
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Track agent usage for learning (async, non-blocking)
-    const metricsInsert = await supabase
-      .from('agent_performance_metrics')
-      .insert({
-        agent_id: selectedAgent.id,
-        agent_type: selectedAgent.type,
-        metadata_captured: {
-          bookType,
-          targetAge,
-          characterTheme,
-          agentSource,
-          sessionId
-        }
-      })
-      .select('id')
-      .single();
-
-    const performanceMetricId = metricsInsert.data?.id;
-    if (metricsInsert.error) {
-      console.error('[Learning] Failed to create performance metric:', metricsInsert.error);
-    } else {
-      console.log('[Learning] Created performance metric:', performanceMetricId);
-    }
-
-    // Use the selected agent's instructions as system prompt (single source of truth)
-    let systemPrompt = selectedAgent.instructions;
-    let promptSource = 'database';
-    
-    // Validate prompt length for completeness
-    const MIN_PROMPT_LENGTH = 500;
-    if (systemPrompt.length < MIN_PROMPT_LENGTH) {
-      console.error(`[Prompt Validation] ✗ Agent prompt is dangerously short (${systemPrompt.length} chars). This indicates incomplete agent configuration in database.`);
-      console.error(`[Prompt Validation] ✗ Agent: ${selectedAgent.name}, Type: ${selectedAgent.type}`);
-      
+    // Handle agent selection failure
+    if (agentError || !selectedAgent) {
+      console.error('[Orchestration] ✗ Agent selection failed:', agentError);
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: `Agent configuration incomplete. The ${selectedAgent.name} has an invalid prompt (${systemPrompt.length} chars). Please update the agent configuration in the /agents admin panel.`,
-          agentType: selectedAgent.type,
-          promptLength: systemPrompt.length
+          error: agentError || 'No book creation agent configured. Please set up agents in the admin panel.' 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Track agent usage for learning via shared utility (async, non-blocking)
+    const performanceMetricId = await createPerformanceMetric(supabase, {
+      agentId: selectedAgent.id,
+      agentType: selectedAgent.type,
+      agentSource,
+      bookType,
+      targetAge,
+      characterTheme,
+      sessionId
+    });
+
+    // Use the selected agent's instructions as system prompt (single source of truth)
+    let systemPrompt = selectedAgent.instructions;
     
-    console.log(`[Prompt Validation] ✓ Agent prompt validated (${systemPrompt.length} chars)`);
-    console.log(`[Agent Source] ${promptSource}`);
-    
-    console.log('[Orchestration] Agent selected:', {
+    // Log orchestration details
+    logOrchestration({
       agentId: selectedAgent.id,
       agentName: selectedAgent.name,
       agentType: selectedAgent.type,
       version: selectedAgent.version,
       source: agentSource,
       promptLength: systemPrompt.length,
-      promptSource: promptSource
+      promptSource: 'database'
     });
 
     // ============================================================================

@@ -288,14 +288,9 @@ function generateTitle(
 ): string {
   const parts: string[] = [];
   
-  // 1. Book type with theme (e.g., "ABC Alphabet" or "Manners")
+  // 1. Book type (e.g., "ABC Alphabet", "Manners", "Rhyming")
   const subjectType = getSubjectType(bookType);
-  const theme = formatTheme(characterTheme);
-  if (theme) {
-    parts.push(`${subjectType} | ${theme} Theme`);
-  } else {
-    parts.push(subjectType);
-  }
+  parts.push(subjectType);
   
   // 2. Grade level (e.g., "Pre-K", "Kindergarten")
   const grade = formatGradeLevel(gradeLevel) || getAgeKeyword(targetAge);

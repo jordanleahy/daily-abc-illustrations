@@ -25,9 +25,8 @@ Copy this checklist when creating a new book agent. Fill in `{typename}` with yo
 
 ## Files to Update
 
-### Type System
-- [ ] `src/types/idRegistry.ts` - Add ID_PREFIX and type guard
-- [ ] `src/types/shared/agent.ts` - Add to AgentType union and BOOK_TYPE_TO_AGENT_TYPE
+### Database (Single Source of Truth)
+- [ ] `book_types` table - Add row with id, label, icon_name, agent_type_suffix
 
 ### Configuration
 - [ ] `src/config/bookTypes.ts` - Add book type entry

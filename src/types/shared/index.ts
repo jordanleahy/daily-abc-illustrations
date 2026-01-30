@@ -39,5 +39,5 @@ export type {
   CompareAgentRequest
 } from './agent';
 
-// Agent utilities
-export { BOOK_TYPE_TO_AGENT_TYPE } from './agent';
+// Agent utilities (dynamic mapping - use bookTypeToAgentType from @/utils/agentTypeUtils)
+export { bookTypeToAgentType, buildAgentTypeMap } from '@/utils/agentTypeUtils';

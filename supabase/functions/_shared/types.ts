@@ -274,30 +274,7 @@ export type PageType = 'cover' | 'educational' | 'content';
 // Re-export for backward compatibility with existing edge functions
 export { type AgentType, type AIProvider, fetchAgentTypeMap } from './agentTypes.ts';
 
-/**
- * @deprecated Use `fetchAgentTypeMap()` for dynamic mapping from database
- * This static mapping is kept for backward compatibility only
- */
-export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, string> = {
-  'numbers': 'book-creation-numbers',
-  'rhyming': 'book-creation-rhyming',
-  'colors': 'book-creation-colors',
-  'abc': 'book-creation-abc',
-  'shapes': 'book-creation-shapes',
-  'animals': 'book-creation-animals',
-  'sight-words': 'book-creation-sight-words',
-  'emotions': 'book-creation-emotions',
-  'cvc': 'book-creation-cvc',
-  'opposites': 'book-creation-opposites',
-  'first-words': 'book-creation-first-words',
-  'bedtime': 'book-creation-bedtime',
-  'general': 'book-creation-general',
-  'digraphs': 'book-creation-digraphs',
-  'dr-seuss': 'book-creation-dr-seuss',
-  'manners': 'book-creation-manners',
-  'parent-education': 'book-creation-parent-education',
-  'other': 'book-creation'
-} as const;
+// Static BOOK_TYPE_TO_AGENT_TYPE removed - use fetchAgentTypeMap() instead
 
 /**
  * Gets the category word for a book type

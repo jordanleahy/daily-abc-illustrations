@@ -4,7 +4,8 @@
 export { 
   type AgentType, 
   type AIProvider,
-  BOOK_TYPE_TO_AGENT_TYPE 
+  bookTypeToAgentType,
+  buildAgentTypeMap,
 } from './shared/agent';
 
 export { type StaticAgentType } from '@/utils/agentTypeUtils';

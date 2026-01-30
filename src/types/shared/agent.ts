@@ -22,30 +22,7 @@ export {
   STATIC_BOOK_TYPE_TO_AGENT_TYPE,
 } from '@/utils/agentTypeUtils';
 
-/**
- * @deprecated Use `buildAgentTypeMap()` from useBookTypes hook for dynamic mapping
- * This static mapping is kept for backward compatibility only
- */
-export const BOOK_TYPE_TO_AGENT_TYPE = {
-  'numbers': 'book-creation-numbers',
-  'rhyming': 'book-creation-rhyming',
-  'colors': 'book-creation-colors',
-  'abc': 'book-creation-abc',
-  'shapes': 'book-creation-shapes',
-  'animals': 'book-creation-animals',
-  'sight-words': 'book-creation-sight-words',
-  'emotions': 'book-creation-emotions',
-  'cvc': 'book-creation-cvc',
-  'opposites': 'book-creation-opposites',
-  'first-words': 'book-creation-first-words',
-  'bedtime': 'book-creation-bedtime',
-  'general': 'book-creation-general',
-  'digraphs': 'book-creation-digraphs',
-  'dr-seuss': 'book-creation-dr-seuss',
-  'manners': 'book-creation-manners',
-  'parent-education': 'book-creation-parent-education',
-  'other': 'book-creation'
-} as const;
+// Static BOOK_TYPE_TO_AGENT_TYPE removed - use bookTypeToAgentType() or useBookTypes().getAgentType() instead
 
 /**
  * Base agent model settings shared between frontend and backend

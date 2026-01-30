@@ -15,7 +15,7 @@ import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { getIconComponent } from '@/utils/iconMapping';
-import { BOOK_TYPE_TO_AGENT_TYPE } from '@/types/shared/agent';
+import { bookTypeToAgentType } from '@/utils/agentTypeUtils';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { ArrowLeft, BookOpen, Bot, MessageCircle } from 'lucide-react';
@@ -30,9 +30,6 @@ const AgentDetail = () => {
 
   // Determine if this is a chat agent or book agent based on the route
   const isChat = location.pathname === '/agents/chat';
-  const derivedAgentType = isChat 
-    ? 'chat' 
-    : (BOOK_TYPE_TO_AGENT_TYPE[bookTypeId as keyof typeof BOOK_TYPE_TO_AGENT_TYPE] || 'chat');
 
   // Fetch book type data if this is a book agent
   const { data: bookType, isLoading: isLoadingBookType } = useQuery({
@@ -49,6 +46,11 @@ const AgentDetail = () => {
     },
     enabled: !!bookTypeId && !isChat,
   });
+
+  // Derive agent type dynamically from database (after bookType is loaded)
+  const derivedAgentType = isChat 
+    ? 'chat' 
+    : (bookType ? bookTypeToAgentType(bookType.id, bookType.agent_type_suffix) : 'chat');
 
   // Use the shared agent config hook
   const {

@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { Pencil, Link2, BookOpen, Bot, Loader2, HelpCircle } from 'lucide-react';
 import { AgentQuestionsManager } from './AgentQuestionsManager';
 import { getIconComponent, getAvailableIconNames } from '@/utils/iconMapping';
-import { BOOK_TYPE_TO_AGENT_TYPE } from '@/types/shared/agent';
+import { bookTypeToAgentType } from '@/utils/agentTypeUtils';
 import type { DatabaseBookType } from '@/hooks/useBookTypes';
 import { cn } from '@/lib/utils';
 
@@ -69,9 +69,9 @@ export function BookAgentsManager() {
     },
   });
 
-  // Join book types with their agents
+  // Join book types with their agents using dynamic mapping from database
   const bookAgentPairs: BookAgentPair[] = (bookTypes || []).map(bt => {
-    const agentType = BOOK_TYPE_TO_AGENT_TYPE[bt.id as keyof typeof BOOK_TYPE_TO_AGENT_TYPE];
+    const agentType = bookTypeToAgentType(bt.id, bt.agent_type_suffix);
     const agent = agents?.find(a => a.type === agentType) || null;
     return { bookType: bt, agent };
   });
@@ -537,7 +537,7 @@ function TwoPanelEditor({ pair, onSave, isSaving, onCancel }: TwoPanelEditorProp
                 No agent linked to this book type
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                The mapping is defined in BOOK_TYPE_TO_AGENT_TYPE
+                Agent mapping derived from book_types.agent_type_suffix
               </p>
             </div>
           )}

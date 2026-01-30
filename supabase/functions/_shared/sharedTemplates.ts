@@ -50,6 +50,39 @@ Generate Page 2 with three vertically-stacked colorful badges:
 - **Skill Focus Badge** (gold background): "{{skillFocus}}"
 
 Image prompt for educational focus page must be 200-350 characters describing the badges with theme-specific styling. End with "No text overlays. Clean illustration only."`,
+
+  'outline_format': `## CRITICAL: PAGE FORMAT RULES
+
+When generating book outlines, you MUST use this EXACT format for each page:
+
+**Page N: Title**
+- Content description
+- Additional details
+
+### ✅ CORRECT FORMAT EXAMPLES:
+\`\`\`
+**Page 1: Cover**
+- Book title prominently displayed
+
+**Page 2: Educational Focus**
+- Three colorful badges
+
+**Page 3: [Cat] is for C**
+- A playful cat character
+\`\`\`
+
+### ❌ FORBIDDEN FORMATS:
+- NO markdown headings before page (### **Page N**)
+- NO numbered lists (1. Page N:)
+- NO plain text (Page N:) without bold
+- NO variations in spacing or punctuation
+
+### FORMAT ENFORCEMENT:
+- Always use double asterisks: **Page N: Title**
+- Always include colon after page number
+- Title follows immediately after colon
+- Content uses bullet points below title
+- One blank line between pages`,
 };
 
 /**

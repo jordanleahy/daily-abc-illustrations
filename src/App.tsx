@@ -61,6 +61,7 @@ import WordProgress from "./pages/WordProgress";
 import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
 import Videos from "./pages/Videos";
 import AdminUserActivity from "./pages/AdminUserActivity";
+import SharedTemplates from "./pages/admin/SharedTemplates";
 import PreviewHome from "./pages/preview/PreviewHome";
 import ProductOverview from "./pages/preview/ProductOverview";
 import ReadingTracking from "./pages/preview/ReadingTracking";
@@ -187,6 +188,7 @@ const App = () => {
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />
                 <Route path="/admin/youtube-channels" element={<ProtectedRoute requireRole="admin"><YouTubeChannels /></ProtectedRoute>} />
+                <Route path="/admin/shared-templates" element={<ProtectedRoute requireRole="admin"><SharedTemplates /></ProtectedRoute>} />
                 <Route path="/blog/admin" element={<ProtectedRoute requireRole="admin"><BlogAdmin /></ProtectedRoute>} />
                 <Route path="/test-video-export" element={<ProtectedRoute requireRole="admin"><VideoExportTest /></ProtectedRoute>} />
                 <Route path="/blog" element={<Blog />} />

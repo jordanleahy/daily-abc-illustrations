@@ -2371,6 +2371,45 @@ export type Database = {
           },
         ]
       }
+      shared_page_templates: {
+        Row: {
+          change_notes: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_latest: boolean
+          template_key: string
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          change_notes?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_latest?: boolean
+          template_key: string
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          change_notes?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_latest?: boolean
+          template_key?: string
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
       trick_completions: {
         Row: {
           completed_at: string

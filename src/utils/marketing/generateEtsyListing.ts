@@ -273,7 +273,7 @@ function formatTheme(theme: string | null): string {
 
 /**
  * Generate SEO-optimized Etsy title (max 140 chars)
- * Priority: Subject Type + Location (City/Resort) + Theme + Digital Download
+ * Format: Book Type | Grade Level | 2 Books Offering | Location/Season (if available)
  */
 function generateTitle(
   bookName: string,
@@ -282,39 +282,49 @@ function generateTitle(
   targetAge: string | null,
   pageCount: number,
   city: string | null,
-  resort: string | null
+  resort: string | null,
+  season: string | null,
+  gradeLevel: string | null
 ): string {
-  const subjectType = getSubjectType(bookType);
-  const location = formatResort(resort) || formatCity(city);
-  const theme = formatTheme(characterTheme);
-  const ageKeyword = getAgeKeyword(targetAge);
-  
-  // Build title with subject type and location front-loaded
   const parts: string[] = [];
   
-  // Start with subject type
-  parts.push(`${subjectType} Coloring Book`);
+  // 1. Book type with theme (e.g., "ABC Alphabet" or "Manners")
+  const subjectType = getSubjectType(bookType);
+  const theme = formatTheme(characterTheme);
+  if (theme) {
+    parts.push(`${subjectType} | ${theme} Theme`);
+  } else {
+    parts.push(subjectType);
+  }
   
-  // Add location (city or resort)
+  // 2. Grade level (e.g., "Pre-K", "Kindergarten")
+  const grade = formatGradeLevel(gradeLevel) || getAgeKeyword(targetAge);
+  if (grade) {
+    parts.push(grade);
+  }
+  
+  // 3. Two books offering - core value proposition
+  parts.push('2 Books: Color + Coloring');
+  
+  // 4. Location (city or resort) if available
+  const location = formatResort(resort) || formatCity(city);
   if (location) {
     parts.push(location);
   }
   
-  // Add theme
-  if (theme) {
-    parts.push(`${theme} Theme`);
+  // 5. Season if available
+  const seasonName = formatSeason(season);
+  if (seasonName) {
+    parts.push(seasonName);
   }
   
-  // Add key SEO terms
+  // 6. Digital Download indicator
   parts.push('Digital Download');
-  parts.push(`${ageKeyword} Printable`);
-  parts.push(`${pageCount} Pages`);
   
   let title = parts.join(' | ');
   
-  // Truncate if over 140 chars
-  if (title.length > 140) {
-    // Try shorter version without page count
+  // Truncate if over 140 chars - remove last segments progressively
+  while (title.length > 140 && parts.length > 3) {
     parts.pop();
     title = parts.join(' | ');
   }
@@ -581,7 +591,7 @@ export function generateEtsyListing({
   mannerType,
   mannersSetting,
 }: EtsyListingParams): EtsyListing {
-  const title = generateTitle(bookName, bookType, characterTheme, targetAge, pageCount, city || null, resort || null);
+  const title = generateTitle(bookName, bookType, characterTheme, targetAge, pageCount, city || null, resort || null, season || null, gradeLevel || null);
   const description = generateDescription(bookName, bookDescription, bookType, characterTheme, targetAge, pageCount);
   const tags = generateTags(
     bookType, 

@@ -598,11 +598,17 @@ serve(async (req) => {
           processedInstructions = processedInstructions.replace('{{SHARED_EDUCATIONAL_TEMPLATE}}', sharedTemplates['educational']);
         }
         
+        // Interpolate outline format template (static rules, no placeholders)
+        if (sharedTemplates['outline_format']) {
+          processedInstructions = processedInstructions.replace('{{SHARED_OUTLINE_FORMAT}}', sharedTemplates['outline_format']);
+        }
+        
         // Log if templates were interpolated
         const coverReplaced = agent.instructions.includes('{{SHARED_COVER_TEMPLATE}}') && !processedInstructions.includes('{{SHARED_COVER_TEMPLATE}}');
         const eduReplaced = agent.instructions.includes('{{SHARED_EDUCATIONAL_TEMPLATE}}') && !processedInstructions.includes('{{SHARED_EDUCATIONAL_TEMPLATE}}');
-        if (coverReplaced || eduReplaced) {
-          console.log(`📋 Shared templates interpolated: cover=${coverReplaced}, educational=${eduReplaced}`);
+        const outlineReplaced = agent.instructions.includes('{{SHARED_OUTLINE_FORMAT}}') && !processedInstructions.includes('{{SHARED_OUTLINE_FORMAT}}');
+        if (coverReplaced || eduReplaced || outlineReplaced) {
+          console.log(`📋 Shared templates interpolated: cover=${coverReplaced}, educational=${eduReplaced}, outline=${outlineReplaced}`);
         }
         
         systemPromptContent = processedInstructions;

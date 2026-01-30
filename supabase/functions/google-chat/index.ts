@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { selectChatAgent, getModelSettings, getInlineFallbackPrompt, type ChatAgentRecord } from '../_shared/agentOrchestration.ts';
 import { fetchAgentTypeMap } from '../_shared/agentTypes.ts';
 import { getBookTypeCategoryWord, normalizeBookType } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
@@ -478,30 +479,19 @@ serve(async (req) => {
     let agentSource: string;
     
     // Store agent data for model settings (accessible in API call)
-    let agent: { instructions: string; name: string; model: string; max_completion_tokens: number; top_p: number } | null = null;
+    let agent: ChatAgentRecord | null = null;
 
     // Track enabled questions for this agent (will be populated if bookType is set)
     let enabledQuestions: Set<string> = new Set();
     let enabledQuestionsWithDetails: EnabledQuestionWithDetails[] = [];
 
     if (bookType) {
-      // Book type selected - route to specialized agent
-      // Use dynamic agent type mapping from database (single source of truth)
-      const agentTypeMap = await fetchAgentTypeMap(supabase);
-      const agentType = agentTypeMap[bookType] || 'book-creation';
-      console.log(`📚 Book type: ${bookType} → Agent: ${agentType}`);
+      // Book type selected - use shared orchestration for agent selection
+      const { agent: selectedAgent, source, agentType } = await selectChatAgent(supabase, bookType);
+      agent = selectedAgent;
+      console.log(`📚 Book type: ${bookType} → Agent: ${agentType} (source: ${source})`);
       
-      // Query database for specialized agent (include model settings)
-      const { data: agentData } = await supabase
-        .from('agents')
-        .select('instructions, name, model, max_completion_tokens, top_p')
-        .eq('type', agentType)
-        .eq('is_latest', true)
-        .single();
-      
-      agent = agentData;
-      
-      // Fetch enabled questions for this agent type WITH full question details (including lookup columns and conditionals)
+      // Fetch enabled questions for this agent type WITH full question details
       const { data: agentQuestionsData } = await supabase
         .from('agent_questions')
         .select(`
@@ -619,14 +609,14 @@ serve(async (req) => {
         agentSource = `Database: ${agent.name}`;
         console.log(`✅ Using ${agent.name} (${processedInstructions.length} chars)`);
       } else {
-        // Fallback for no book type selected
-        systemPromptContent = `You are a helpful AI assistant for creating children's educational books. Help users explore different book types: ABC, Numbers, Colors, Shapes, Animals, Rhyming, Emotions, Opposites, First Words, CVC Words, Sight Words, and Bedtime stories. Ask which type interests them.`;
+        // Fallback for agent not found - use shared inline fallback
+        systemPromptContent = getInlineFallbackPrompt(bookType);
         agentSource = 'Inline: Discovery';
         console.log('⚠️ Using inline discovery prompt');
       }
     } else {
-      // No book type - minimal discovery prompt
-      systemPromptContent = `You are a helpful AI assistant for creating children's educational books. Help users explore different book types: ABC, Numbers, Colors, Shapes, Animals, Rhyming, Emotions, Opposites, First Words, CVC Words, Sight Words, and Bedtime stories. Ask which type interests them.`;
+      // No book type - use shared inline discovery prompt
+      systemPromptContent = getInlineFallbackPrompt();
       agentSource = 'Inline: Discovery';
       console.log('🔍 No book type selected');
     }
@@ -993,12 +983,10 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 
-    // Use agent model settings from database, with sensible defaults
-    const modelToUse = agent?.model || 'google/gemini-2.5-flash';
-    const maxTokens = agent?.max_completion_tokens || 8000;
-    const topP = agent?.top_p || 0.95;
+    // Use shared utility for model settings with safe defaults
+    const modelSettings = getModelSettings(agent);
     
-    console.log(`🧠 Model config: ${modelToUse}, max_tokens: ${maxTokens}, top_p: ${topP}`);
+    console.log(`🧠 Model config: ${modelSettings.model}, max_tokens: ${modelSettings.maxCompletionTokens}, top_p: ${modelSettings.topP}`);
 
     // Call Lovable AI Gateway with streaming
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -1008,10 +996,10 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: modelToUse,
+        model: modelSettings.model,
         messages: allMessages,
-        max_completion_tokens: maxTokens,
-        top_p: topP,
+        max_completion_tokens: modelSettings.maxCompletionTokens,
+        top_p: modelSettings.topP,
         stream: true,
       }),
     });

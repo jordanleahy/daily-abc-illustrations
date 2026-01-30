@@ -1,81 +1,231 @@
 
-# Plan: Centralize Cover Page Prompt Utility
-
-## Status: ✅ COMPLETED
+# Plan: Unify Prompt Sanitization at Storage Time
 
 ## Overview
-Created a shared utility for cover page image generation that consolidates the scattered cover prompt logic into a single source of truth. This ensures consistent cover page styling across all agents and edge functions.
+Consolidate prompt cleaning by sanitizing at the **extraction point** (`pageHelpers.ts`) instead of having duplicate cleaning logic in both the client (`stripTitleFromPrompt`) and server (`sanitizeImagePrompt`). This ensures what users see in chat is identical to what the "Generate" button sends.
 
-## What Was Done
+## Current Architecture
 
-### Phase 1: Created Shared Cover Constants ✅
+```text
+Agent Output (raw markdown)
+        ↓
+parseBookOutline() → extractPromptsRecord()
+        ↓
+qa_page_prompts (RAW stored - contains **Text Overlay:**, metadata, etc.)
+        ↓
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+▼                           ▼                                   ▼
+Display in Chat         Copy Prompt                         Generate
+(shows raw)         (stripTitleFromPrompt)          (sanitizeImagePrompt + enhancements)
+                            ↓                                   ↓
+                    Clean prompt                  Clean prompt + aspect ratio + negative prompt
+```
 
-Created `supabase/functions/_shared/coverPromptConstants.ts` containing:
+**Problems:**
+- Two separate cleaning functions with overlapping logic (~80 lines each)
+- Prompts shown to users differ from what Generate sends
+- Maintenance burden of keeping both in sync
+- Users see confusing instructional metadata like `**Text Overlay:**`
 
-1. **COVER_TITLE_INSTRUCTION** - The canonical title display instruction
-2. **NO_TEXT_INSTRUCTION** - Strong negative prompt for content pages
-3. **COVER_ASPECT_RATIOS** - Aspect ratio instructions for different formats
-4. **COVER_STYLE_DEFAULTS** - Default styling constants
-5. **generateCoverTitleInstruction(bookTitle)** - Function to generate title instruction with variable title
-6. **getCoverPromptEnding()** - Returns the cover title instruction
-7. **getContentPromptEnding()** - Returns the no-text instruction
-8. **buildCoverPromptPrefix(config)** - Builds complete cover prompt prefix
-9. **buildCoverPrompt(config)** - Builds full cover prompt from config
-10. **getPromptEndingForPage(pageType, pageNumber)** - Determines correct ending
+## Proposed Architecture
 
-### Phase 2: Standardized Cover Title Instruction ✅
+```text
+Agent Output (raw markdown)
+        ↓
+parseBookOutline() → extractPromptsRecord() + sanitizeImagePrompt()
+        ↓
+qa_page_prompts (CLEAN stored - pure scene descriptions)
+        ↓
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+▼                           ▼                                   ▼
+Display in Chat         Copy Prompt                         Generate
+(shows CLEAN)         (direct use)                  (add contextual enhancements only)
+```
 
-Adopted canonical instruction format:
-> **CRITICAL INSTRUCTION: Display the book title "[TITLE]" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space. Use a playful, bubble-letter font style (rounded, child-friendly). The title must be the most prominent visual element.**
+## Implementation Steps
 
-### Phase 3: Refactored Existing Files ✅
+### Step 1: Create Shared Sanitization Utility
+Create `src/utils/promptSanitizer.ts` with a unified function combining logic from both existing cleaners:
 
-**Files updated:**
+**What gets removed:**
+- `**Page N: Title**` headers
+- `**Text Overlay:**` sections
+- `**Rhyme Text:**` and `**Rhyme Pair:**` sections
+- `- Text Overlay:` bullet lines
+- `- Opposite Pair:` bullet lines
+- Character metadata sections
+- `**Educational Content:**` and `**Activity:**` sections
+- `DISPLAY TITLE:` instructions
+- JSON metadata prefixes
+- Standalone quoted text lines
 
-1. **`supabase/functions/_shared/promptTemplates.ts`**
-   - Added import from `coverPromptConstants.ts`
-   - Updated `generateCoverPromptLayered()` to use `generateCoverTitleInstruction()`
+**What stays server-side only:**
+- Aspect ratio prefix (depends on page type)
+- Cover title instruction (depends on book title)
+- Opposites split-screen rules (depends on book category)
+- Negative prompt appendix (always added)
 
-2. **`supabase/functions/generate-color-image/index.ts`**
-   - Added import from `coverPromptConstants.ts`
-   - Updated aspect ratio prefix to use `COVER_ASPECT_RATIOS.square`
-   - Updated cover title prefix to use `generateCoverTitleInstruction()`
+### Step 2: Update pageHelpers.ts
+Apply sanitizer in `extractPromptsRecord()` at extraction time:
 
-3. **`supabase/functions/generate-thumbnail/index.ts`**
-   - Added imports from `coverPromptConstants.ts`
-   - Updated prompt to use `generateCoverTitleInstruction()`
-   - Updated styling to use `COVER_STYLE_DEFAULTS`
+```typescript
+import { sanitizeImagePrompt } from './promptSanitizer';
 
-4. **`supabase/functions/_shared/instructionTemplates.ts`**
-   - Added import from `coverPromptConstants.ts`
-   - Updated `TEMPLATES.coverPage()` to use `COVER_TITLE_INSTRUCTION`
+export const extractPromptsRecord = (outline: ParsedOutline | null): Record<number, string> => {
+  if (!outline) return {};
+  
+  const prompts: Record<number, string> = {};
+  outline.allPages.forEach((page, pageNum) => {
+    if (page.description) {
+      // Sanitize at extraction - prompts stored clean
+      prompts[pageNum] = sanitizeImagePrompt(page.description);
+    }
+  });
+  
+  return prompts;
+};
+```
 
-5. **`supabase/functions/google-create-book/agent-prompts.ts`**
-   - Added import from `coverPromptConstants.ts`
-   - Updated `BASE_BOOK_STRUCTURE` to use `COVER_TITLE_INSTRUCTION`
-   - Added documentation noting centralized location
+### Step 3: Simplify BookEditorPanel.tsx
+Remove `stripTitleFromPrompt()` function (~30 lines) - prompts are already clean:
 
-### Phase 4: Cover Format Configuration ✅
+```typescript
+// BEFORE:
+const cleanPrompt = stripTitleFromPrompt(prompt);
+await copyToClipboard(cleanPrompt);
 
-Added support for different cover formats:
-- **SQUARE** (1:1): Default for book pages
-- **LANDSCAPE** (1200x630): For thumbnails/OG images
-- **PORTRAIT** (3:4): Future consideration
+// AFTER:
+await copyToClipboard(prompt); // Already sanitized at storage
+```
+
+### Step 4: Simplify generate-color-image Edge Function
+Remove `sanitizeImagePrompt()` function body, keep only contextual enhancements:
+
+```typescript
+// BEFORE:
+const sanitizedPrompt = sanitizeImagePrompt(prompt);
+const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + sanitizedPrompt + oppositesSuffix;
+
+// AFTER:
+// Prompt arrives pre-sanitized, just add contextual enhancements
+const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + prompt + oppositesSuffix + negativePromptSuffix;
+```
+
+Keep the negative prompt appendix as a safety net.
+
+### Step 5: Add Fallback for Legacy Data
+Existing `qa_page_prompts` may contain unsanitized prompts. Add fallback sanitization in `getCurrentPagePrompt()`:
+
+```typescript
+const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
+  if (editorPagePrompts[pageNum]) {
+    // Apply sanitization for any legacy unsanitized prompts
+    return sanitizeImagePrompt(editorPagePrompts[pageNum]);
+  }
+  // ... rest of function
+}, [...]);
+```
 
 ---
 
-## Benefits Achieved
+## Technical Details
 
-1. ✅ **Single Source of Truth**: All cover prompt logic in `coverPromptConstants.ts`
-2. ✅ **Consistency**: Same title instruction used everywhere
-3. ✅ **Maintainability**: Change once, applies everywhere
-4. ✅ **Testability**: Easier to unit test isolated utilities
-5. ✅ **Documentation**: Centralized place to document cover requirements
+### Shared Sanitizer Function
 
-## Files Affected
-- `supabase/functions/_shared/coverPromptConstants.ts` (new - 145 lines)
-- `supabase/functions/_shared/promptTemplates.ts` (modified)
-- `supabase/functions/_shared/instructionTemplates.ts` (modified)
-- `supabase/functions/generate-color-image/index.ts` (modified)
-- `supabase/functions/generate-thumbnail/index.ts` (modified)
-- `supabase/functions/google-create-book/agent-prompts.ts` (modified)
+```typescript
+// src/utils/promptSanitizer.ts
+
+export function sanitizeImagePrompt(prompt: string): string {
+  if (!prompt) return '';
+  
+  let clean = prompt;
+  
+  // Remove page headers: **Page N: Title** or **Cover: Title**
+  clean = clean.replace(/^\*\*(?:Page\s+\d+|Cover|Educational Focus):[^\n*]*\*\*\s*/gim, '');
+  
+  // Remove **Text Overlay:** sections
+  clean = clean.replace(/\*\*Text Overlay:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+  
+  // Remove **Rhyme Text:** and **Rhyme Pair:** sections
+  clean = clean.replace(/\*\*Rhyme (?:Text|Pair):\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
+  
+  // Remove bullet-format instruction lines
+  clean = clean.replace(/^-\s*\*{0,2}(?:Text Overlay|Opposite Pair)\*{0,2}:\s*[^\n]*\n?/gim, '');
+  
+  // Remove character metadata sections
+  clean = clean.replace(/\*\*(?:Paw Patrol |Disney |Bluey |)Character\(?s?\)?:\*\*[^\n]*\n?/gi, '');
+  
+  // Remove **Educational Content:** and **Activity:** sections
+  clean = clean.replace(/\*\*(?:Educational Content|Activity):\*\*[\s\S]*?(?=\n\*\*|$)/gi, '');
+  
+  // Remove **Image Prompt:** label but keep content
+  clean = clean.replace(/\*\*(?:Illustration|Image Prompt):\*\*\s*/gi, '');
+  
+  // Remove DISPLAY TITLE instructions
+  clean = clean.replace(/\n*DISPLAY TITLE:[\s\S]*$/gi, '');
+  
+  // Remove JSON metadata prefix
+  clean = clean.replace(/^\[pageType:\s*"[^"]*",\s*pageNumber:\s*\d+\]\s*/gi, '');
+  
+  // Remove standalone quoted text lines (rhymes)
+  clean = clean.replace(/^[""][^""]+[""]\.?\s*$/gm, '');
+  
+  // Clean up bullet points and whitespace
+  clean = clean.replace(/^[-*]\s+/gm, '');
+  clean = clean.replace(/\n{3,}/g, '\n\n').trim();
+  
+  return clean;
+}
+```
+
+### Edge Function Contextual Enhancements
+
+The server will still add page/book-specific elements:
+
+```typescript
+// These depend on runtime data and must stay server-side
+const aspectRatioPrefix = requiresSquareFormat ? `${COVER_ASPECT_RATIOS.square}\n\n` : '';
+const coverTitlePrefix = isCoverPage && bookTitle ? `CRITICAL - BOOK COVER...` : '';
+const oppositesSuffix = isOppositesContentPage ? OPPOSITES_SPLIT_SCREEN_RULES : '';
+const negativePrompt = '\n\nNo text overlays. DO NOT add any text...';
+
+// Prompt arrives pre-sanitized, just enhance it
+const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + prompt + oppositesSuffix + negativePrompt;
+```
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/utils/promptSanitizer.ts` | **NEW** - Shared sanitization utility (~50 lines) |
+| `src/utils/pageHelpers.ts` | Apply sanitizer in `extractPromptsRecord()` |
+| `src/pages/GoogleChat.tsx` | Apply sanitizer in `getCurrentPagePrompt()` fallback |
+| `src/components/chat/BookEditorPanel.tsx` | Remove `stripTitleFromPrompt()` (~30 lines removed) |
+| `supabase/functions/generate-color-image/index.ts` | Remove `sanitizeImagePrompt()` body (~40 lines), keep contextual logic |
+| `src/hooks/useGoogleCreateBook.ts` | Apply sanitizer in fallback extraction |
+
+## Benefits
+
+1. **Single source of truth** - One sanitization function, consistent behavior everywhere
+2. **What you see = what you get** - Chat displays exactly what will be generated
+3. **Code reduction** - Remove ~100 lines of duplicate logic
+4. **Easier maintenance** - Changes to sanitization rules apply globally
+5. **Better UX** - Users see clean, readable scene descriptions instead of confusing metadata
+
+## Risk Mitigation
+
+1. **Backward compatibility**: Fallback sanitization in `getCurrentPagePrompt()` handles legacy unsanitized prompts
+2. **Defense in depth**: Keep negative prompt appendix on server as safety net
+3. **No data migration**: Existing prompts sanitized on read, not in database
+4. **Testing**: Verify with existing books that image generation still works correctly
+
+## Estimated Impact
+
+- **Code reduction**: ~100-120 lines removed
+- **Files touched**: 6 files
+- **Risk level**: Low-Medium (sanitization logic is well-understood)
+- **Testing required**: Manual verification of prompt display and image generation

@@ -284,7 +284,8 @@ function generateTitle(
   city: string | null,
   resort: string | null,
   season: string | null,
-  gradeLevel: string | null
+  gradeLevel: string | null,
+  clothingBrand: string | null
 ): string {
   const parts: string[] = [];
   
@@ -292,28 +293,47 @@ function generateTitle(
   const subjectType = getSubjectType(bookType);
   parts.push(subjectType);
   
-  // 2. Grade level (e.g., "Pre-K", "Kindergarten")
-  const grade = formatGradeLevel(gradeLevel) || getAgeKeyword(targetAge);
+  // 2. Grade level if available, otherwise age group
+  const grade = formatGradeLevel(gradeLevel);
   if (grade) {
     parts.push(grade);
+  } else {
+    const age = getAgeKeyword(targetAge);
+    if (age && age !== 'Kids') {
+      parts.push(age);
+    }
   }
   
   // 3. Two books offering - core value proposition
   parts.push('2 Books: Color + Coloring');
   
-  // 4. Location (city or resort) if available
-  const location = formatResort(resort) || formatCity(city);
-  if (location) {
-    parts.push(location);
+  // 4. Resort if available (takes priority over city)
+  const resortName = formatResort(resort);
+  if (resortName) {
+    parts.push(resortName);
   }
   
-  // 5. Season if available
+  // 5. City if available (and no resort)
+  if (!resortName) {
+    const cityName = formatCity(city);
+    if (cityName) {
+      parts.push(cityName);
+    }
+  }
+  
+  // 6. Brand if available
+  const brandName = formatClothingBrand(clothingBrand);
+  if (brandName) {
+    parts.push(brandName);
+  }
+  
+  // 7. Season if available
   const seasonName = formatSeason(season);
   if (seasonName) {
     parts.push(seasonName);
   }
   
-  // 6. Digital Download indicator
+  // 8. Digital Download indicator
   parts.push('Digital Download');
   
   let title = parts.join(' | ');
@@ -586,7 +606,18 @@ export function generateEtsyListing({
   mannerType,
   mannersSetting,
 }: EtsyListingParams): EtsyListing {
-  const title = generateTitle(bookName, bookType, characterTheme, targetAge, pageCount, city || null, resort || null, season || null, gradeLevel || null);
+  const title = generateTitle(
+    bookName, 
+    bookType, 
+    characterTheme, 
+    targetAge, 
+    pageCount, 
+    city || null, 
+    resort || null, 
+    season || null, 
+    gradeLevel || null,
+    clothingBrand || null
+  );
   const description = generateDescription(bookName, bookDescription, bookType, characterTheme, targetAge, pageCount);
   const tags = generateTags(
     bookType, 

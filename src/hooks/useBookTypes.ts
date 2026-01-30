@@ -1,6 +1,12 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BOOK_TYPES, BookType } from '@/config/bookTypes';
+import { 
+  buildAgentTypeMap, 
+  STATIC_BOOK_TYPE_TO_AGENT_TYPE,
+  type AgentType 
+} from '@/utils/agentTypeUtils';
 import { 
   Sparkles, 
   Hash, 
@@ -31,6 +37,8 @@ export interface DatabaseBookType {
   clarification_context: string | null;
   sort_order: number;
   is_active: boolean;
+  /** Suffix for agent type mapping. Agent type = 'book-creation-' + (agent_type_suffix || id) */
+  agent_type_suffix: string | null;
 }
 
 // Map icon names to Lucide components
@@ -87,11 +95,22 @@ export function useBookTypes() {
     ? query.data.map(toBookType)
     : BOOK_TYPES as BookType[];
 
+  // Generate agent type mapping from database (dynamic, single source of truth)
+  const agentTypeMap = useMemo(() => 
+    query.data ? buildAgentTypeMap(query.data) : STATIC_BOOK_TYPE_TO_AGENT_TYPE,
+    [query.data]
+  );
+
   return {
     ...query,
     bookTypes,
+    /** Dynamic mapping from book type ID to agent type */
+    agentTypeMap,
     // Helper to find a book type by ID
     getBookType: (id: string): BookType | undefined => 
       bookTypes.find(bt => bt.id === id),
+    // Helper to get the agent type for a book type ID
+    getAgentType: (bookTypeId: string): AgentType => 
+      agentTypeMap[bookTypeId] || 'book-creation',
   };
 }

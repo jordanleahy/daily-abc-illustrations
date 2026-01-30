@@ -1,12 +1,13 @@
 /**
  * Agent types - re-exported from shared module for consistency
  */
-export { type AgentType, BOOK_TYPE_TO_AGENT_TYPE } from './shared/agent';
+export { 
+  type AgentType, 
+  type AIProvider,
+  BOOK_TYPE_TO_AGENT_TYPE 
+} from './shared/agent';
 
-/**
- * AI provider types
- */
-export type AIProvider = 'openai' | 'deepseek' | 'google';
+export { type StaticAgentType } from '@/utils/agentTypeUtils';
 
 /**
  * Configuration interface for AI agents in the system
@@ -32,7 +33,7 @@ export interface AgentConfig {
   /** System instructions that define the agent's behavior and responses */
   instructions: string;
   /** AI provider (OpenAI, DeepSeek, or Google) */
-  provider: AIProvider;
+  provider: import('./shared/agent').AIProvider;
   /** AI-generated description of what changed in the latest version */
   whatChanged?: string;
   /** Human-readable description of the last change */

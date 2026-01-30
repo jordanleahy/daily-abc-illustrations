@@ -4,7 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
-import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
+import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange } from '../_shared/types.ts';
+import { fetchAgentTypeMap, type AgentType } from '../_shared/agentTypes.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
@@ -266,8 +267,9 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
     // ============================================================================
     console.log('[Orchestration] Starting agent selection for book type:', bookType);
 
-    // Map book type to agent type
-    const agentType: AgentType = BOOK_TYPE_TO_AGENT_TYPE[bookType || 'other'] || 'book-creation';
+    // Map book type to agent type (dynamic mapping from database - single source of truth)
+    const agentTypeMap = await fetchAgentTypeMap(supabase);
+    const agentType: AgentType = agentTypeMap[bookType || 'other'] || 'book-creation';
     console.log('[Orchestration] Mapped to agent type:', agentType);
 
     // Attempt to fetch specialized agent

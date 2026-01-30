@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/components/ui/drawer';
-import { useToast } from '@/hooks/use-toast';
-import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, Copy, ExternalLink } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useCopyWithFeedback } from '@/hooks/useCopyWithFeedback';
+import { SocialDrawerLayout } from './social-drawers/SocialDrawerLayout';
+import { CopyableSection } from './social-drawers/CopyableSection';
 
 // TikTok icon
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -36,36 +36,6 @@ interface TikTokPostDrawerProps {
   onPosted?: () => void;
 }
 
-/**
- * Generate TikTok-optimized caption (shorter, more punchy)
- */
-function generateTikTokCaption(
-  bookName: string,
-  bookDescription: string | null,
-  metadata?: TikTokPostDrawerProps['metadata']
-): { caption: string; hashtags: string } {
-  // TikTok prefers shorter, punchier captions
-  const themeEmoji = getThemeEmoji(metadata?.characterTheme);
-  
-  let caption = `${themeEmoji} ${bookName}`;
-  
-  if (bookDescription) {
-    // Take first sentence only for TikTok
-    const firstSentence = bookDescription.split(/[.!?]/)[0];
-    if (firstSentence && firstSentence.length < 60) {
-      caption += `\n\n${firstSentence}`;
-    }
-  }
-  
-  caption += '\n\n✨ Free coloring pages included!';
-  caption += '\n📚 Link in bio';
-  
-  // TikTok hashtags - fewer but more targeted
-  const hashtags = generateTikTokHashtags(metadata);
-  
-  return { caption, hashtags };
-}
-
 function getThemeEmoji(theme: string | null | undefined): string {
   if (!theme) return '📖';
   
@@ -85,6 +55,30 @@ function getThemeEmoji(theme: string | null | undefined): string {
   return emojiMap[theme] || '📖';
 }
 
+function generateTikTokCaption(
+  bookName: string,
+  bookDescription: string | null,
+  metadata?: TikTokPostDrawerProps['metadata']
+): { caption: string; hashtags: string } {
+  const themeEmoji = getThemeEmoji(metadata?.characterTheme);
+  
+  let caption = `${themeEmoji} ${bookName}`;
+  
+  if (bookDescription) {
+    const firstSentence = bookDescription.split(/[.!?]/)[0];
+    if (firstSentence && firstSentence.length < 60) {
+      caption += `\n\n${firstSentence}`;
+    }
+  }
+  
+  caption += '\n\n✨ Free coloring pages included!';
+  caption += '\n📚 Link in bio';
+  
+  const hashtags = generateTikTokHashtags(metadata);
+  
+  return { caption, hashtags };
+}
+
 function generateTikTokHashtags(metadata?: TikTokPostDrawerProps['metadata']): string {
   const tags: string[] = [
     '#kidstiktok',
@@ -93,7 +87,6 @@ function generateTikTokHashtags(metadata?: TikTokPostDrawerProps['metadata']): s
     '#kidsactivities',
   ];
   
-  // Add book type specific tags
   if (metadata?.bookType) {
     const typeTagMap: Record<string, string[]> = {
       'abc': ['#abclearning', '#alphabetforkids'],
@@ -105,7 +98,6 @@ function generateTikTokHashtags(metadata?: TikTokPostDrawerProps['metadata']): s
     tags.push(...(typeTagMap[metadata.bookType] || []));
   }
   
-  // Add seasonal tags
   if (metadata?.season) {
     const seasonTagMap: Record<string, string> = {
       'SPRING': '#springactivities',
@@ -117,7 +109,6 @@ function generateTikTokHashtags(metadata?: TikTokPostDrawerProps['metadata']): s
     if (seasonTag) tags.push(seasonTag);
   }
   
-  // Add environment/activity tags
   if (metadata?.environment) {
     const envTagMap: Record<string, string[]> = {
       'SNOWBOARD_RESORT': ['#snowboardtok', '#skiresort'],
@@ -127,10 +118,8 @@ function generateTikTokHashtags(metadata?: TikTokPostDrawerProps['metadata']): s
     tags.push(...(envTagMap[metadata.environment.toUpperCase()] || []));
   }
   
-  // Core TikTok viral tags
   tags.push('#foryou', '#fyp', '#forkids');
   
-  // Limit to ~15 hashtags for TikTok
   return tags.slice(0, 15).join(' ');
 }
 
@@ -145,31 +134,11 @@ export function TikTokPostDrawer({
   onPosted,
 }: TikTokPostDrawerProps) {
   const { toast } = useToast();
-  const [captionCopied, setCaptionCopied] = useState(false);
-  const [hashtagsCopied, setHashtagsCopied] = useState(false);
+  const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingPosted, setIsMarkingPosted] = useState(false);
 
   const { caption, hashtags } = generateTikTokCaption(bookName, bookDescription || null, metadata);
   const fullPost = `${caption}\n\n${hashtags}`;
-
-  const handleCopy = async (text: string, type: 'caption' | 'hashtags') => {
-    try {
-      await copyToClipboard(text);
-      
-      if (type === 'caption') {
-        setCaptionCopied(true);
-        setTimeout(() => setCaptionCopied(false), 2000);
-      } else {
-        setHashtagsCopied(true);
-        setTimeout(() => setHashtagsCopied(false), 2000);
-      }
-      
-      toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} copied!` });
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      toast({ title: 'Failed to copy', variant: 'destructive' });
-    }
-  };
 
   const handleMarkPosted = async () => {
     setIsMarkingPosted(true);
@@ -206,113 +175,37 @@ export function TikTokPostDrawer({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader className="text-left">
-          <DrawerTitle className="flex items-center gap-2">
-            <TikTokIcon className="h-5 w-5" />
-            TikTok Post
-          </DrawerTitle>
-          <DrawerDescription>
-            Copy the caption and hashtags for your TikTok video
-          </DrawerDescription>
-        </DrawerHeader>
+    <SocialDrawerLayout
+      open={open}
+      onOpenChange={onOpenChange}
+      title="TikTok Post"
+      description="Copy the caption and hashtags for your TikTok video"
+      icon={TikTokIcon}
+      actionLabel="I've Posted to TikTok"
+      isActionLoading={isMarkingPosted}
+      onAction={handleMarkPosted}
+    >
+      <CopyableSection
+        label="Caption"
+        content={caption}
+        isCopied={isCopied('caption')}
+        onCopy={(e) => handleCopy(e, caption, 'caption')}
+      />
 
-        <div className="px-4 space-y-4 overflow-y-auto flex-1">
-          {/* Caption Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Caption</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(caption, 'caption')}
-              >
-                {captionCopied ? (
-                  <>
-                    <Check className="h-3 w-3 text-primary" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="p-3 bg-muted rounded-lg text-sm max-h-48 overflow-y-auto whitespace-pre-wrap">
-              {caption}
-            </div>
-          </div>
+      <CopyableSection
+        label="Hashtags"
+        content={hashtags}
+        isCopied={isCopied('hashtags')}
+        onCopy={(e) => handleCopy(e, hashtags, 'hashtags')}
+      />
 
-          {/* Hashtags Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Hashtags</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(hashtags, 'hashtags')}
-              >
-                {hashtagsCopied ? (
-                  <>
-                    <Check className="h-3 w-3 text-primary" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="p-3 bg-muted rounded-lg text-sm">
-              {hashtags}
-            </div>
-          </div>
-
-          {/* Full Post Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Full Post</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(fullPost, 'caption')}
-              >
-                <Copy className="h-3 w-3" />
-                Copy All
-              </Button>
-            </div>
-            <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground max-h-24 overflow-y-auto whitespace-pre-wrap">
-              {fullPost}
-            </div>
-          </div>
-        </div>
-
-        <DrawerFooter className="pt-4">
-          <Button
-            onClick={handleMarkPosted}
-            disabled={isMarkingPosted}
-            className="w-full gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            {isMarkingPosted ? 'Saving...' : "I've Posted to TikTok"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full"
-          >
-            Close
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+      <CopyableSection
+        label="Full Post"
+        content={fullPost}
+        isCopied={isCopied('fullPost')}
+        onCopy={(e) => handleCopy(e, fullPost, 'fullPost', 'Full post')}
+        variant="muted"
+      />
+    </SocialDrawerLayout>
   );
 }

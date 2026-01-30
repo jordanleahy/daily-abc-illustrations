@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/components/ui/drawer';
-import { useToast } from '@/hooks/use-toast';
-import { copyToClipboard } from '@/utils/clipboardHelpers';
-import { generateYouTubePost } from '@/utils/marketing/generateYouTubePost';
+import { Youtube } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useCopyWithFeedback } from '@/hooks/useCopyWithFeedback';
+import { generateYouTubePost } from '@/utils/marketing/generateYouTubePost';
 import { SITE_CONFIG } from '@/config/site';
-import { Check, Copy, Youtube, ExternalLink } from 'lucide-react';
+import { SocialDrawerLayout } from './social-drawers/SocialDrawerLayout';
+import { CopyableSection } from './social-drawers/CopyableSection';
 
 interface YouTubePostDrawerProps {
   open: boolean;
@@ -31,9 +31,7 @@ interface YouTubePostDrawerProps {
 
 export function YouTubePostDrawer({ open, onOpenChange, book, publicationSlug }: YouTubePostDrawerProps) {
   const { toast } = useToast();
-  const [titleCopied, setTitleCopied] = useState(false);
-  const [descriptionCopied, setDescriptionCopied] = useState(false);
-  const [hashtagsCopied, setHashtagsCopied] = useState(false);
+  const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
 
   const slug = publicationSlug || book.marketing_url;
@@ -52,28 +50,6 @@ export function YouTubePostDrawer({ open, onOpenChange, book, publicationSlug }:
     targetAge: book.metadata?.targetAge || null,
   });
 
-  const handleCopy = async (text: string, type: 'title' | 'description' | 'hashtags') => {
-    try {
-      await copyToClipboard(text);
-      
-      if (type === 'title') {
-        setTitleCopied(true);
-        setTimeout(() => setTitleCopied(false), 2000);
-      } else if (type === 'description') {
-        setDescriptionCopied(true);
-        setTimeout(() => setDescriptionCopied(false), 2000);
-      } else {
-        setHashtagsCopied(true);
-        setTimeout(() => setHashtagsCopied(false), 2000);
-      }
-      
-      toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} copied!` });
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      toast({ title: 'Failed to copy', variant: 'destructive' });
-    }
-  };
-
   const handleMarkUploaded = async () => {
     setIsMarkingUploaded(true);
     try {
@@ -82,7 +58,6 @@ export function YouTubePostDrawer({ open, onOpenChange, book, publicationSlug }:
         throw new Error('Not authenticated');
       }
 
-      // Record the YouTube post in book_social_posts table
       const { error } = await supabase
         .from('book_social_posts')
         .insert({
@@ -108,119 +83,38 @@ export function YouTubePostDrawer({ open, onOpenChange, book, publicationSlug }:
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
-        <DrawerHeader className="text-left">
-          <DrawerTitle className="flex items-center gap-2">
-            <Youtube className="h-5 w-5 text-destructive" />
-            YouTube Post
-          </DrawerTitle>
-          <DrawerDescription>
-            Copy the title, description, and hashtags for your YouTube video
-          </DrawerDescription>
-        </DrawerHeader>
+    <SocialDrawerLayout
+      open={open}
+      onOpenChange={onOpenChange}
+      title="YouTube Post"
+      description="Copy the title, description, and hashtags for your YouTube video"
+      icon={Youtube}
+      iconClassName="h-5 w-5 text-destructive"
+      actionLabel="I've Uploaded to YouTube"
+      isActionLoading={isMarkingUploaded}
+      onAction={handleMarkUploaded}
+    >
+      <CopyableSection
+        label="Title"
+        content={title}
+        isCopied={isCopied('title')}
+        onCopy={(e) => handleCopy(e, title, 'title')}
+        charCount={{ current: title.length, max: 100 }}
+      />
 
-        <div className="px-4 space-y-4 overflow-y-auto flex-1">
-          {/* Title Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Title</label>
-              <span className="text-xs text-muted-foreground">{title.length}/100 chars</span>
-            </div>
-            <div className="relative">
-              <div className="p-3 pr-12 bg-muted rounded-lg text-sm break-words">
-                {title}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                onClick={() => handleCopy(title, 'title')}
-              >
-                {titleCopied ? (
-                  <Check className="h-4 w-4 text-primary" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+      <CopyableSection
+        label="Description"
+        content={description}
+        isCopied={isCopied('description')}
+        onCopy={(e) => handleCopy(e, description, 'description')}
+      />
 
-          {/* Description Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Description</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(description, 'description')}
-              >
-                {descriptionCopied ? (
-                  <>
-                    <Check className="h-3 w-3 text-primary" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="p-3 bg-muted rounded-lg text-sm max-h-48 overflow-y-auto whitespace-pre-wrap">
-              {description}
-            </div>
-          </div>
-
-          {/* Hashtags Section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">Hashtags</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={() => handleCopy(hashtags, 'hashtags')}
-              >
-                {hashtagsCopied ? (
-                  <>
-                    <Check className="h-3 w-3 text-primary" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-            <div className="p-3 bg-muted rounded-lg text-sm">
-              {hashtags}
-            </div>
-          </div>
-        </div>
-
-        <DrawerFooter className="pt-4">
-          <Button
-            onClick={handleMarkUploaded}
-            disabled={isMarkingUploaded}
-            className="w-full gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            {isMarkingUploaded ? 'Saving...' : 'I\'ve Uploaded to YouTube'}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full"
-          >
-            Close
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+      <CopyableSection
+        label="Hashtags"
+        content={hashtags}
+        isCopied={isCopied('hashtags')}
+        onCopy={(e) => handleCopy(e, hashtags, 'hashtags')}
+      />
+    </SocialDrawerLayout>
   );
 }

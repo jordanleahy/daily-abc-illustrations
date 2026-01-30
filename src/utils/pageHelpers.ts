@@ -3,6 +3,8 @@
  * All page numbers are 1-based matching agent output exactly
  */
 
+import { sanitizeImagePrompt } from './promptSanitizer';
+
 export interface ParsedPage {
   pageNumber: number;  // 1-based, exactly as agent outputs
   pageType: 'cover' | 'educational' | 'content';
@@ -125,7 +127,8 @@ export const getPageTitle = (
 
 /**
  * Extract all prompts as Record for book creation
- * Keys are page numbers (1-based), values are full prompts
+ * Keys are page numbers (1-based), values are sanitized prompts
+ * Sanitization is applied at extraction time to ensure consistency
  */
 export const extractPromptsRecord = (
   outline: ParsedOutline | null
@@ -135,7 +138,8 @@ export const extractPromptsRecord = (
   const prompts: Record<number, string> = {};
   outline.allPages.forEach((page, pageNum) => {
     if (page.description) {
-      prompts[pageNum] = page.description;
+      // Sanitize at extraction - prompts stored clean
+      prompts[pageNum] = sanitizeImagePrompt(page.description);
     }
   });
   

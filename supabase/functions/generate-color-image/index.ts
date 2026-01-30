@@ -21,50 +21,24 @@ const corsHeaders = {
 // Page types that use the pro model for better text accuracy
 const PRO_MODEL_PAGE_TYPES = ['cover', 'educational'];
 
+// Strong negative prompt to prevent text in generated images
+const NEGATIVE_PROMPT = 'No text overlays. DO NOT add any text, labels, signs, words, letters, captions, or written content. Clean illustration only.';
+
 /**
- * Sanitize image prompts to remove text overlay instructions
- * This is a defense-in-depth measure to prevent text from appearing on generated images
+ * Add negative prompt enforcement to sanitized prompts
+ * Prompts are now pre-sanitized at extraction time on the client.
+ * This function just adds the negative prompt as a safety net.
  */
-function sanitizeImagePrompt(prompt: string): string {
-  let clean = prompt;
+function addNegativePrompt(prompt: string): string {
+  if (!prompt) return '';
   
-  // Remove **Text Overlay:** section and its content (until next ** or end)
-  clean = clean.replace(/\*\*Text Overlay:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
-  
-  // Remove **Rhyme Text:** section and its content
-  clean = clean.replace(/\*\*Rhyme Text:\*\*[\s\S]*?(?=\*\*[A-Z]|$)/gi, '');
-  
-  // Remove **Rhyme Pair:** lines
-  clean = clean.replace(/\*\*Rhyme Pair:\*\*[^\n]*\n?/gi, '');
-  
-  // Remove bullet-format Text Overlay lines (entire line including quoted content)
-  clean = clean.replace(/^-\s*\*{0,2}Text Overlay\*{0,2}:\s*[^\n]*\n?/gim, '');
-  
-  // Remove bullet-format Opposite Pair lines (entire line)
-  clean = clean.replace(/^-\s*\*{0,2}Opposite Pair\*{0,2}:\s*[^\n]*\n?/gim, '');
-  
-  // Remove any remaining "Text Overlay" references with quoted content
-  clean = clean.replace(/\bText Overlay\b[:\s]*["'][^"']*["']/gi, '');
-  
-  // Remove standalone quoted text lines (rhymes in quotes)
-  clean = clean.replace(/^[""][^""]+[""]\.?\s*$/gm, '');
-  
-  // Remove **Illustration:** or **Image Prompt:** labels but keep content
-  clean = clean.replace(/\*\*(?:Illustration|Image Prompt):\*\*\s*/gi, '');
-  
-  // Remove bullet point markers at start of lines
-  clean = clean.replace(/^[-*]\s+/gm, '');
-  
-  // Clean up extra whitespace
-  clean = clean.replace(/\n{3,}/g, '\n\n').trim();
-  
-  // Append strong negative prompt enforcement for content pages
-  const negativePrompt = 'No text overlays. DO NOT add any text, labels, signs, words, letters, captions, or written content. Clean illustration only.';
-  if (!clean.toLowerCase().includes('do not add any text')) {
-    clean = clean.replace(/\.?\s*$/, '. ' + negativePrompt);
+  // If negative prompt already exists, return as-is
+  if (prompt.toLowerCase().includes('do not add any text')) {
+    return prompt;
   }
   
-  return clean;
+  // Append negative prompt
+  return prompt.replace(/\.?\s*$/, '. ' + NEGATIVE_PROMPT);
 }
 
 serve(async (req) => {
@@ -137,14 +111,15 @@ serve(async (req) => {
       ? `CRITICAL - BOOK COVER: This is a COVER PAGE for the book titled "${bookTitle}". ${generateCoverTitleInstruction(bookTitle)}\n\n`
       : '';
     
-    // Sanitize the prompt to remove any text overlay instructions
-    const sanitizedPrompt = sanitizeImagePrompt(prompt);
-    
     // Apply split-screen composition rules for opposites book content pages
     const isOppositesContentPage = isOppositesBook && pageType === 'content';
     const oppositesSuffix = isOppositesContentPage ? OPPOSITES_SPLIT_SCREEN_RULES : '';
     
-    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + sanitizedPrompt + oppositesSuffix;
+    // Prompts are pre-sanitized at extraction time on the client
+    // Add negative prompt as defense-in-depth safety net
+    const promptWithNegative = addNegativePrompt(prompt);
+    
+    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + promptWithNegative + oppositesSuffix;
     
     console.log('🎨 Generating color image for page:', pageId);
     console.log('📄 Page type:', pageType || 'unknown');
@@ -153,7 +128,6 @@ serve(async (req) => {
     console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
     console.log('📐 Square format enforced:', requiresSquareFormat);
     console.log('📕 Cover title included:', isCoverPage && bookTitle ? bookTitle : 'N/A');
-    console.log('🧹 Prompt sanitized:', prompt !== sanitizedPrompt ? 'YES (text content removed)' : 'NO (already clean)');
     console.log('📝 Prompt length:', enhancedPrompt.length);
 
     // Call Lovable AI to generate the color image with retry logic for transient errors

@@ -1,168 +1,345 @@
 
 
-# Plan: Consolidate CORS Headers Duplication
+# Plan: Database-Driven Agent Type System for True DRY Architecture
 
-## Problem Summary
+## Executive Summary
 
-The `corsHeaders` constant is duplicated across **43+ edge functions** instead of using the centralized definition in `supabase/functions/_shared/cors.ts`. This creates:
-
-- **Maintenance burden**: Any CORS header changes require updating 40+ files
-- **Inconsistency risk**: Headers could drift if updated in some files but not others
-- **Code bloat**: ~150 lines of redundant code across the codebase
+Currently, `AgentType`, `BOOK_TYPE_TO_AGENT_TYPE`, and `AIProvider` are duplicated in 3+ places with **drift already occurring** (frontend has `dr-seuss`, backend doesn't; database has `song`, neither has it). Rather than just synchronizing copies, we'll leverage the existing `book_types` database table as the **single source of truth** and generate the derived `AgentType` values dynamically.
 
 ## Current State Analysis
 
-| Location | Status |
-|----------|--------|
-| `_shared/cors.ts` | Canonical source (4 lines) |
-| `_shared/types.ts` | Duplicate definition (lines 222-225) |
-| 43 edge function `index.ts` files | Inline duplicates |
-| 9 edge functions | Already importing from `_shared/cors.ts` |
+### Duplication Found
 
-**Functions already using shared import:**
-- `admin-chat`, `consume-screen-time`, `download-book-images`, `expire-pending-habits`
-- `generate-page-system-prompts`, `generate-png-variants`, `google-chat`
-- `google-create-book`, `purchase-reward`
+| Definition | Frontend | Backend | Database |
+|------------|----------|---------|----------|
+| `AgentType` | `src/types/shared/agent.ts` | `supabase/functions/_shared/types.ts` | N/A (derived from agents.type column) |
+| `BOOK_TYPE_TO_AGENT_TYPE` | `src/types/shared/agent.ts` | `supabase/functions/_shared/types.ts` | N/A |
+| `AIProvider` | `src/types/shared/agent.ts` | `supabase/functions/_shared/types.ts` | N/A |
+| `VALID_BOOK_TYPES` | `src/types/bookType.ts` | `supabase/functions/_shared/types.ts` | `book_types` table |
 
-## Implementation Steps
+### Type Drift Detected
 
-### Step 1: Remove Duplicate from `_shared/types.ts`
-Delete the `corsHeaders` definition (lines 218-225) from `types.ts` since it's already properly defined in `cors.ts`. This file should focus on type definitions and validation utilities, not CORS.
+- **Frontend has** `book-creation-dr-seuss` - Backend missing
+- **Database has** `book-creation-song` agent type - Neither frontend nor backend has this
+- **Backend missing** `dr-seuss` in `VALID_BOOK_TYPES` 
 
-### Step 2: Update Edge Functions to Use Shared Import
+### Real-time Status
 
-Replace inline `corsHeaders` definitions with the shared import in all 43 remaining edge functions.
+- `useAgentRealtime` exists for agent updates
+- `useAgentQuestionsSubscription` exists for question updates  
+- **No real-time subscription** for `book_types` changes (5-min stale time cache only)
 
-**Before:**
+## Proposed Architecture
+
+### Strategy: Database as Source of Truth
+
+Since `book_types` already exists and is the operational source, we'll:
+
+1. **Add `agent_type_suffix` column** to `book_types` table for explicit mapping
+2. **Generate `AgentType` dynamically** from database in edge functions
+3. **Keep static fallbacks** for type safety in TypeScript
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    book_types (PostgreSQL)                       │
+│  id: 'abc' | 'numbers' | 'song' | 'dr-seuss' | ...              │
+│  agent_type_suffix: NULL | 'abc' | 'numbers' | 'song' | ...     │
+│  → Computes: 'book-creation-' + COALESCE(agent_type_suffix, id) │
+└───────────────────────────────────────────────────────────────────┘
+                              ↓
+         ┌────────────────────┴───────────────────┐
+         ↓                                         ↓
+   Frontend (Runtime)                        Backend (Runtime)
+   useBookTypes() hook                       fetchBookTypeMap() util
+   derives agent mapping                     derives agent mapping
+         ↓                                         ↓
+   Type-safe union                           Type-safe union
+   (static + dynamic)                        (static + dynamic)
+```
+
+## Implementation Plan
+
+### Phase 1: Add Database Column for Agent Type Mapping
+
+Add `agent_type_suffix` column to `book_types` to explicitly define the agent type suffix:
+
+```sql
+ALTER TABLE book_types 
+ADD COLUMN agent_type_suffix TEXT DEFAULT NULL;
+
+COMMENT ON COLUMN book_types.agent_type_suffix IS 
+  'Suffix for agent type. Agent type = ''book-creation-'' + COALESCE(agent_type_suffix, id). NULL means use id directly.';
+
+-- Populate for cases where id differs from agent suffix (none currently, but future-proof)
+UPDATE book_types SET agent_type_suffix = id WHERE id = id;
+```
+
+### Phase 2: Create Shared Type Generation Utilities
+
+**Frontend Utility** (`src/utils/agentTypeUtils.ts`):
+
 ```typescript
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+import type { DatabaseBookType } from '@/hooks/useBookTypes';
+
+// Static fallback types for TypeScript (used before DB loads)
+export const STATIC_AGENT_TYPES = [
+  'chat',
+  'book-creation',
+  'book-creation-numbers',
+  'book-creation-rhyming',
+  // ... all known types for IDE autocomplete
+] as const;
+
+export type StaticAgentType = typeof STATIC_AGENT_TYPES[number];
+
+// Dynamic agent type (string for flexibility, validated at runtime)
+export type AgentType = StaticAgentType | `book-creation-${string}`;
+
+/**
+ * Generates agent type from book type ID
+ */
+export function bookTypeToAgentType(bookTypeId: string, suffix?: string | null): AgentType {
+  if (bookTypeId === 'other' || bookTypeId === 'general') {
+    return 'book-creation';
+  }
+  return `book-creation-${suffix || bookTypeId}` as AgentType;
+}
+
+/**
+ * Builds BOOK_TYPE_TO_AGENT_TYPE mapping from database records
+ */
+export function buildAgentTypeMap(bookTypes: DatabaseBookType[]): Record<string, AgentType> {
+  const map: Record<string, AgentType> = {
+    'other': 'book-creation', // Fallback
+  };
+  
+  for (const bt of bookTypes) {
+    map[bt.id] = bookTypeToAgentType(bt.id, bt.agent_type_suffix);
+  }
+  
+  return map;
+}
+```
+
+**Backend Utility** (`supabase/functions/_shared/agentTypes.ts`):
+
+```typescript
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+
+// Static types for TypeScript safety
+export type AgentType = 
+  | 'chat' 
+  | 'book-creation'
+  | `book-creation-${string}`;
+
+export type AIProvider = 'openai' | 'deepseek' | 'google';
+
+// Cache for book type mappings (refreshed per invocation or with TTL)
+let cachedMapping: Record<string, AgentType> | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 60 * 1000; // 1 minute
+
+/**
+ * Fetches book type to agent type mapping from database
+ */
+export async function fetchAgentTypeMap(
+  supabase: ReturnType<typeof createClient>
+): Promise<Record<string, AgentType>> {
+  const now = Date.now();
+  
+  if (cachedMapping && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedMapping;
+  }
+  
+  const { data, error } = await supabase
+    .from('book_types')
+    .select('id, agent_type_suffix')
+    .eq('is_active', true);
+    
+  if (error) {
+    console.error('[AgentTypes] Failed to fetch from DB, using fallback');
+    return FALLBACK_MAPPING;
+  }
+  
+  const mapping: Record<string, AgentType> = {
+    'other': 'book-creation',
+  };
+  
+  for (const row of data || []) {
+    const suffix = row.agent_type_suffix || row.id;
+    mapping[row.id] = `book-creation-${suffix}` as AgentType;
+  }
+  
+  cachedMapping = mapping;
+  cacheTimestamp = now;
+  
+  return mapping;
+}
+
+// Fallback for when DB is unreachable
+const FALLBACK_MAPPING: Record<string, AgentType> = {
+  'numbers': 'book-creation-numbers',
+  'rhyming': 'book-creation-rhyming',
+  // ... minimal fallback set
+  'other': 'book-creation',
 };
 ```
 
-**After:**
+### Phase 3: Update Frontend Consumption
+
+**Update `src/types/shared/agent.ts`**:
+
 ```typescript
-import { corsHeaders } from '../_shared/cors.ts';
+// Import dynamic utilities
+export { 
+  type AgentType, 
+  type StaticAgentType,
+  bookTypeToAgentType,
+  buildAgentTypeMap 
+} from '@/utils/agentTypeUtils';
+
+// Keep AIProvider as simple enum (no database backing needed)
+export type AIProvider = 'openai' | 'deepseek' | 'google';
+
+// Re-export for backward compatibility 
+// (deprecated - prefer buildAgentTypeMap from hook)
+export const BOOK_TYPE_TO_AGENT_TYPE = {
+  'numbers': 'book-creation-numbers',
+  // ... static fallback for SSR/initial render
+} as const;
 ```
 
-### Step 3: Batch Update List
+**Enhance `useBookTypes` hook**:
 
-The following edge functions need to be updated (grouped for parallel editing):
+```typescript
+export function useBookTypes() {
+  const query = useQuery({...});
+  
+  const bookTypes = query.data?.map(toBookType) ?? BOOK_TYPES;
+  
+  // Generate agent type mapping from database
+  const agentTypeMap = useMemo(() => 
+    query.data ? buildAgentTypeMap(query.data) : STATIC_BOOK_TYPE_TO_AGENT_TYPE,
+    [query.data]
+  );
+  
+  return {
+    ...query,
+    bookTypes,
+    agentTypeMap,  // NEW: Dynamic mapping
+    getAgentType: (bookTypeId: string) => agentTypeMap[bookTypeId] || 'book-creation',
+  };
+}
+```
 
-**Batch 1 - High traffic functions:**
-- `generate-color-image/index.ts`
-- `generate-thumbnail/index.ts`
-- `generate-book-type-image/index.ts`
-- `generate-og-image/index.ts`
-- `generate-text-image/index.ts`
+### Phase 4: Update Backend Edge Functions
 
-**Batch 2 - Book creation/management:**
-- `agent-creator/index.ts`
-- `apply-book-categorization/index.ts`
-- `categorize-existing-books/index.ts`
-- `generate-blog-post-for-book/index.ts`
-- `generate-book-qr-metadata/index.ts`
-- `generate-book-slug-qr/index.ts`
+**Update `google-chat/index.ts`**:
 
-**Batch 3 - Daily publishing:**
-- `simple-daily-publisher/index.ts`
-- `generate-daily-blog-post/index.ts`
-- `get-daily-published-images/index.ts`
-- `get-landing-page-data/index.ts`
+```typescript
+// Before (static import)
+import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
+const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
 
-**Batch 4 - User/subscription functions:**
-- `check-subscription/index.ts`
-- `create-checkout/index.ts`
-- `customer-portal/index.ts`
-- `delete-account/index.ts`
-- `stripe-webhook/index.ts`
-- `update-subscription-renewal/index.ts`
+// After (dynamic fetch)
+import { fetchAgentTypeMap } from '../_shared/agentTypes.ts';
+const agentTypeMap = await fetchAgentTypeMap(supabase);
+const agentType = agentTypeMap[bookType] || 'book-creation';
+```
 
-**Batch 5 - Utility functions:**
-- `admin-upload-image/index.ts`
-- `analyze-bites/index.ts`
-- `backfill-syllables/index.ts`
-- `create-product-description/index.ts`
-- `create-scheduled-habits/index.ts`
-- `elevenlabs-tts/index.ts`
+**Update `google-create-book/index.ts`** similarly.
 
-**Batch 6 - Word/content functions:**
-- `generate-word-book-recommendations/index.ts`
-- `get-word-syllables/index.ts`
-- `regenerate-word-metadata/index.ts`
-- `generate-seo-metadata/index.ts`
+### Phase 5: Add Real-time Subscription for Book Types
 
-**Batch 7 - Coloring/image functions:**
-- `edit-color-image/index.ts`
-- `generate-coloring-image/index.ts`
-- `generate-printable-coloring-image/index.ts`
+Create `src/hooks/useBookTypesSubscription.ts`:
 
-**Batch 8 - External integrations:**
-- `google-places-autocomplete/index.ts`
-- `reddit-search/index.ts`
-- `resort-places-autocomplete/index.ts`
-- `youtube-video/index.ts`
+```typescript
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
-**Batch 9 - Remaining functions:**
-- `qa-theme-agent/index.ts`
-- `rollback-categorization/index.ts`
-- `seed-initial-habits/index.ts`
-- `standardize-agents/index.ts`
-- `what_changed_in_agent/index.ts`
+export const useBookTypesSubscription = () => {
+  const queryClient = useQueryClient();
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
-## Technical Details
+  useEffect(() => {
+    channelRef.current = supabase
+      .channel('book-types-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'book_types',
+        },
+        () => {
+          // Invalidate cache on any change
+          queryClient.invalidateQueries({ queryKey: ['book-types'] });
+        }
+      )
+      .subscribe();
 
-### Edit Pattern for Each File
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, [queryClient]);
+};
+```
 
-For each edge function, the change is straightforward:
+### Phase 6: Consolidate AIProvider
 
-1. **Add import** at top of file (after other imports):
-   ```typescript
-   import { corsHeaders } from '../_shared/cors.ts';
-   ```
+`AIProvider` is simple and stable - consolidate to single definition:
 
-2. **Remove inline definition** (typically 3-4 lines near top):
-   ```typescript
-   // DELETE THIS:
-   const corsHeaders = {
-     'Access-Control-Allow-Origin': '*',
-     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-   };
-   ```
+**Frontend** (`src/types/shared/agent.ts`):
+```typescript
+export type AIProvider = 'openai' | 'deepseek' | 'google';
+```
 
-### No Other Code Changes Required
+**Backend** (`supabase/functions/_shared/agentTypes.ts`):
+```typescript
+export type AIProvider = 'openai' | 'deepseek' | 'google';
+```
 
-All edge functions already use `corsHeaders` consistently in their response handling, so no other modifications are needed. The variable name and usage pattern remains identical.
+Add sync comment headers to both files.
 
 ## Files to Modify
 
-| File | Change Type |
-|------|-------------|
-| `supabase/functions/_shared/types.ts` | Remove duplicate `corsHeaders` (lines 218-225) |
-| 43 edge function `index.ts` files | Replace inline definition with import |
+| File | Change |
+|------|--------|
+| `book_types` table | Add `agent_type_suffix` column |
+| `src/utils/agentTypeUtils.ts` | **NEW** - Dynamic agent type utilities |
+| `supabase/functions/_shared/agentTypes.ts` | **NEW** - Backend agent type utilities with caching |
+| `src/types/shared/agent.ts` | Simplify to re-exports + AIProvider |
+| `src/types/agent.ts` | Update imports |
+| `supabase/functions/_shared/types.ts` | Remove AgentType, BOOK_TYPE_TO_AGENT_TYPE (move to agentTypes.ts) |
+| `src/hooks/useBookTypes.ts` | Add `agentTypeMap` and `getAgentType` |
+| `src/hooks/useBookTypesSubscription.ts` | **NEW** - Real-time sync for book types |
+| `supabase/functions/google-chat/index.ts` | Use `fetchAgentTypeMap()` |
+| `supabase/functions/google-create-book/index.ts` | Use `fetchAgentTypeMap()` |
 
 ## Benefits
 
-1. **Single source of truth** - One place to update CORS configuration
-2. **Reduced code** - ~150 lines of duplicate code removed
-3. **Consistency guaranteed** - All functions use identical headers
-4. **Easier maintenance** - Future CORS changes require editing one file
-5. **Better discoverability** - New developers find the pattern immediately
+1. **True Single Source of Truth**: Database `book_types` table defines all book types
+2. **Automatic Sync**: Adding a new book type in admin UI automatically creates the agent type mapping
+3. **No Manual Sync Required**: Eliminates the `dr-seuss`/`song` drift issues
+4. **Real-time Updates**: Changes propagate immediately via subscriptions
+5. **Type Safety Preserved**: Static types remain for IDE autocomplete, runtime validates against DB
+6. **Backward Compatible**: Fallback mappings ensure system works during DB failures
 
-## Risk Assessment
+## Risk Mitigation
 
-**Risk Level: Very Low**
+1. **Fallback Static Mapping**: Edge functions have hardcoded fallback if DB fetch fails
+2. **Caching**: 1-minute TTL cache prevents excessive DB queries in edge functions
+3. **Graceful Degradation**: Frontend falls back to static `BOOK_TYPES` during loading
+4. **Migration Safety**: `agent_type_suffix` defaults to NULL (uses `id`), no data loss
 
-- No functional changes - only import refactoring
-- All edge functions already work with the same `corsHeaders` object structure
-- The shared file `_shared/cors.ts` already exists and is battle-tested
-- 9 functions already use this pattern successfully
+## Code Reduction Summary
 
-## Estimated Impact
-
-- **Code reduction**: ~150 lines removed
-- **Files touched**: 44 files (1 shared, 43 edge functions)
-- **Testing required**: Basic smoke test of a few edge functions to verify imports work
-- **Implementation time**: Fast - purely mechanical refactoring
+- Remove ~50 lines of duplicate `AgentType` definitions
+- Remove ~40 lines of duplicate `BOOK_TYPE_TO_AGENT_TYPE` mappings  
+- Eliminate manual sync overhead between 3 files
+- Add ~80 lines of dynamic utilities (net reduction + better architecture)
 

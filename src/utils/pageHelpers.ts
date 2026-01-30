@@ -25,11 +25,12 @@ export interface ParsedOutline {
  * Returns structured data with page lookup by number
  */
 export const parseBookOutline = (messages: any[]): ParsedOutline | null => {
-  // Find last message with outline - check for both bold and list formats
+  // Find last message with outline - check for bold, list, and markdown heading formats
   const outlineMsg = [...messages].reverse().find(
     msg => typeof msg.content === 'string' && (
       /\*\*Page\s+\d+/i.test(msg.content) || 
-      /- Page\s+\d+:/i.test(msg.content)
+      /- Page\s+\d+:/i.test(msg.content) ||
+      /#{1,3}\s*\*\*Page\s+\d+/i.test(msg.content)  // Markdown heading format: ### **Page 12**
     )
   );
   
@@ -38,8 +39,10 @@ export const parseBookOutline = (messages: any[]): ParsedOutline | null => {
   const content = outlineMsg.content as string;
   const allPages = new Map<number, ParsedPage>();
   
-  // Parse bold format pages: **Page 1: Title** or **Page 1 - Cover**: Title
-  const boldPagePattern = /\*\*Page\s+(\d+)[\s:-]+([^*]*?)\*\*:?\s*([\s\S]*?)(?=\n\*\*Page|\n- Page\s+\d+|$)/gi;
+  // Parse bold format pages with optional markdown heading prefix:
+  // **Page 1: Title** or **Page 1 - Cover**: Title or ### **Page 12: [Bug] vs [Hug]**
+  // Lookahead accounts for optional heading markers (###, ##, #) before **Page
+  const boldPagePattern = /#{0,3}\s*\*\*Page\s+(\d+)[\s:-]+([^*]*?)\*\*:?\s*([\s\S]*?)(?=\n#{0,3}\s*\*\*Page|\n- Page\s+\d+|$)/gi;
   let match;
   
   while ((match = boldPagePattern.exec(content)) !== null) {

@@ -370,7 +370,7 @@ function generateDescription(
   if (theme) {
     description += `• Adorable ${theme.toLowerCase()} characters throughout\n`;
   }
-  description += `• AI-illustrated with beautiful detail\n\n`;
+  description += `\n`;
   
   // Perfect For section
   description += `🎨 PERFECT FOR:\n`;
@@ -417,7 +417,7 @@ function generateDescription(
   // Disclaimer
   description += `⚠️ This is a DIGITAL DOWNLOAD - no physical product will be shipped.\n`;
   description += `📁 You will receive 2 PDF files: 1 full-color book + 1 coloring book.\n\n`;
-  description += `💖 Thank you for supporting Daily ABC Illustrations!`;
+  description += `💖 Thank you for supporting Shelly and Thatch!`;
   
   return description;
 }

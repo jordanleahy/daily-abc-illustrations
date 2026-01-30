@@ -13,16 +13,19 @@ import { formatDistanceToNow } from 'date-fns';
 const TEMPLATE_DISPLAY_NAMES: Record<string, string> = {
   cover: 'Cover Page Template',
   educational: 'Educational Focus Template',
+  outline_format: 'Outline Format Rules',
 };
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   cover: 'Controls how cover pages (Page 1) are generated across all book types',
   educational: 'Controls how educational focus pages (Page 2) are generated with grade/skill badges',
+  outline_format: 'Standardizes page format across all agents to ensure consistent parsing',
 };
 
 const AVAILABLE_PLACEHOLDERS: Record<string, string[]> = {
   cover: ['{{bookTypeWord}}', '{{COVER_TITLE_INSTRUCTION}}'],
   educational: ['{{gradeLevel}}', '{{learningType}}', '{{skillFocus}}'],
+  outline_format: [], // No placeholders - static format rules
 };
 
 export const SharedTemplatesManager = () => {
@@ -157,7 +160,7 @@ export const SharedTemplatesManager = () => {
           <CardTitle className="text-base">Placeholder Reference</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <h4 className="font-medium mb-2">Cover Page Placeholders</h4>
               <ul className="space-y-1 text-muted-foreground">
@@ -171,6 +174,13 @@ export const SharedTemplatesManager = () => {
                 <li><code className="text-xs bg-muted px-1 rounded">{'{{gradeLevel}}'}</code> - Selected grade level text</li>
                 <li><code className="text-xs bg-muted px-1 rounded">{'{{learningType}}'}</code> - Learning type badge text</li>
                 <li><code className="text-xs bg-muted px-1 rounded">{'{{skillFocus}}'}</code> - Skill focus badge text</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Outline Format</h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>No placeholders - static format rules</li>
+                <li>Injected via <code className="text-xs bg-muted px-1 rounded">{'{{SHARED_OUTLINE_FORMAT}}'}</code></li>
               </ul>
             </div>
           </div>

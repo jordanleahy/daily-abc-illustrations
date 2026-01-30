@@ -167,20 +167,15 @@ export const is{NewType}Id = (id: string): boolean => hasPrefix(id, ID_PREFIX.{N
 
 Edit `src/types/shared/agent.ts`:
 
-```typescript
-// Add to AgentType union (around line 8)
-export type AgentType = 
-  | 'chat' 
-  | 'book-creation'
-  // ... existing types
-  | 'book-creation-{typename}';  // ADD THIS
+Add a row to the `book_types` database table (via admin UI or migration):
 
-// Add to BOOK_TYPE_TO_AGENT_TYPE mapping (around line 32)
-export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
-  // ... existing mappings
-  '{typename}': 'book-creation-{typename}',  // ADD THIS
-};
+```sql
+INSERT INTO book_types (id, label, icon_name, expected_page_count, agent_type_suffix, is_active)
+VALUES ('{typename}', 'Type Display Name', 'BookIcon', 12, '{typename}', true);
 ```
+
+The agent type is automatically derived as `'book-creation-' + agent_type_suffix`.
+No code changes needed - the database is the single source of truth.
 
 ### 2.4 Update Book Types Config
 

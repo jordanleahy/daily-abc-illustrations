@@ -129,15 +129,15 @@ Update `src/config/bookTypes.ts`:
 }
 ```
 
-Update `src/types/shared/agent.ts`:
+Add a row to the `book_types` database table (via admin UI or migration):
 
-```typescript
-// Add to AgentType enum
-| 'book-creation-typename'
-
-// Add to BOOK_TYPE_TO_AGENT_TYPE mapping
-typename: 'book-creation-typename',
+```sql
+INSERT INTO book_types (id, label, icon_name, expected_page_count, agent_type_suffix, is_active)
+VALUES ('typename', 'Type Display Name', 'BookIcon', 12, 'typename', true);
 ```
+
+The agent type is automatically derived as `'book-creation-' + agent_type_suffix` (or `id` if suffix is null).
+No code changes needed - the database is the single source of truth.
 
 ---
 
@@ -848,18 +848,14 @@ export const isYourTypeId = (id: string): boolean =>
 
 ### 7.3 Update Agent Type Definitions
 
-Edit `src/types/shared/agent.ts`:
+Add a row to the `book_types` database table (via admin UI or migration):
 
-```typescript
-// Add to AgentType union
-export type AgentType = 
-  | 'book-creation-your-type';
-
-// Add to mapping
-export const BOOK_TYPE_TO_AGENT_TYPE = {
-  'your-type': 'book-creation-your-type',
-};
+```sql
+INSERT INTO book_types (id, label, icon_name, expected_page_count, agent_type_suffix, is_active)
+VALUES ('your-type', 'Your Type Name', 'BookIcon', 12, 'your-type', true);
 ```
+
+The agent type is automatically derived. No code changes needed.
 
 ---
 

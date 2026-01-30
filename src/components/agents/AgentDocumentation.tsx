@@ -117,27 +117,16 @@ When creating an agent, these database fields must be set:
 
 ### 2.3 Frontend Configuration
 
-Update \`src/config/bookTypes.ts\`:
+Add a row to the \`book_types\` database table (via admin UI or migration):
 
-\`\`\`typescript
-{
-  id: 'typename',
-  label: 'Type Display Name',
-  prompt: 'I want to create a {typename} book',
-  icon: IconComponent,
-  expectedPageCount: 12, // or 28 for ABC
-}
+\`\`\`sql
+INSERT INTO book_types (id, label, icon_name, expected_page_count, agent_type_suffix, is_active)
+VALUES ('typename', 'Type Display Name', 'BookIcon', 12, 'typename', true);
 \`\`\`
 
-Update \`src/types/shared/agent.ts\`:
+The agent type is automatically derived as \`'book-creation-' + agent_type_suffix\` (or \`id\` if suffix is null).
 
-\`\`\`typescript
-// Add to AgentType enum
-| 'book-creation-typename'
-
-// Add to BOOK_TYPE_TO_AGENT_TYPE mapping
-typename: 'book-creation-typename',
-\`\`\`
+No code changes needed - the database is the single source of truth for book types and agent mappings.
 
 ---
 

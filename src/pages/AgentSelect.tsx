@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useUserRole } from '@/hooks/useUserRole';
 import { getIconComponent } from '@/utils/iconMapping';
-import { BOOK_TYPE_TO_AGENT_TYPE } from '@/types/shared/agent';
+import { bookTypeToAgentType } from '@/utils/agentTypeUtils';
 import { cn } from '@/lib/utils';
 import { Plus, Bot, MessageCircle, Settings, HelpCircle } from 'lucide-react';
 import type { DatabaseBookType } from '@/hooks/useBookTypes';
@@ -83,9 +83,9 @@ const AgentSelect = () => {
     );
   }
 
-  // Build agent cards data
+  // Build agent cards data using dynamic mapping from database
   const bookAgentCards = (bookTypes || []).map(bt => {
-    const agentType = BOOK_TYPE_TO_AGENT_TYPE[bt.id as keyof typeof BOOK_TYPE_TO_AGENT_TYPE];
+    const agentType = bookTypeToAgentType(bt.id, bt.agent_type_suffix);
     const agent = agents?.find(a => a.type === agentType) || null;
     return { bookType: bt, agent, type: 'book' as const };
   });

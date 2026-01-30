@@ -5,6 +5,8 @@
  * These are merged with AI-generated type-specific content to produce complete agent instructions.
  */
 
+import { COVER_TITLE_INSTRUCTION } from './coverPromptConstants.ts';
+
 // ============================================================================
 // TITLE GENERATION UTILITY
 // ============================================================================
@@ -252,6 +254,7 @@ Image prompt for educational focus page must be 200-350 characters describing th
 `.trim(),
 
   // Cover page template - now uses BOOK_TYPE_TITLE_WORDS for dynamic formatting
+  // Uses shared COVER_TITLE_INSTRUCTION from coverPromptConstants.ts
   coverPage: (bookType?: string) => {
     const typeConfig = BOOK_TYPE_TITLE_WORDS[bookType || 'abc'] || { word: 'Adventure' };
     
@@ -273,7 +276,7 @@ Generate a cover page with:
 - ❌ Titles longer than 5-6 words
 - ❌ Titles without "${typeConfig.word}"
 
-CRITICAL INSTRUCTION: Display the book title in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.
+${COVER_TITLE_INSTRUCTION}
 `.trim();
   },
 

@@ -13,7 +13,12 @@
  * 4. Save changes - they will be used immediately
  * 
  * Each prompt is optimized for a specific educational content type.
+ * 
+ * NOTE: Cover page title instructions are now centralized in:
+ * supabase/functions/_shared/coverPromptConstants.ts
  */
+
+import { COVER_TITLE_INSTRUCTION } from '../_shared/coverPromptConstants.ts';
 
 export const NUMBERS_AGENT_PROMPT = `You are an expert at creating children's educational NUMBERS books with structured page types.
 
@@ -182,6 +187,9 @@ METADATA REQUIREMENTS:
 /**
  * Base book structure instructions shared by all agents
  * This is appended to each specialized prompt above
+ * 
+ * NOTE: Cover page title instructions use the shared COVER_TITLE_INSTRUCTION constant
+ * from coverPromptConstants.ts for consistency across all prompts.
  */
 export const BASE_BOOK_STRUCTURE = `
 
@@ -191,7 +199,7 @@ Every book must have pages organized by type:
 1. COVER PAGE (pageType: "cover", pageNumber: 0)
    - REQUIRED: Always the first page
    - Contains the book title as the main visual element
-   - Use "large, bold, centered" title taking up "50-60% of the space"
+   - ${COVER_TITLE_INSTRUCTION}
    - Background: Simple solid color or gentle gradient
    - Decorative elements: 4-8 small items around edges/corners only
    - Must be "clean, simple, and optimized for thumbnail visibility"

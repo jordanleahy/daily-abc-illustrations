@@ -8,6 +8,10 @@ import {
   buildImageGenerationMetadata
 } from "../_shared/aiModelConstants.ts";
 import { OPPOSITES_SPLIT_SCREEN_RULES } from "../_shared/safeSpaceConfig.ts";
+import { 
+  generateCoverTitleInstruction,
+  COVER_ASPECT_RATIOS 
+} from "../_shared/coverPromptConstants.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -121,16 +125,16 @@ serve(async (req) => {
     const useProModel = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
     const selectedModel = useProModel ? IMAGE_GENERATION_MODEL_PRO : IMAGE_GENERATION_MODEL;
     
-    // Enforce 1:1 aspect ratio for cover and educational pages
+    // Enforce 1:1 aspect ratio for cover and educational pages using shared constants
     const requiresSquareFormat = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
     const aspectRatioPrefix = requiresSquareFormat 
-      ? `CRITICAL - IMAGE DIMENSIONS: Generate a SQUARE image with 1:1 aspect ratio. The width and height MUST be equal. This is mandatory.\n\n`
+      ? `${COVER_ASPECT_RATIOS.square}\n\n`
       : '';
     
-    // For cover pages, ensure the book title is prominently featured
+    // For cover pages, ensure the book title is prominently featured using shared utility
     const isCoverPage = pageType === 'cover';
     const coverTitlePrefix = isCoverPage && bookTitle
-      ? `CRITICAL - BOOK COVER: This is a COVER PAGE for the book titled "${bookTitle}". The title "${bookTitle}" MUST be prominently displayed as a BIG, BUBBLY, CENTERED text overlay in the upper-middle area of the image. Use extra large bubble-letter font (rounded, playful, child-friendly). The title should be the most prominent text element.\n\n`
+      ? `CRITICAL - BOOK COVER: This is a COVER PAGE for the book titled "${bookTitle}". ${generateCoverTitleInstruction(bookTitle)}\n\n`
       : '';
     
     // Sanitize the prompt to remove any text overlay instructions

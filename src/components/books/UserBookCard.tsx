@@ -323,32 +323,47 @@ export function UserBookCard({
                   return;
                 }
                 
-                // Otherwise, generate the printable coloring book
+                // Otherwise, generate the printable coloring book in batches
                 setIsGeneratingPrintable(true);
                 try {
                   const { data: session } = await supabase.auth.getSession();
-                  const response = await fetch(
-                    `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/generate-printable-coloring-image`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session?.session?.access_token || ''}`,
-                      },
-                      body: JSON.stringify({ batchProcess: true, bookId: book.id }),
+                  let totalProcessed = 0;
+                  let hasMore = true;
+                  
+                  // Process in batches until complete (edge function handles 3 pages at a time)
+                  while (hasMore) {
+                    const response = await fetch(
+                      `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/generate-printable-coloring-image`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${session?.session?.access_token || ''}`,
+                        },
+                        body: JSON.stringify({ batchProcess: true, bookId: book.id }),
+                      }
+                    );
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                      throw new Error(result.error || 'Failed to generate');
                     }
-                  );
-                  const result = await response.json();
-                  if (result.success) {
-                    toast({ 
-                      title: "Printable coloring book created!",
-                      description: `${result.summary?.success || 0} pages generated, ${result.summary?.skipped || 0} skipped`
-                    });
-                    // Refetch to update button color
-                    refetchPrintableStatus();
-                  } else {
-                    throw new Error(result.error || 'Failed to generate');
+                    
+                    totalProcessed += result.summary?.success || 0;
+                    hasMore = result.hasMore === true;
+                    
+                    // Brief pause between batches to avoid overwhelming the server
+                    if (hasMore) {
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                    }
                   }
+                  
+                  toast({ 
+                    title: "Printable coloring book created!",
+                    description: `${totalProcessed} pages generated`
+                  });
+                  // Refetch to update button color
+                  refetchPrintableStatus();
                 } catch (error) {
                   console.error('Failed to generate printable coloring book:', error);
                   toast({ title: "Failed to generate", variant: "destructive" });

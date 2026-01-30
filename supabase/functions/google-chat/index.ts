@@ -15,6 +15,8 @@ import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothi
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
+import { fetchSharedTemplates, interpolateTemplate } from '../_shared/sharedTemplates.ts';
+import { COVER_TITLE_INSTRUCTION } from '../_shared/coverPromptConstants.ts';
 
 // Dynamic question injection system - fetches enabled questions and injects [SUGGEST] blocks
 // Constants for input validation
@@ -573,9 +575,49 @@ serve(async (req) => {
       }
       
       if (agent?.instructions) {
-        systemPromptContent = agent.instructions;
+        // Fetch shared templates and interpolate placeholders
+        const sharedTemplates = await fetchSharedTemplates(supabase);
+        
+        // Get the book type display word for template interpolation
+        const normalizedType = normalizeBookType(bookType);
+        const typeWords: Record<string, string> = {
+          'abc': 'ABCs', 'rhyming': 'Rhyme Time', 'numbers': 'Numbers', 'colors': 'Colors',
+          'shapes': 'Shapes', 'manners': 'Manners', 'emotions': 'Feelings', 'animals': 'Animals',
+          'bedtime': 'Bedtime', 'sight-words': 'Sight Words', 'cvc': 'CVC Words', 'digraphs': 'Digraphs',
+          'opposites': 'Opposites', 'first-words': 'First Words'
+        };
+        const bookTypeWord = typeWords[normalizedType] || 'Adventure';
+        
+        // Interpolate shared templates into agent instructions
+        // Templates use placeholders: {{SHARED_COVER_TEMPLATE}}, {{SHARED_EDUCATIONAL_TEMPLATE}}
+        let processedInstructions = agent.instructions;
+        
+        // Interpolate cover template
+        if (sharedTemplates['cover']) {
+          const coverTemplate = interpolateTemplate(sharedTemplates['cover'], {
+            bookTypeWord,
+            COVER_TITLE_INSTRUCTION,
+          });
+          processedInstructions = processedInstructions.replace('{{SHARED_COVER_TEMPLATE}}', coverTemplate);
+        }
+        
+        // Interpolate educational template (placeholder values will be filled at runtime by the AI)
+        if (sharedTemplates['educational']) {
+          // For educational template, we pass the template as-is with placeholders
+          // The AI will interpret these based on the user's selections
+          processedInstructions = processedInstructions.replace('{{SHARED_EDUCATIONAL_TEMPLATE}}', sharedTemplates['educational']);
+        }
+        
+        // Log if templates were interpolated
+        const coverReplaced = agent.instructions.includes('{{SHARED_COVER_TEMPLATE}}') && !processedInstructions.includes('{{SHARED_COVER_TEMPLATE}}');
+        const eduReplaced = agent.instructions.includes('{{SHARED_EDUCATIONAL_TEMPLATE}}') && !processedInstructions.includes('{{SHARED_EDUCATIONAL_TEMPLATE}}');
+        if (coverReplaced || eduReplaced) {
+          console.log(`📋 Shared templates interpolated: cover=${coverReplaced}, educational=${eduReplaced}`);
+        }
+        
+        systemPromptContent = processedInstructions;
         agentSource = `Database: ${agent.name}`;
-        console.log(`✅ Using ${agent.name} (${agent.instructions.length} chars)`);
+        console.log(`✅ Using ${agent.name} (${processedInstructions.length} chars)`);
       } else {
         // Fallback for no book type selected
         systemPromptContent = `You are a helpful AI assistant for creating children's educational books. Help users explore different book types: ABC, Numbers, Colors, Shapes, Animals, Rhyming, Emotions, Opposites, First Words, CVC Words, Sight Words, and Bedtime stories. Ask which type interests them.`;

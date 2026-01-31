@@ -1,172 +1,117 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
+import { createHandler } from '../_shared/handler.ts';
+import { successResponse, errors } from '../_shared/response.ts';
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[DELETE-ACCOUNT] ${step}${detailsStr}`);
-};
+Deno.serve(createHandler({
+  name: 'delete-account',
+  clientMode: 'service',
+  requireAuth: true,
+}, async ({ supabase, user }) => {
+  const userId = user!.userId;
+  const email = user!.email;
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  console.log('[DELETE-ACCOUNT] User authenticated', { userId, email });
+
+  // Step 1: Cancel Stripe subscription if exists
+  try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (stripeKey && email) {
+      const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+      const customers = await stripe.customers.list({ email, limit: 1 });
+      
+      if (customers.data.length > 0) {
+        const customerId = customers.data[0].id;
+        console.log('[DELETE-ACCOUNT] Found Stripe customer', { customerId });
+        
+        // Cancel all active subscriptions immediately
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customerId,
+          status: "active",
+        });
+        
+        for (const subscription of subscriptions.data) {
+          await stripe.subscriptions.cancel(subscription.id);
+          console.log('[DELETE-ACCOUNT] Cancelled Stripe subscription', { subscriptionId: subscription.id });
+        }
+        
+        // NOTE: We intentionally DO NOT delete the Stripe customer record for:
+        // 1. Legal/compliance requirements (payment history retention)
+        // 2. Accounting/tax purposes (transaction records)
+        // 3. Dispute resolution (chargeback handling)
+        console.log('[DELETE-ACCOUNT] Stripe customer retained for compliance', { customerId });
+      } else {
+        console.log('[DELETE-ACCOUNT] No Stripe customer found');
+      }
+    }
+  } catch (stripeError) {
+    console.log('[DELETE-ACCOUNT] Error cancelling Stripe subscription', { 
+      error: stripeError instanceof Error ? stripeError.message : String(stripeError) 
+    });
+    // Continue with deletion even if Stripe fails
   }
 
+  // Step 2: Sign out all sessions before deletion
+  console.log('[DELETE-ACCOUNT] Signing out all user sessions');
   try {
-    logStep("Starting account deletion process");
-
-    // Initialize Supabase client with service role for admin operations
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    // Authenticate user with validation
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    
-    // Validate Authorization header format
-    const AuthHeaderSchema = z.string().regex(/^Bearer .+$/, "Invalid authorization header format");
-    const validatedHeader = AuthHeaderSchema.parse(authHeader);
-
-    const token = validatedHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    
-    logStep("User authenticated", { userId: user.id, email: user.email });
-
-    // Step 1: Cancel Stripe subscription if exists
-    try {
-      const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-      if (stripeKey) {
-        const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-        const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-        
-        if (customers.data.length > 0) {
-          const customerId = customers.data[0].id;
-          logStep("Found Stripe customer", { customerId });
-          
-          // Cancel all active subscriptions immediately
-          const subscriptions = await stripe.subscriptions.list({
-            customer: customerId,
-            status: "active",
-          });
-          
-          for (const subscription of subscriptions.data) {
-            await stripe.subscriptions.cancel(subscription.id);
-            logStep("Cancelled Stripe subscription", { subscriptionId: subscription.id });
-          }
-          
-          // NOTE: We intentionally DO NOT delete the Stripe customer record for:
-          // 1. Legal/compliance requirements (payment history retention)
-          // 2. Accounting/tax purposes (transaction records)
-          // 3. Dispute resolution (chargeback handling)
-          // The customer record will be retained with cancelled subscriptions.
-          logStep("Stripe customer retained for compliance", { customerId });
-        } else {
-          logStep("No Stripe customer found");
-        }
-      }
-    } catch (stripeError) {
-      logStep("Error cancelling Stripe subscription", { error: stripeError.message });
-      // Continue with deletion even if Stripe fails
+    const { error: signOutError } = await supabase.auth.admin.signOut(userId, 'global');
+    if (signOutError) {
+      console.log('[DELETE-ACCOUNT] Warning: Failed to sign out user sessions', { error: signOutError.message });
+    } else {
+      console.log('[DELETE-ACCOUNT] Successfully signed out all user sessions');
     }
+  } catch (signOutError) {
+    console.log('[DELETE-ACCOUNT] Error during session sign out', { 
+      error: signOutError instanceof Error ? signOutError.message : String(signOutError) 
+    });
+  }
 
-    // Step 2: Sign out all sessions before deletion
-    logStep("Signing out all user sessions");
+  // Step 3: Delete storage files
+  const storageBuckets = ['kid-profile-images', 'kid-rewards-images', 'page-images', 'book-covers', 'exports'];
+  
+  for (const bucket of storageBuckets) {
     try {
-      const { error: signOutError } = await supabaseAdmin.auth.admin.signOut(user.id, 'global');
-      if (signOutError) {
-        logStep("Warning: Failed to sign out user sessions", { error: signOutError.message });
-        // Continue anyway - deletion will invalidate tokens
-      } else {
-        logStep("Successfully signed out all user sessions");
+      const { data: files, error: listError } = await supabase
+        .storage
+        .from(bucket)
+        .list(userId);
+      
+      if (listError) {
+        console.log(`[DELETE-ACCOUNT] Error listing files in ${bucket}`, { error: listError.message });
+        continue;
       }
-    } catch (signOutError) {
-      logStep("Error during session sign out", { error: signOutError.message });
-      // Continue anyway
-    }
 
-    // Step 3: Delete storage files
-    const storageBuckets = ['kid-profile-images', 'kid-rewards-images', 'page-images', 'book-covers', 'exports'];
-    
-    for (const bucket of storageBuckets) {
-      try {
-        const { data: files, error: listError } = await supabaseAdmin
+      if (files && files.length > 0) {
+        const filePaths = files.map(file => `${userId}/${file.name}`);
+        const { error: deleteError } = await supabase
           .storage
           .from(bucket)
-          .list(user.id);
+          .remove(filePaths);
         
-        if (listError) {
-          logStep(`Error listing files in ${bucket}`, { error: listError.message });
-          continue;
+        if (deleteError) {
+          console.log(`[DELETE-ACCOUNT] Error deleting files from ${bucket}`, { error: deleteError.message });
+        } else {
+          console.log(`[DELETE-ACCOUNT] Deleted ${files.length} files from ${bucket}`);
         }
-
-        if (files && files.length > 0) {
-          const filePaths = files.map(file => `${user.id}/${file.name}`);
-          const { error: deleteError } = await supabaseAdmin
-            .storage
-            .from(bucket)
-            .remove(filePaths);
-          
-          if (deleteError) {
-            logStep(`Error deleting files from ${bucket}`, { error: deleteError.message });
-          } else {
-            logStep(`Deleted ${files.length} files from ${bucket}`);
-          }
-        }
-      } catch (bucketError) {
-        logStep(`Error processing bucket ${bucket}`, { error: bucketError.message });
-        // Continue with other buckets
       }
-    }
-
-    // Step 4: Delete user from Supabase Auth (CASCADE will handle database records)
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
-    
-    if (deleteError) {
-      logStep("Error deleting user", { error: deleteError.message });
-      throw new Error(`Failed to delete user account: ${deleteError.message}`);
-    }
-
-    logStep("Account deleted successfully", { userId: user.id });
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Account deleted successfully" 
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-    );
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in delete-account", { message: errorMessage });
-    
-    // Handle Zod validation errors
-    if (error instanceof z.ZodError) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Invalid input',
-        details: error.errors 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    } catch (bucketError) {
+      console.log(`[DELETE-ACCOUNT] Error processing bucket ${bucket}`, { 
+        error: bucketError instanceof Error ? bucketError.message : String(bucketError) 
       });
     }
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: errorMessage 
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
   }
-});
+
+  // Step 4: Delete user from Supabase Auth (CASCADE will handle database records)
+  const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+  
+  if (deleteError) {
+    console.log('[DELETE-ACCOUNT] Error deleting user', { error: deleteError.message });
+    throw new Error(`Failed to delete user account: ${deleteError.message}`);
+  }
+
+  console.log('[DELETE-ACCOUNT] Account deleted successfully', { userId });
+
+  return successResponse({ 
+    success: true, 
+    message: "Account deleted successfully" 
+  });
+}));

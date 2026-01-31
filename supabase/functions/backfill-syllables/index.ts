@@ -1,8 +1,7 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from '../_shared/cors.ts';
+import { createHandler } from '../_shared/handler.ts';
+import { successResponse } from '../_shared/response.ts';
 
-// Syllable counting using vowel groups (matches 'syllable' npm package logic)
+// Syllable counting using vowel groups
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
 function getSyllableCount(word: string): number {
@@ -21,14 +20,8 @@ function getSyllableCount(word: string): number {
     previousWasVowel = isVowel;
   }
   
-  // Silent 'e' at end
   if (cleanWord.endsWith('e') && count > 1 && !cleanWord.endsWith('le')) {
     count--;
-  }
-  
-  // Handle -le endings (they form their own syllable)
-  if (cleanWord.length > 2 && cleanWord.endsWith('le') && !VOWELS.includes(cleanWord[cleanWord.length - 3])) {
-    // Already counted, no adjustment needed
   }
   
   return Math.max(1, count);
@@ -268,115 +261,95 @@ function parseWordsFromTitle(title: string) {
   });
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+Deno.serve(createHandler({
+  name: 'backfill-syllables',
+  clientMode: 'service',
+  requireAuth: false,
+  methods: ['POST'],
+}, async ({ supabase }) => {
+  console.log('🔄 Starting syllable backfill migration...');
+
+  // Fetch pages that don't have segments yet
+  const { data: pages, error: fetchError } = await supabase
+    .from('pages')
+    .select('id, title, content, book_id')
+    .not('title', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(500);
+
+  if (fetchError) {
+    throw new Error(`Failed to fetch pages: ${fetchError.message}`);
   }
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Filter to only pages that need processing
+  const pagesToProcess = (pages || []).filter(page => {
+    if (!page.content || typeof page.content !== 'object') return true;
+    const content = page.content as Record<string, unknown>;
+    if (!content.words || !Array.isArray(content.words)) return true;
+    const words = content.words as Array<{ segments?: string[] }>;
+    if (words.length === 0) return true;
+    return !words[0].segments || words[0].segments.length === 0;
+  });
 
-    console.log('🔄 Starting syllable backfill migration...');
+  console.log(`📚 Found ${pagesToProcess.length} pages needing syllable segments`);
 
-    // Fetch pages that don't have segments yet (check for missing or empty segments in first word)
-    const { data: pages, error: fetchError } = await supabase
-      .from('pages')
-      .select('id, title, content, book_id')
-      .not('title', 'is', null)
-      .order('created_at', { ascending: true })
-      .limit(500); // Process in smaller batches
+  let updated = 0;
+  let errorCount = 0;
 
-    if (fetchError) {
-      throw new Error(`Failed to fetch pages: ${fetchError.message}`);
-    }
-
-    // Filter to only pages that need processing (no segments in content.words)
-    const pagesToProcess = (pages || []).filter(page => {
-      if (!page.content || typeof page.content !== 'object') return true;
-      const content = page.content as Record<string, unknown>;
-      if (!content.words || !Array.isArray(content.words)) return true;
-      const words = content.words as Array<{ segments?: string[] }>;
-      // Check if first word has segments
-      if (words.length === 0) return true;
-      return !words[0].segments || words[0].segments.length === 0;
-    });
-
-    console.log(`📚 Found ${pagesToProcess.length} pages needing syllable segments`);
-
-    let updated = 0;
-    let errors = 0;
-
-    // Process in parallel batches of 50
-    const batchSize = 50;
-    for (let i = 0; i < pagesToProcess.length; i += batchSize) {
-      const batch = pagesToProcess.slice(i, i + batchSize);
-      
-      const updates = await Promise.all(batch.map(async (page) => {
-        try {
-          if (!page.title || page.title.trim().length === 0) {
-            return { success: true, skipped: true };
-          }
-
-          const words = parseWordsFromTitle(page.title);
-          const existingContent = (page.content && typeof page.content === 'object') 
-            ? page.content 
-            : {};
-          
-          const updatedContent = {
-            ...existingContent,
-            words
-          };
-
-          const { error: updateError } = await supabase
-            .from('pages')
-            .update({ 
-              content: updatedContent,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', page.id);
-
-          if (updateError) {
-            return { success: false, error: updateError.message };
-          }
-          return { success: true };
-        } catch (err) {
-          return { success: false, error: String(err) };
+  // Process in parallel batches of 50
+  const batchSize = 50;
+  for (let i = 0; i < pagesToProcess.length; i += batchSize) {
+    const batch = pagesToProcess.slice(i, i + batchSize);
+    
+    const updates = await Promise.all(batch.map(async (page) => {
+      try {
+        if (!page.title || page.title.trim().length === 0) {
+          return { success: true, skipped: true };
         }
-      }));
 
-      updates.forEach(result => {
-        if (result.success && !result.skipped) updated++;
-        if (!result.success) errors++;
-      });
+        const words = parseWordsFromTitle(page.title);
+        const existingContent = (page.content && typeof page.content === 'object') 
+          ? page.content 
+          : {};
+        
+        const updatedContent = {
+          ...existingContent,
+          words
+        };
 
-      console.log(`📊 Progress: ${Math.min(i + batchSize, pagesToProcess.length)}/${pagesToProcess.length} pages, ${updated} updated`);
-    }
+        const { error: updateError } = await supabase
+          .from('pages')
+          .update({ 
+            content: updatedContent,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', page.id);
 
-    const result = {
-      success: true,
-      totalChecked: pages?.length || 0,
-      neededProcessing: pagesToProcess.length,
-      updated,
-      errors,
-      message: `Backfill complete. Updated ${updated} pages with syllable segments.`
-    };
+        if (updateError) {
+          return { success: false, error: updateError.message };
+        }
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: String(err) };
+      }
+    }));
 
-    console.log('✅ Backfill complete:', result);
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200
+    updates.forEach(result => {
+      if (result.success && !result.skipped) updated++;
+      if (!result.success) errorCount++;
     });
-  } catch (error) {
-    console.error('❌ Backfill error:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500
-    });
+
+    console.log(`📊 Progress: ${Math.min(i + batchSize, pagesToProcess.length)}/${pagesToProcess.length} pages, ${updated} updated`);
   }
-});
+
+  console.log('✅ Backfill complete:', { updated, errors: errorCount });
+
+  return successResponse({
+    success: true,
+    totalChecked: pages?.length || 0,
+    neededProcessing: pagesToProcess.length,
+    updated,
+    errors: errorCount,
+    message: `Backfill complete. Updated ${updated} pages with syllable segments.`
+  });
+}));

@@ -1,10 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { VALID_BOOK_TYPES, normalizeBookType } from '../_shared/types.ts';
-import { corsHeaders } from '../_shared/cors.ts';
+import { createHandler } from '../_shared/handler.ts';
+import { successResponse, errors } from '../_shared/response.ts';
+import { VALID_BOOK_TYPES } from '../_shared/types.ts';
 
 // Mapping rules for common patterns
-const CATEGORIZATION_RULES = {
+const CATEGORIZATION_RULES: Record<string, string[]> = {
   abc: ['abc', 'alphabet', 'letters', 'a-z'],
   numbers: ['123', 'numbers', 'counting', 'math', '1-10'],
   shapes: ['shapes', 'geometry', 'circle', 'square', 'triangle'],
@@ -29,96 +28,6 @@ interface CategorizationPreview {
   reasoning: string;
   needs_review: boolean;
 }
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
-
-    // Verify admin role using RLS-safe function
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      throw new Error('Unauthorized');
-    }
-
-    const { data: hasAdminRole, error: roleError } = await supabaseClient
-      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
-
-    if (roleError || !hasAdminRole) {
-      throw new Error('Admin access required');
-    }
-
-    console.log('[categorize-existing-books] Starting categorization preview...');
-
-    // Fetch all books
-    const { data: books, error: booksError } = await supabaseClient
-      .from('books')
-      .select('id, book_name, book_description, category, metadata')
-      .order('created_at', { ascending: false });
-
-    if (booksError) throw booksError;
-
-    const previews: CategorizationPreview[] = [];
-
-    for (const book of books) {
-      const currentBookType = book.metadata?.bookType;
-      
-      // Skip if already has valid bookType
-      if (currentBookType && VALID_BOOK_TYPES.includes(currentBookType)) {
-        continue;
-      }
-
-      // Categorize based on book name and category
-      const result = categorizeBook(book.book_name, book.category, book.book_description);
-      
-      previews.push({
-        book_id: book.id,
-        book_name: book.book_name,
-        current_category: book.category,
-        current_book_type: currentBookType || null,
-        proposed_book_type: result.bookType,
-        confidence_score: result.confidence,
-        reasoning: result.reasoning,
-        needs_review: result.confidence < 0.9,
-      });
-    }
-
-    console.log(`[categorize-existing-books] Generated ${previews.length} categorization previews`);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        total_books: books.length,
-        books_needing_categorization: previews.length,
-        high_confidence_count: previews.filter(p => p.confidence_score >= 0.9).length,
-        needs_review_count: previews.filter(p => p.needs_review).length,
-        previews,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('[categorize-existing-books] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-  }
-});
 
 function categorizeBook(
   bookName: string, 
@@ -147,3 +56,64 @@ function categorizeBook(
     reasoning: 'No clear pattern match - defaulted to "other"',
   };
 }
+
+Deno.serve(createHandler({
+  name: 'categorize-existing-books',
+  clientMode: 'user',
+  requireAuth: true,
+  methods: ['POST'],
+}, async ({ supabase, user }) => {
+  // Verify admin role
+  const { data: hasAdminRole, error: roleError } = await supabase
+    .rpc('has_role', { _user_id: user!.userId, _role: 'admin' });
+
+  if (roleError || !hasAdminRole) {
+    return errors.forbidden('Admin access required');
+  }
+
+  console.log('[categorize-existing-books] Starting categorization preview...');
+
+  // Fetch all books
+  const { data: books, error: booksError } = await supabase
+    .from('books')
+    .select('id, book_name, book_description, category, metadata')
+    .order('created_at', { ascending: false });
+
+  if (booksError) throw booksError;
+
+  const previews: CategorizationPreview[] = [];
+
+  for (const book of books || []) {
+    const currentBookType = book.metadata?.bookType;
+    
+    // Skip if already has valid bookType
+    if (currentBookType && VALID_BOOK_TYPES.includes(currentBookType)) {
+      continue;
+    }
+
+    // Categorize based on book name and category
+    const result = categorizeBook(book.book_name, book.category, book.book_description);
+    
+    previews.push({
+      book_id: book.id,
+      book_name: book.book_name,
+      current_category: book.category,
+      current_book_type: currentBookType || null,
+      proposed_book_type: result.bookType,
+      confidence_score: result.confidence,
+      reasoning: result.reasoning,
+      needs_review: result.confidence < 0.9,
+    });
+  }
+
+  console.log(`[categorize-existing-books] Generated ${previews.length} categorization previews`);
+
+  return successResponse({
+    success: true,
+    total_books: books?.length || 0,
+    books_needing_categorization: previews.length,
+    high_confidence_count: previews.filter(p => p.confidence_score >= 0.9).length,
+    needs_review_count: previews.filter(p => p.needs_review).length,
+    previews,
+  });
+}));

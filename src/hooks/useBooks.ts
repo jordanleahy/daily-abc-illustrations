@@ -60,14 +60,15 @@ export const useBooks = (
   pagination?: { page: number; pageSize: number },
   searchQuery?: string,
   themeFilter?: string[], // Server-side theme filtering
-  completionFilter?: 'completed' | 'not-completed' | 'archived' // Admin-only: filter by image completion status or archived
+  completionFilter?: 'completed' | 'not-completed' | 'archived', // Admin-only: filter by image completion status or archived
+  etsyFilter?: boolean // Admin-only: filter to books NOT listed on Etsy
 ) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
   const { data: booksResult, isLoading, error } = useQuery({
-    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery, themeFilter, completionFilter],
+    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery, themeFilter, completionFilter, etsyFilter],
     queryFn: async () => {
       if (!user?.id) return { books: [], totalCount: 0 };
       
@@ -185,13 +186,25 @@ export const useBooks = (
         filteredBooks = booksWithActivity.filter(book => !book.isComplete);
       }
 
+      // Apply Etsy filter if enabled - filter out books that ARE on Etsy
+      if (etsyFilter) {
+        // Fetch book IDs that have Etsy posts
+        const { data: etsyPosts } = await supabase
+          .from('book_social_posts')
+          .select('book_id')
+          .eq('platform', 'etsy');
+        
+        const etsyBookIds = new Set(etsyPosts?.map(p => p.book_id) || []);
+        filteredBooks = filteredBooks.filter(book => !etsyBookIds.has(book.id));
+      }
+
       const sortedBooks = filteredBooks.sort((a, b) => 
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       );
 
       return {
         books: sortedBooks,
-        totalCount: count || sortedBooks.length
+        totalCount: etsyFilter ? sortedBooks.length : (count || sortedBooks.length) // Adjust count when Etsy filtering
       };
     },
     enabled: !!user?.id,

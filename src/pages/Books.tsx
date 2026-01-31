@@ -70,25 +70,28 @@ export default function Books() {
   }, []);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [completionFilter, setCompletionFilter] = useState<'completed' | 'not-completed' | 'archived'>('completed');
+  const [etsyFilter, setEtsyFilter] = useState(false);
   const PAGE_SIZE = 24;
   
   const { rawQuery: searchQuery, activeQuery: debouncedSearchQuery, setSearchQuery } = useOptimizedSearch('debounced', 300);
   
   // Admin-only completion filter, undefined for non-admins
   const activeCompletionFilter = isAdmin ? completionFilter : undefined;
+  const activeEtsyFilter = isAdmin ? etsyFilter : undefined;
   
   const { books, totalCount, loading } = useBooks(
     'my-books',
     { page: currentPage, pageSize: PAGE_SIZE },
     debouncedSearchQuery,
     selectedThemes.length > 0 ? selectedThemes : undefined,
-    activeCompletionFilter
+    activeCompletionFilter,
+    activeEtsyFilter
   );
   
   const availableThemes = useMemo(() => extractAvailableThemes([]), []);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
   
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedThemes, completionFilter]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedThemes, completionFilter, etsyFilter]);
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
@@ -182,6 +185,9 @@ export default function Books() {
                 availableThemes={availableThemes}
                 placeholder="Search your books..."
                 showSearch={true}
+                etsyFilter={etsyFilter}
+                onEtsyFilterChange={setEtsyFilter}
+                showEtsyFilter={isAdmin}
               />
 
               {/* Admin-only completion filter toggle */}

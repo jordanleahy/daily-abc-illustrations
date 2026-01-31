@@ -1,17 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createHandler } from '../_shared/handler.ts';
+import { successResponse } from '../_shared/response.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Common consonant digraphs that should stay together
+// Common consonant digraphs and blends
 const DIGRAPHS = ['ch', 'sh', 'th', 'wh', 'ph', 'gh', 'ck', 'ng', 'qu'];
-
-// Common consonant blends that start syllables
 const BLENDS = ['bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'pl', 'pr', 'sc', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sw', 'tr', 'tw'];
-
 const VOWELS = ['a', 'e', 'i', 'o', 'u', 'y'];
 
 function isVowel(char: string): boolean {
@@ -29,54 +21,38 @@ function segmentWithCount(word: string, syllableCount: number): string[] {
     return [letters];
   }
   
-  // Handle consonant-le endings (ble, dle, gle, ple, tle, etc.)
   const cleMatch = letters.match(/^(.+?)([bcdfgkpstvz]le)$/);
   if (cleMatch && cleMatch[1].length > 0) {
-    const base = cleMatch[1];
-    const ending = cleMatch[2];
-    
     if (syllableCount === 2) {
-      return [base, ending];
+      return [cleMatch[1], cleMatch[2]];
     } else {
-      const baseSegments = segmentWithCount(base, syllableCount - 1);
-      return [...baseSegments, ending];
+      return [...segmentWithCount(cleMatch[1], syllableCount - 1), cleMatch[2]];
     }
   }
   
-  // Handle -tion, -sion endings
   const tionMatch = letters.match(/^(.+?)(tion|sion)$/);
   if (tionMatch && tionMatch[1].length > 0) {
-    const base = tionMatch[1];
-    const ending = tionMatch[2];
-    
     if (syllableCount === 2) {
-      return [base, ending];
+      return [tionMatch[1], tionMatch[2]];
     } else {
-      const baseSegments = segmentWithCount(base, syllableCount - 1);
-      return [...baseSegments, ending];
+      return [...segmentWithCount(tionMatch[1], syllableCount - 1), tionMatch[2]];
     }
   }
   
-  // Find vowel groups
   const vowelGroups: { start: number; end: number }[] = [];
   let i = 0;
   while (i < letters.length) {
     if (isVowel(letters[i])) {
       const start = i;
-      while (i < letters.length && isVowel(letters[i])) {
-        i++;
-      }
+      while (i < letters.length && isVowel(letters[i])) i++;
       vowelGroups.push({ start, end: i - 1 });
     } else {
       i++;
     }
   }
   
-  if (vowelGroups.length <= 1) {
-    return [letters];
-  }
+  if (vowelGroups.length <= 1) return [letters];
   
-  // Find split points between vowel groups
   const splitPoints: number[] = [];
   
   for (let v = 0; v < vowelGroups.length - 1 && splitPoints.length < syllableCount - 1; v++) {
@@ -91,19 +67,15 @@ function segmentWithCount(word: string, syllableCount: number): string[] {
       splitPoints.push(currentEnd + 1);
     } else if (numConsonants === 2) {
       const pair = consonants;
-      
       if (pair[0] === pair[1]) {
         splitPoints.push(currentEnd + 2);
-      } else if (DIGRAPHS.includes(pair.toLowerCase())) {
-        splitPoints.push(currentEnd + 1);
-      } else if (BLENDS.includes(pair.toLowerCase())) {
+      } else if (DIGRAPHS.includes(pair.toLowerCase()) || BLENDS.includes(pair.toLowerCase())) {
         splitPoints.push(currentEnd + 1);
       } else {
         splitPoints.push(currentEnd + 2);
       }
     } else {
       let splitAt = currentEnd + 2;
-      
       for (let len = Math.min(3, numConsonants); len >= 2; len--) {
         const endPart = consonants.substring(numConsonants - len);
         if (BLENDS.includes(endPart.toLowerCase()) || DIGRAPHS.includes(endPart.toLowerCase())) {
@@ -111,7 +83,6 @@ function segmentWithCount(word: string, syllableCount: number): string[] {
           break;
         }
       }
-      
       splitPoints.push(splitAt);
     }
   }
@@ -134,9 +105,7 @@ function segmentWithCount(word: string, syllableCount: number): string[] {
 }
 
 function adjustToTarget(segments: string[], target: number): string[] {
-  if (segments.length === target) {
-    return segments;
-  }
+  if (segments.length === target) return segments;
   
   const result = [...segments];
   
@@ -184,7 +153,6 @@ function adjustToTarget(segments: string[], target: number): string[] {
   return result;
 }
 
-// Basic syllable count estimation (fallback)
 function estimateSyllableCount(word: string): number {
   if (!word || word.length === 0) return 0;
   const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
@@ -234,119 +202,104 @@ interface DatamuseWord {
   numSyllables?: number;
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+Deno.serve(createHandler({
+  name: 'regenerate-word-metadata',
+  clientMode: 'service',
+  requireAuth: false,
+  methods: ['POST'],
+}, async ({ supabase }) => {
+  // Fetch all pages with titles
+  const { data: pages, error: fetchError } = await supabase
+    .from('pages')
+    .select('id, title, content, book_id')
+    .not('title', 'is', null);
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  if (fetchError) throw fetchError;
 
-    // Fetch all pages with titles
-    const { data: pages, error: fetchError } = await supabase
-      .from('pages')
-      .select('id, title, content, book_id')
-      .not('title', 'is', null);
+  console.log(`📚 Processing ${pages?.length || 0} pages for word metadata regeneration`);
 
-    if (fetchError) throw fetchError;
+  let updatedCount = 0;
+  let errorCount = 0;
 
-    console.log(`📚 Processing ${pages?.length || 0} pages for word metadata regeneration`);
-
-    let updatedCount = 0;
-    let errorCount = 0;
-
-    // Process pages in batches
-    const BATCH_SIZE = 10;
+  const BATCH_SIZE = 10;
+  
+  for (let batchStart = 0; batchStart < (pages?.length || 0); batchStart += BATCH_SIZE) {
+    const batch = pages!.slice(batchStart, batchStart + BATCH_SIZE);
     
-    for (let batchStart = 0; batchStart < (pages?.length || 0); batchStart += BATCH_SIZE) {
-      const batch = pages!.slice(batchStart, batchStart + BATCH_SIZE);
-      
-      await Promise.all(batch.map(async (page) => {
-        try {
-          const title = page.title;
-          if (!title || title.trim().length === 0) return;
+    await Promise.all(batch.map(async (page) => {
+      try {
+        const title = page.title;
+        if (!title || title.trim().length === 0) return;
 
-          const words = title.split(/\s+/).filter((word: string) => word.length > 0);
-          const cleanWords = words.map((w: string) => w.replace(/[.,!?;:'"]/g, '').toLowerCase()).filter((w: string) => w.length > 0);
-          
-          // Fetch syllable counts from Datamuse for unique words
-          const uniqueWords = [...new Set(cleanWords)];
-          const syllableMap = new Map<string, number>();
-          
-          await Promise.all(uniqueWords.map(async (word: string) => {
-            try {
-              const url = `https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&qe=sp&md=s&max=1`;
-              const response = await fetch(url);
-              if (response.ok) {
-                const data: DatamuseWord[] = await response.json();
-                if (data.length > 0 && data[0].numSyllables) {
-                  syllableMap.set(word, data[0].numSyllables);
-                }
+        const words = title.split(/\s+/).filter((word: string) => word.length > 0);
+        const cleanWords = words.map((w: string) => w.replace(/[.,!?;:'"]/g, '').toLowerCase()).filter((w: string) => w.length > 0);
+        
+        // Fetch syllable counts from Datamuse
+        const uniqueWords = [...new Set(cleanWords)];
+        const syllableMap = new Map<string, number>();
+        
+        await Promise.all(uniqueWords.map(async (word: string) => {
+          try {
+            const url = `https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&qe=sp&md=s&max=1`;
+            const response = await fetch(url);
+            if (response.ok) {
+              const data: DatamuseWord[] = await response.json();
+              if (data.length > 0 && data[0].numSyllables) {
+                syllableMap.set(word, data[0].numSyllables);
               }
-            } catch (e) {
-              // Silent fail, use fallback
             }
-          }));
-          
-          const wordMetadata = words.map((word: string, index: number) => {
-            const cleanWord = word.replace(/[.,!?;:'"]/g, '');
-            const lowerWord = cleanWord.toLowerCase();
-            
-            const syllableCount = syllableMap.get(lowerWord) ?? estimateSyllableCount(cleanWord);
-            const segments = segmentWithCount(cleanWord, syllableCount);
-            
-            return {
-              word: cleanWord,
-              order: index,
-              syllableCount,
-              segments,
-              syllableBreakdown: segments.join('-'),
-              partOfSpeech: detectPartOfSpeech(cleanWord),
-              letters: parseLetters(cleanWord)
-            };
-          });
-
-          const baseContent = (page.content && typeof page.content === 'object') ? page.content : {};
-          const updatedContent = { ...baseContent, words: wordMetadata };
-
-          const { error: updateError } = await supabase
-            .from('pages')
-            .update({ content: updatedContent, updated_at: new Date().toISOString() })
-            .eq('id', page.id);
-
-          if (updateError) {
-            console.error(`Error updating page ${page.id}:`, updateError);
-            errorCount++;
-          } else {
-            updatedCount++;
+          } catch (_e) {
+            // Silent fail, use fallback
           }
-        } catch (pageError) {
-          console.error(`Error processing page ${page.id}:`, pageError);
+        }));
+        
+        const wordMetadata = words.map((word: string, index: number) => {
+          const cleanWord = word.replace(/[.,!?;:'"]/g, '');
+          const lowerWord = cleanWord.toLowerCase();
+          
+          const syllableCount = syllableMap.get(lowerWord) ?? estimateSyllableCount(cleanWord);
+          const segments = segmentWithCount(cleanWord, syllableCount);
+          
+          return {
+            word: cleanWord,
+            order: index,
+            syllableCount,
+            segments,
+            syllableBreakdown: segments.join('-'),
+            partOfSpeech: detectPartOfSpeech(cleanWord),
+            letters: parseLetters(cleanWord)
+          };
+        });
+
+        const baseContent = (page.content && typeof page.content === 'object') ? page.content : {};
+        const updatedContent = { ...baseContent, words: wordMetadata };
+
+        const { error: updateError } = await supabase
+          .from('pages')
+          .update({ content: updatedContent, updated_at: new Date().toISOString() })
+          .eq('id', page.id);
+
+        if (updateError) {
+          console.error(`Error updating page ${page.id}:`, updateError);
           errorCount++;
+        } else {
+          updatedCount++;
         }
-      }));
-      
-      console.log(`📦 Processed batch ${Math.floor(batchStart / BATCH_SIZE) + 1}, total updated: ${updatedCount}`);
-    }
-
-    console.log(`✅ Regenerated word metadata: ${updatedCount} pages updated, ${errorCount} errors`);
-
-    return new Response(JSON.stringify({
-      success: true,
-      totalPages: pages?.length || 0,
-      updatedCount,
-      errorCount
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
-    console.error('Error in regenerate-word-metadata:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+      } catch (pageError) {
+        console.error(`Error processing page ${page.id}:`, pageError);
+        errorCount++;
+      }
+    }));
+    
+    console.log(`📦 Processed batch ${Math.floor(batchStart / BATCH_SIZE) + 1}, total updated: ${updatedCount}`);
   }
-});
+
+  console.log(`✅ Regenerated word metadata: ${updatedCount} pages updated, ${errorCount} errors`);
+
+  return successResponse({
+    success: true,
+    totalPages: pages?.length || 0,
+    updatedCount,
+    errorCount
+  });
+}));

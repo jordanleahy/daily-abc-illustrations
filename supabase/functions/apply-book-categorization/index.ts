@@ -1,147 +1,126 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createHandler, parseBody } from '../_shared/handler.ts';
+import { successResponse, errors } from '../_shared/response.ts';
 import { normalizeBookType } from '../_shared/types.ts';
-import { corsHeaders } from '../_shared/cors.ts';
 
-interface ApplyCategorizationRequest {
-  changes: Array<{
-    book_id: string;
-    new_book_type: string;
-    confidence_score?: number;
-    notes?: string;
-  }>;
+interface CategorizationChange {
+  book_id: string;
+  new_book_type: string;
+  confidence_score?: number;
+  notes?: string;
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+interface ApplyCategorizationRequest {
+  changes: CategorizationChange[];
+}
+
+Deno.serve(createHandler({
+  name: 'apply-book-categorization',
+  clientMode: 'user',
+  requireAuth: true,
+  methods: ['POST'],
+}, async ({ supabase, user, req }) => {
+  // Verify admin role
+  const { data: hasAdminRole, error: roleError } = await supabase
+    .rpc('has_role', { _user_id: user!.userId, _role: 'admin' });
+
+  if (roleError || !hasAdminRole) {
+    return errors.forbidden('Admin access required');
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+  const { changes } = await parseBody<ApplyCategorizationRequest>(req);
 
-    // Verify admin role using RLS-safe function
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      throw new Error('Unauthorized');
-    }
+  if (!changes || !Array.isArray(changes) || changes.length === 0) {
+    return errors.badRequest('No changes provided');
+  }
 
-    const { data: hasAdminRole, error: roleError } = await supabaseClient
-      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+  console.log(`[apply-book-categorization] Applying ${changes.length} categorization changes...`);
 
-    if (roleError || !hasAdminRole) {
-      throw new Error('Admin access required');
-    }
+  const results: Array<{
+    book_id: string;
+    book_name?: string;
+    success: boolean;
+    old_book_type?: string | null;
+    new_book_type?: string;
+    error?: string;
+  }> = [];
+  let successCount = 0;
+  let errorCount = 0;
 
-    const { changes }: ApplyCategorizationRequest = await req.json();
+  for (const change of changes) {
+    try {
+      // Validate book type before applying
+      const validatedBookType = normalizeBookType(change.new_book_type);
+      
+      console.log(`[apply-book-categorization] Validating book type: ${change.new_book_type} -> ${validatedBookType}`);
+      
+      // Fetch current book data
+      const { data: book, error: fetchError } = await supabase
+        .from('books')
+        .select('id, book_name, category, metadata')
+        .eq('id', change.book_id)
+        .single();
 
-    if (!changes || !Array.isArray(changes) || changes.length === 0) {
-      throw new Error('No changes provided');
-    }
+      if (fetchError) throw fetchError;
 
-    console.log(`[apply-book-categorization] Applying ${changes.length} categorization changes...`);
+      const oldCategory = book.category;
+      const oldBookType = book.metadata?.bookType || null;
 
-    const results = [];
-    let successCount = 0;
-    let errorCount = 0;
+      // Update book metadata with validated bookType
+      const updatedMetadata = {
+        ...(book.metadata || {}),
+        bookType: validatedBookType,
+      };
 
-    for (const change of changes) {
-      try {
-        // Validate book type before applying
-        const validatedBookType = normalizeBookType(change.new_book_type);
-        
-        console.log(`[apply-book-categorization] Validating book type: ${change.new_book_type} -> ${validatedBookType}`);
-        
-        // Fetch current book data
-        const { data: book, error: fetchError } = await supabaseClient
-          .from('books')
-          .select('id, book_name, category, metadata')
-          .eq('id', change.book_id)
-          .single();
+      const { error: updateError } = await supabase
+        .from('books')
+        .update({ metadata: updatedMetadata })
+        .eq('id', change.book_id);
 
-        if (fetchError) throw fetchError;
+      if (updateError) throw updateError;
 
-        const oldCategory = book.category;
-        const oldBookType = book.metadata?.bookType || null;
-
-        // Update book metadata with validated bookType
-        const updatedMetadata = {
-          ...(book.metadata || {}),
-          bookType: validatedBookType,
-        };
-
-        const { error: updateError } = await supabaseClient
-          .from('books')
-          .update({ metadata: updatedMetadata })
-          .eq('id', change.book_id);
-
-        if (updateError) throw updateError;
-
-        // Log the change
-        const { error: logError } = await supabaseClient
-          .from('book_categorization_log')
-          .insert({
-            book_id: change.book_id,
-            old_category: oldCategory,
-            old_book_type: oldBookType,
-            new_book_type: change.new_book_type,
-            confidence_score: change.confidence_score || null,
-            applied_by: user.id,
-            can_rollback: true,
-            notes: change.notes || null,
-          });
-
-        if (logError) throw logError;
-
-        results.push({
+      // Log the change
+      const { error: logError } = await supabase
+        .from('book_categorization_log')
+        .insert({
           book_id: change.book_id,
-          book_name: book.book_name,
-          success: true,
+          old_category: oldCategory,
           old_book_type: oldBookType,
           new_book_type: change.new_book_type,
+          confidence_score: change.confidence_score || null,
+          applied_by: user!.userId,
+          can_rollback: true,
+          notes: change.notes || null,
         });
 
-        successCount++;
-      } catch (error) {
-        console.error(`[apply-book-categorization] Error for book ${change.book_id}:`, error);
-        results.push({
-          book_id: change.book_id,
-          success: false,
-          error: error.message,
-        });
-        errorCount++;
-      }
-    }
+      if (logError) throw logError;
 
-    console.log(`[apply-book-categorization] Complete: ${successCount} success, ${errorCount} errors`);
-
-    return new Response(
-      JSON.stringify({
+      results.push({
+        book_id: change.book_id,
+        book_name: book.book_name,
         success: true,
-        total_changes: changes.length,
-        success_count: successCount,
-        error_count: errorCount,
-        results,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+        old_book_type: oldBookType,
+        new_book_type: change.new_book_type,
+      });
 
-  } catch (error) {
-    console.error('[apply-book-categorization] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+      successCount++;
+    } catch (error) {
+      console.error(`[apply-book-categorization] Error for book ${change.book_id}:`, error);
+      results.push({
+        book_id: change.book_id,
+        success: false,
+        error: (error as Error).message,
+      });
+      errorCount++;
+    }
   }
-});
+
+  console.log(`[apply-book-categorization] Complete: ${successCount} success, ${errorCount} errors`);
+
+  return successResponse({
+    success: true,
+    total_changes: changes.length,
+    success_count: successCount,
+    error_count: errorCount,
+    results,
+  });
+}));

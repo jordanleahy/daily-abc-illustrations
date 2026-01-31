@@ -1,210 +1,155 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { createHandler } from '../_shared/handler.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+Deno.serve(createHandler({
+  name: 'seed-initial-habits',
+  clientMode: 'user', // Uses user's auth for RLS
+  requireAuth: true,
+}, async ({ supabase, user }) => {
+  // Verify user has active subscription (Plus tier required for habits)
+  const { data: hasAccess, error: accessError } = await supabase.rpc('has_feature_access', {
+    p_user_id: user!.userId,
+    p_feature: 'habits_rewards'
+  });
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (accessError || !hasAccess) {
+    console.log('[SEED-INITIAL-HABITS] User does not have access to habits feature', { userId: user!.userId });
+    return errorResponse(
+      'This feature requires an active Plus subscription. Please upgrade to use habits.',
+      403,
+      { success: false }
+    );
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+  console.log('Seeding habits for user:', user!.userId);
+
+  // Step 1: Insert initial habits
+  const { data: habits, error: habitsError } = await supabase
+    .from('habits')
+    .insert([
       {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+        parent_user_id: user!.userId,
+        title: 'Hang up pajamas on hook',
+        description: 'Please hang up your pajamas on your bed',
+        coin_amount: 10,
+        frequency: 'daily',
+        is_active: true,
+        display_order: 0,
+      },
+      {
+        parent_user_id: user!.userId,
+        title: 'Do not play with any toys',
+        description: null,
+        coin_amount: 10,
+        frequency: 'daily',
+        is_active: true,
+        display_order: 1,
+      },
+      {
+        parent_user_id: user!.userId,
+        title: 'Sit still for mommy to brush your hair',
+        description: null,
+        coin_amount: 10,
+        frequency: 'daily',
+        is_active: true,
+        display_order: 2,
+      },
+      {
+        parent_user_id: user!.userId,
+        title: 'Make sure your pup pack is ready and on the stroller',
+        description: null,
+        coin_amount: 10,
+        frequency: 'daily',
+        is_active: true,
+        display_order: 3,
+      },
+      {
+        parent_user_id: user!.userId,
+        title: 'Put your shoes on and your coat',
+        description: null,
+        coin_amount: 10,
+        frequency: 'daily',
+        is_active: true,
+        display_order: 4,
+      },
+    ])
+    .select();
 
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser();
+  if (habitsError) throw habitsError;
 
-    if (authError || !user) {
-      throw new Error('Not authenticated');
+  console.log(`Created ${habits.length} habits`);
+
+  // Step 2: Get all active kid profiles for this user
+  const { data: kids, error: kidsError } = await supabase
+    .from('kid_profiles')
+    .select('id')
+    .eq('parent_user_id', user!.userId)
+    .eq('is_active', true);
+
+  if (kidsError) throw kidsError;
+
+  console.log(`Found ${kids.length} kids`);
+
+  // Step 3: Create habit assignments for all habits and all kids
+  const assignments = [];
+  for (const habit of habits) {
+    for (const kid of kids) {
+      assignments.push({
+        habit_id: habit.id,
+        kid_profile_id: kid.id,
+        parent_user_id: user!.userId,
+        is_active: true,
+      });
     }
+  }
 
-    // Verify user has active subscription (Plus tier required for habits)
-    const { data: hasAccess, error: accessError } = await supabaseClient.rpc('has_feature_access', {
-      p_user_id: user.id,
-      p_feature: 'habits_rewards'
-    });
-
-    if (accessError || !hasAccess) {
-      console.log('[SEED-INITIAL-HABITS] User does not have access to habits feature', { userId: user.id });
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'This feature requires an active Plus subscription. Please upgrade to use habits.' 
-        }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('Seeding habits for user:', user.id);
-
-    // Step 1: Insert initial habits
-    const { data: habits, error: habitsError } = await supabaseClient
-      .from('habits')
-      .insert([
-        {
-          parent_user_id: user.id,
-          title: 'Hang up pajamas on hook',
-          description: 'Please hang up your pajamas on your bed',
-          coin_amount: 10,
-          frequency: 'daily',
-          is_active: true,
-          display_order: 0,
-        },
-        {
-          parent_user_id: user.id,
-          title: 'Do not play with any toys',
-          description: null,
-          coin_amount: 10,
-          frequency: 'daily',
-          is_active: true,
-          display_order: 1,
-        },
-        {
-          parent_user_id: user.id,
-          title: 'Sit still for mommy to brush your hair',
-          description: null,
-          coin_amount: 10,
-          frequency: 'daily',
-          is_active: true,
-          display_order: 2,
-        },
-        {
-          parent_user_id: user.id,
-          title: 'Make sure your pup pack is ready and on the stroller',
-          description: null,
-          coin_amount: 10,
-          frequency: 'daily',
-          is_active: true,
-          display_order: 3,
-        },
-        {
-          parent_user_id: user.id,
-          title: 'Put your shoes on and your coat',
-          description: null,
-          coin_amount: 10,
-          frequency: 'daily',
-          is_active: true,
-          display_order: 4,
-        },
-      ])
+  if (assignments.length > 0) {
+    const { data: createdAssignments, error: assignmentsError } = await supabase
+      .from('habit_assignments')
+      .insert(assignments)
       .select();
 
-    if (habitsError) throw habitsError;
+    if (assignmentsError) throw assignmentsError;
 
-    console.log(`Created ${habits.length} habits`);
+    console.log(`Created ${createdAssignments.length} habit assignments`);
 
-    // Step 2: Get all active kid profiles for this user
-    const { data: kids, error: kidsError } = await supabaseClient
-      .from('kid_profiles')
-      .select('id')
-      .eq('parent_user_id', user.id)
-      .eq('is_active', true);
+    // Step 4: Create today's habit completions
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const completions = createdAssignments.map((assignment) => ({
+      habit_assignment_id: assignment.id,
+      kid_profile_id: assignment.kid_profile_id,
+      parent_user_id: user!.userId,
+      completion_date: today,
+      status: 'pending',
+    }));
 
-    if (kidsError) throw kidsError;
+    const { data: createdCompletions, error: completionsError } = await supabase
+      .from('habit_completions')
+      .insert(completions)
+      .select();
 
-    console.log(`Found ${kids.length} kids`);
+    if (completionsError) throw completionsError;
 
-    // Step 3: Create habit assignments for all habits and all kids
-    const assignments = [];
-    for (const habit of habits) {
-      for (const kid of kids) {
-        assignments.push({
-          habit_id: habit.id,
-          kid_profile_id: kid.id,
-          parent_user_id: user.id,
-          is_active: true,
-        });
-      }
-    }
+    console.log(`Created ${createdCompletions.length} habit completions for today`);
 
-    if (assignments.length > 0) {
-      const { data: createdAssignments, error: assignmentsError } = await supabaseClient
-        .from('habit_assignments')
-        .insert(assignments)
-        .select();
-
-      if (assignmentsError) throw assignmentsError;
-
-      console.log(`Created ${createdAssignments.length} habit assignments`);
-
-      // Step 4: Create today's habit completions
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      const completions = createdAssignments.map((assignment) => ({
-        habit_assignment_id: assignment.id,
-        kid_profile_id: assignment.kid_profile_id,
-        parent_user_id: user.id,
-        completion_date: today,
-        status: 'pending',
-      }));
-
-      const { data: createdCompletions, error: completionsError } = await supabaseClient
-        .from('habit_completions')
-        .insert(completions)
-        .select();
-
-      if (completionsError) throw completionsError;
-
-      console.log(`Created ${createdCompletions.length} habit completions for today`);
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Initial habits seeded successfully',
-          data: {
-            habits: habits.length,
-            assignments: createdAssignments.length,
-            completions: createdCompletions.length,
-          },
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Habits created but no kids found to assign them to',
-          data: {
-            habits: habits.length,
-            assignments: 0,
-            completions: 0,
-          },
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      );
-    }
-  } catch (error) {
-    console.error('Error seeding habits:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
-    );
+    return successResponse({
+      success: true,
+      message: 'Initial habits seeded successfully',
+      data: {
+        habits: habits.length,
+        assignments: createdAssignments.length,
+        completions: createdCompletions.length,
+      },
+    });
+  } else {
+    return successResponse({
+      success: true,
+      message: 'Habits created but no kids found to assign them to',
+      data: {
+        habits: habits.length,
+        assignments: 0,
+        completions: 0,
+      },
+    });
   }
-});
+}));

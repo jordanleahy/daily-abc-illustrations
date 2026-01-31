@@ -1,162 +1,129 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { corsHeaders } from '../_shared/cors.ts';
+import { createHandler, parseBody } from '../_shared/handler.ts';
+import { successResponse, errorResponse, errors } from '../_shared/response.ts';
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+interface ConsumeScreenTimeRequest {
+  kidProfileId: string;
+  secondsWatched: number;
+  videoId?: string;
+}
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+Deno.serve(createHandler({
+  name: 'consume-screen-time',
+  clientMode: 'service',
+  requireAuth: true,
+}, async ({ supabase, user, req }) => {
+  const { kidProfileId, secondsWatched, videoId } = await parseBody<ConsumeScreenTimeRequest>(req);
+
+  console.log('[CONSUME-SCREEN-TIME] Starting consumption', { 
+    userId: user!.userId, 
+    kidProfileId, 
+    secondsWatched,
+    videoId 
+  });
+
+  // Verify kid belongs to parent and get coin balance
+  const { data: kidProfile, error: kidError } = await supabase
+    .from('kid_profiles')
+    .select('parent_user_id, earned_coins')
+    .eq('id', kidProfileId)
+    .single();
+
+  if (kidError || !kidProfile || kidProfile.parent_user_id !== user!.userId) {
+    return errors.forbidden('Kid profile not found or unauthorized');
   }
 
-  try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('No authorization header');
+  // Get screen time product to check coin requirement
+  let { data: product } = await supabase
+    .from('kid_rewards_products')
+    .select('coin_price')
+    .eq('parent_user_id', kidProfile.parent_user_id)
+    .eq('title', 'Screen Time')
+    .eq('is_active', true)
+    .single();
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  // Safety check: Auto-create Screen Time product if it doesn't exist
+  if (!product) {
+    console.warn('[CONSUME-SCREEN-TIME] Screen Time product missing, auto-creating', {
+      parentUserId: kidProfile.parent_user_id
+    });
     
-    if (authError || !user) throw new Error('Unauthorized');
-
-    const { kidProfileId, secondsWatched, videoId } = await req.json();
-
-    console.log('[CONSUME-SCREEN-TIME] Starting consumption', { 
-      userId: user.id, 
-      kidProfileId, 
-      secondsWatched,
-      videoId 
-    });
-
-    // Verify kid belongs to parent and get coin balance
-    const { data: kidProfile, error: kidError } = await supabase
-      .from('kid_profiles')
-      .select('parent_user_id, earned_coins')
-      .eq('id', kidProfileId)
-      .single();
-
-    if (kidError || !kidProfile || kidProfile.parent_user_id !== user.id) {
-      throw new Error('Kid profile not found or unauthorized');
-    }
-
-    // Get screen time product to check coin requirement
-    let { data: product } = await supabase
-      .from('kid_rewards_products')
-      .select('coin_price')
-      .eq('parent_user_id', kidProfile.parent_user_id)
-      .eq('title', 'Screen Time')
-      .eq('is_active', true)
-      .single();
-
-    // Safety check: Auto-create Screen Time product if it doesn't exist
-    if (!product) {
-      console.warn('[CONSUME-SCREEN-TIME] Screen Time product missing, auto-creating', {
-        parentUserId: kidProfile.parent_user_id
+    const { data: seedResult } = await supabase
+      .rpc('seed_screen_time_product', {
+        p_parent_user_id: kidProfile.parent_user_id
       });
+    
+    if (seedResult?.success) {
+      // Fetch the newly created product
+      const { data: newProduct } = await supabase
+        .from('kid_rewards_products')
+        .select('coin_price')
+        .eq('parent_user_id', kidProfile.parent_user_id)
+        .eq('title', 'Screen Time')
+        .eq('is_active', true)
+        .single();
       
-      const { data: seedResult } = await supabase
-        .rpc('seed_screen_time_product', {
-          p_parent_user_id: kidProfile.parent_user_id
-        });
-      
-      if (seedResult?.success) {
-        // Fetch the newly created product
-        const { data: newProduct } = await supabase
-          .from('kid_rewards_products')
-          .select('coin_price')
-          .eq('parent_user_id', kidProfile.parent_user_id)
-          .eq('title', 'Screen Time')
-          .eq('is_active', true)
-          .single();
-        
-        product = newProduct;
-      }
+      product = newProduct;
     }
+  }
 
-    // Verify user has minimum coins to use screen time
-    if (product && kidProfile.earned_coins < product.coin_price) {
-      console.error('[consume-screen-time] Insufficient coins to unlock screen time');
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Need at least ${product.coin_price} coins to access videos. Current: ${kidProfile.earned_coins}`,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      );
-    }
-
-    // Use atomic RPC function to deduct screen time
-    const { data: result, error: deductError } = await supabase
-      .rpc('decrement_screen_time', {
-        p_kid_id: kidProfileId,
-        p_seconds: secondsWatched
-      });
-
-    if (deductError) {
-      console.error('[CONSUME-SCREEN-TIME] RPC error', deductError);
-      throw deductError;
-    }
-
-    if (!result.success) {
-      console.log('[CONSUME-SCREEN-TIME] Insufficient balance', { 
-        remainingSeconds: result.new_balance 
-      });
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: result.error_message,
-          remainingSeconds: result.new_balance,
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Record session
-    const { data: session, error: sessionError } = await supabase
-      .from('screen_time_sessions')
-      .insert({
-        kid_profile_id: kidProfileId,
-        parent_user_id: user.id,
-        seconds_consumed: secondsWatched,
-        video_id: videoId,
-        ended_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (sessionError) {
-      console.error('[CONSUME-SCREEN-TIME] Session record failed', sessionError);
-    }
-
-    console.log('[CONSUME-SCREEN-TIME] Success', { 
-      sessionId: session?.id,
-      newBalance: result.new_balance,
-      balanceInMinutes: Math.floor(result.new_balance / 60)
-    });
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        remainingSeconds: result.new_balance,
-        sessionId: session?.id,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('[CONSUME-SCREEN-TIME] Error:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+  // Verify user has minimum coins to use screen time
+  if (product && kidProfile.earned_coins < product.coin_price) {
+    console.error('[consume-screen-time] Insufficient coins to unlock screen time');
+    return errorResponse(
+      `Need at least ${product.coin_price} coins to access videos. Current: ${kidProfile.earned_coins}`,
+      403,
+      { success: false }
     );
   }
-});
+
+  // Use atomic RPC function to deduct screen time
+  const { data: result, error: deductError } = await supabase
+    .rpc('decrement_screen_time', {
+      p_kid_id: kidProfileId,
+      p_seconds: secondsWatched
+    });
+
+  if (deductError) {
+    console.error('[CONSUME-SCREEN-TIME] RPC error', deductError);
+    throw deductError;
+  }
+
+  if (!result.success) {
+    console.log('[CONSUME-SCREEN-TIME] Insufficient balance', { 
+      remainingSeconds: result.new_balance 
+    });
+    return errorResponse(result.error_message, 400, {
+      success: false,
+      remainingSeconds: result.new_balance,
+    });
+  }
+
+  // Record session
+  const { data: session, error: sessionError } = await supabase
+    .from('screen_time_sessions')
+    .insert({
+      kid_profile_id: kidProfileId,
+      parent_user_id: user!.userId,
+      seconds_consumed: secondsWatched,
+      video_id: videoId,
+      ended_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (sessionError) {
+    console.error('[CONSUME-SCREEN-TIME] Session record failed', sessionError);
+  }
+
+  console.log('[CONSUME-SCREEN-TIME] Success', { 
+    sessionId: session?.id,
+    newBalance: result.new_balance,
+    balanceInMinutes: Math.floor(result.new_balance / 60)
+  });
+
+  return successResponse({
+    success: true,
+    remainingSeconds: result.new_balance,
+    sessionId: session?.id,
+  });
+}));

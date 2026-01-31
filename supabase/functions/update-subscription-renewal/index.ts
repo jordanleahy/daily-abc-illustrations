@@ -1,122 +1,84 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { corsHeaders } from '../_shared/cors.ts';
+import { createHandler, parseBody } from '../_shared/handler.ts';
+import { successResponse, errorResponse, errors } from '../_shared/response.ts';
 
-// Helper logging function for debugging
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[UPDATE-SUBSCRIPTION-RENEWAL] ${step}${detailsStr}`);
-};
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    logStep("Function started");
-
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
-
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
-
-    // Parse and validate request body
-    const UpdateRenewalSchema = z.object({
-      auto_renew: z.boolean({ 
-        required_error: "auto_renew is required",
-        invalid_type_error: "auto_renew must be a boolean value" 
-      })
-    });
-    
-    const body = await req.json();
-    const { auto_renew } = UpdateRenewalSchema.parse(body);
-    logStep("Request parsed", { auto_renew });
-
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    
-    // Find the customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user");
-    }
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
-
-    // Find active subscription
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-
-    if (subscriptions.data.length === 0) {
-      throw new Error("No active subscription found");
-    }
-
-    const subscription = subscriptions.data[0];
-    logStep("Found active subscription", { subscriptionId: subscription.id });
-
-    // Update the subscription's cancel_at_period_end setting
-    // If auto_renew is true, we set cancel_at_period_end to false (don't cancel)
-    // If auto_renew is false, we set cancel_at_period_end to true (cancel at end)
-    const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
-      cancel_at_period_end: !auto_renew,
-    });
-
-    logStep("Subscription updated successfully", {
-      subscriptionId: updatedSubscription.id,
-      cancel_at_period_end: updatedSubscription.cancel_at_period_end,
-      current_period_end: updatedSubscription.current_period_end,
-    });
-
-    return new Response(JSON.stringify({
-      success: true,
-      cancel_at_period_end: updatedSubscription.cancel_at_period_end,
-      subscription_end: updatedSubscription.current_period_end 
-        ? new Date(updatedSubscription.current_period_end * 1000).toISOString() 
-        : null,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in update-subscription-renewal", { message: errorMessage });
-    
-    // Handle Zod validation errors
-    if (error instanceof z.ZodError) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid input',
-        details: error.errors 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
-    
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
-  }
+const UpdateRenewalSchema = z.object({
+  auto_renew: z.boolean({ 
+    required_error: "auto_renew is required",
+    invalid_type_error: "auto_renew must be a boolean value" 
+  })
 });
+
+Deno.serve(createHandler({
+  name: 'update-subscription-renewal',
+  clientMode: 'service',
+  requireAuth: true,
+}, async ({ supabase, user, req }) => {
+  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+  if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+
+  const email = user!.email;
+  if (!email) {
+    return errors.unauthorized('Email not available');
+  }
+
+  // Parse and validate request body
+  const body = await parseBody<unknown>(req);
+  
+  let auto_renew: boolean;
+  try {
+    const parsed = UpdateRenewalSchema.parse(body);
+    auto_renew = parsed.auto_renew;
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return errorResponse('Invalid input', 400, { details: error.errors });
+    }
+    throw error;
+  }
+
+  console.log('[UPDATE-SUBSCRIPTION-RENEWAL] Request parsed', { auto_renew });
+
+  const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+  
+  // Find the customer
+  const customers = await stripe.customers.list({ email, limit: 1 });
+  if (customers.data.length === 0) {
+    return errors.notFound('No Stripe customer found for this user');
+  }
+  const customerId = customers.data[0].id;
+  console.log('[UPDATE-SUBSCRIPTION-RENEWAL] Found Stripe customer', { customerId });
+
+  // Find active subscription
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "active",
+    limit: 1,
+  });
+
+  if (subscriptions.data.length === 0) {
+    return errors.notFound('No active subscription found');
+  }
+
+  const subscription = subscriptions.data[0];
+  console.log('[UPDATE-SUBSCRIPTION-RENEWAL] Found active subscription', { subscriptionId: subscription.id });
+
+  // Update the subscription's cancel_at_period_end setting
+  const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+    cancel_at_period_end: !auto_renew,
+  });
+
+  console.log('[UPDATE-SUBSCRIPTION-RENEWAL] Subscription updated successfully', {
+    subscriptionId: updatedSubscription.id,
+    cancel_at_period_end: updatedSubscription.cancel_at_period_end,
+    current_period_end: updatedSubscription.current_period_end,
+  });
+
+  return successResponse({
+    success: true,
+    cancel_at_period_end: updatedSubscription.cancel_at_period_end,
+    subscription_end: updatedSubscription.current_period_end 
+      ? new Date(updatedSubscription.current_period_end * 1000).toISOString() 
+      : null,
+  });
+}));

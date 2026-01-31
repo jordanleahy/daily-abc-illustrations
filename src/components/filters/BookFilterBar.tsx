@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,10 @@ interface BookFilterBarProps {
   showSearch?: boolean;
   showThemeFilter?: boolean;
   placeholder?: string;
+  // Etsy filter props (admin-only)
+  etsyFilter?: boolean;
+  onEtsyFilterChange?: (enabled: boolean) => void;
+  showEtsyFilter?: boolean;
 }
 
 export const BookFilterBar = ({
@@ -30,10 +34,14 @@ export const BookFilterBar = ({
   availableThemes,
   showSearch = true,
   showThemeFilter = true,
-  placeholder = 'Search books...'
+  placeholder = 'Search books...',
+  etsyFilter = false,
+  onEtsyFilterChange,
+  showEtsyFilter = false
 }: BookFilterBarProps) => {
   const isMobile = useIsMobile();
-  const [open, setOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [etsyOpen, setEtsyOpen] = useState(false);
   
   const toggleTheme = (themeValue: string) => {
     if (selectedThemes.includes(themeValue)) {
@@ -46,9 +54,10 @@ export const BookFilterBar = ({
   const clearAllFilters = () => {
     onSearchChange('');
     onThemesChange([]);
+    onEtsyFilterChange?.(false);
   };
   
-  const hasActiveFilters = searchQuery.length > 0 || selectedThemes.length > 0;
+  const hasActiveFilters = searchQuery.length > 0 || selectedThemes.length > 0 || etsyFilter;
   
   const ThemeFilterContent = () => (
     <div className="space-y-4">
@@ -73,6 +82,24 @@ export const BookFilterBar = ({
       </CommandList>
     </div>
   );
+
+  const EtsyFilterContent = () => (
+    <div className="space-y-4 p-2">
+      <div
+        className="flex items-center gap-3 cursor-pointer p-2 rounded-md hover:bg-accent"
+        onClick={() => onEtsyFilterChange?.(!etsyFilter)}
+      >
+        <Checkbox
+          checked={etsyFilter}
+          onCheckedChange={(checked) => onEtsyFilterChange?.(!!checked)}
+        />
+        <div className="flex flex-col">
+          <span className="font-medium">Not on Etsy</span>
+          <span className="text-sm text-muted-foreground">Show only books not listed on Etsy</span>
+        </div>
+      </div>
+    </div>
+  );
   
   return (
     <div className="space-y-3 md:space-y-0 md:flex md:items-center md:gap-4">
@@ -94,7 +121,7 @@ export const BookFilterBar = ({
       {showThemeFilter && (
         <>
           {isMobile ? (
-            <Sheet open={open} onOpenChange={setOpen}>
+            <Sheet open={themeOpen} onOpenChange={setThemeOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" className="w-full md:w-auto">
                   <Filter className="h-4 w-4 mr-2" />
@@ -118,7 +145,7 @@ export const BookFilterBar = ({
               </SheetContent>
             </Sheet>
           ) : (
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={themeOpen} onOpenChange={setThemeOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline">
                   <Filter className="h-4 w-4 mr-2" />
@@ -134,6 +161,52 @@ export const BookFilterBar = ({
                 <Command>
                   <ThemeFilterContent />
                 </Command>
+              </PopoverContent>
+            </Popover>
+          )}
+        </>
+      )}
+
+      {/* Etsy Filter - Desktop: Popover, Mobile: Sheet */}
+      {showEtsyFilter && (
+        <>
+          {isMobile ? (
+            <Sheet open={etsyOpen} onOpenChange={setEtsyOpen}>
+              <SheetTrigger asChild>
+                <Button variant={etsyFilter ? "default" : "outline"} className="w-full md:w-auto">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Etsy
+                  {etsyFilter && (
+                    <Badge variant="secondary" className="ml-2 bg-background/20">
+                      1
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-auto max-h-[50vh]">
+                <SheetHeader>
+                  <SheetTitle>Filter by Etsy Status</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <EtsyFilterContent />
+                </div>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Popover open={etsyOpen} onOpenChange={setEtsyOpen}>
+              <PopoverTrigger asChild>
+                <Button variant={etsyFilter ? "default" : "outline"}>
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Etsy
+                  {etsyFilter && (
+                    <Badge variant="secondary" className="ml-2 bg-background/20">
+                      1
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-0" align="start">
+                <EtsyFilterContent />
               </PopoverContent>
             </Popover>
           )}

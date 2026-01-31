@@ -37,6 +37,8 @@ async function fetchImageData(url: string): Promise<{
   // Detect format and decode
   const isPng = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47;
   const isJpeg = bytes[0] === 0xFF && bytes[1] === 0xD8;
+  const isWebP = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 
+              && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
   
   if (isPng) {
     console.log(`  📄 Detected PNG format`);
@@ -49,21 +51,16 @@ async function fetchImageData(url: string): Promise<{
   } else if (isJpeg) {
     console.log(`  📄 Detected JPEG format`);
     const decoded = decodeJpeg(bytes);
-    // Convert RGB to RGBA
-    const rgba = new Uint8Array(decoded.width * decoded.height * 4);
-    for (let i = 0; i < decoded.width * decoded.height; i++) {
-      rgba[i * 4] = decoded.data[i * 3];
-      rgba[i * 4 + 1] = decoded.data[i * 3 + 1];
-      rgba[i * 4 + 2] = decoded.data[i * 3 + 2];
-      rgba[i * 4 + 3] = 255;
-    }
+    // jpegts already returns RGBA data (4 bytes per pixel) - use directly!
     return {
-      data: rgba,
+      data: new Uint8Array(decoded.data),
       width: decoded.width,
       height: decoded.height,
     };
+  } else if (isWebP) {
+    console.log(`  ⚠️ Detected WebP format - not supported`);
+    throw new Error('WebP format detected but not supported. Please use PNG or JPEG source images.');
   } else {
-    // Try WebP or other formats - fetch as PNG from a conversion service
     throw new Error('Unsupported image format. Only PNG and JPEG are supported.');
   }
 }

@@ -1,7 +1,6 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createHandler, parseBody } from '../_shared/handler.ts';
+import { successResponse, errors } from '../_shared/response.ts';
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { corsHeaders } from '../_shared/cors.ts';
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -15,9 +14,8 @@ interface CacheEntry {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 30000; // 30 seconds - longer to prevent repeated calls
+const CACHE_TTL_MS = 30000;
 
-// In-flight request deduplication
 const pendingRequests = new Map<string, Promise<any>>();
 
 const getCachedResult = (key: string): any | null => {
@@ -43,7 +41,6 @@ const setCachedResult = (key: string, data: any): void => {
   }
 };
 
-// Retry helper with exponential backoff
 const retryWithBackoff = async <T>(
   fn: () => Promise<T>,
   maxRetries = 3,
@@ -74,7 +71,6 @@ const retryWithBackoff = async <T>(
   throw lastError;
 };
 
-// Core subscription check logic - extracted for deduplication
 async function checkSubscriptionForUser(
   supabaseClient: any,
   user: { id: string; email: string },
@@ -101,7 +97,6 @@ async function checkSubscriptionForUser(
     }
   }
 
-  // Check Stripe subscription
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   if (!stripeKey) {
     logStep("Stripe key missing - returning unsubscribed");
@@ -207,111 +202,73 @@ async function checkSubscriptionForUser(
   return result;
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+Deno.serve(createHandler({
+  name: 'check-subscription',
+  clientMode: 'service',
+  requireAuth: false, // We handle auth manually for graceful fallback
+}, async ({ supabase, req }) => {
+  logStep("Function started");
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    logStep("No authorization header provided - treating as unauthenticated");
+    return successResponse({ subscribed: false });
+  }
+  
+  logStep("Authorization header found");
+  const token = authHeader.replace("Bearer ", "");
+  logStep("Authenticating user with token");
+  
+  const { data: userData, error: userError } = await supabase.auth.getUser(token);
+  if (userError) {
+    const msg = userError.message || '';
+    if (msg.includes('connection slots') || msg.includes('SUPERUSER')) {
+      logStep("Database connection pool exhausted - retry needed");
+      throw new Error("Service temporarily unavailable - too many concurrent requests. Please try again.");
+    }
+    if (msg.toLowerCase().includes('unexpected')) {
+      logStep("Auth unexpected failure - returning unsubscribed");
+      return successResponse({ subscribed: false, error: 'unauthenticated' });
+    }
+    logStep("Authentication error", { message: msg });
+    return successResponse({ subscribed: false, error: 'unauthenticated' });
+  }
+  
+  const user = userData.user;
+  if (!user?.email) {
+    logStep("No user email - treating as unauthenticated");
+    return successResponse({ subscribed: false });
+  }
+  logStep("User authenticated", { userId: user.id, email: user.email });
+
+  // Check cache first
+  const cacheKey = `subscription_${user.email}`;
+  const cachedResult = getCachedResult(cacheKey);
+  if (cachedResult) {
+    return successResponse(cachedResult);
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
+  // Check if there's already a pending request for this user - DEDUPLICATION
+  const existingRequest = pendingRequests.get(cacheKey);
+  if (existingRequest) {
+    logStep("Waiting for existing request", { cacheKey });
+    const result = await existingRequest;
+    return successResponse(result);
+  }
+
+  // Create pending request promise for deduplication
+  const requestPromise = checkSubscriptionForUser(
+    supabase,
+    { id: user.id, email: user.email },
+    cacheKey
   );
+  pendingRequests.set(cacheKey, requestPromise);
 
   try {
-    logStep("Function started");
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      logStep("No authorization header provided - treating as unauthenticated");
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-    logStep("Authorization header found");
-    const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) {
-      const msg = userError.message || '';
-      if (msg.includes('connection slots') || msg.includes('SUPERUSER')) {
-        logStep("Database connection pool exhausted - retry needed");
-        throw new Error("Service temporarily unavailable - too many concurrent requests. Please try again.");
-      }
-      if (msg.toLowerCase().includes('unexpected')) {
-        logStep("Auth unexpected failure - returning unsubscribed");
-        return new Response(JSON.stringify({ subscribed: false, error: 'unauthenticated' }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-      logStep("Authentication error", { message: msg });
-      return new Response(JSON.stringify({ subscribed: false, error: 'unauthenticated' }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-    const user = userData.user;
-    if (!user?.email) {
-      logStep("No user email - treating as unauthenticated");
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-    logStep("User authenticated", { userId: user.id, email: user.email });
-
-    // Check cache first
-    const cacheKey = `subscription_${user.email}`;
-    const cachedResult = getCachedResult(cacheKey);
-    if (cachedResult) {
-      return new Response(JSON.stringify(cachedResult), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    // Check if there's already a pending request for this user - DEDUPLICATION
-    const existingRequest = pendingRequests.get(cacheKey);
-    if (existingRequest) {
-      logStep("Waiting for existing request", { cacheKey });
-      const result = await existingRequest;
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    // Create pending request promise for deduplication
-    const requestPromise = checkSubscriptionForUser(
-      supabaseClient,
-      { id: user.id, email: user.email },
-      cacheKey
-    );
-    pendingRequests.set(cacheKey, requestPromise);
-
-    try {
-      const result = await requestPromise;
-      
-      // Cache the result
-      setCachedResult(cacheKey, result);
-
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    } finally {
-      // Clean up pending request
-      pendingRequests.delete(cacheKey);
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    const result = await requestPromise;
+    setCachedResult(cacheKey, result);
+    return successResponse(result);
+  } finally {
+    pendingRequests.delete(cacheKey);
   }
-});
+}));

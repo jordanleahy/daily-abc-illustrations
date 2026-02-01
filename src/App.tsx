@@ -48,6 +48,7 @@ import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionManage from "./pages/SubscriptionManage";
 import SubscriptionCheckout from "./pages/SubscriptionCheckout";
+import Subscriptions from "./pages/Subscriptions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
@@ -245,6 +246,7 @@ const App = () => {
                <Route path="/reddit" element={<Reddit />} />
                <Route path="/admin/categorize-books" element={<ProtectedRoute><AdminCategorizeBooks /></ProtectedRoute>} />
                <Route path="/pricing" element={<Pricing />} />
+               <Route path="/subscriptions" element={<ProtectedRoute requireSubscription={false}><Subscriptions /></ProtectedRoute>} />
                <Route path="/subscription/checkout" element={<SubscriptionCheckout />} />
                <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
                <Route path="/subscription/cancel" element={<ProtectedRoute><SubscriptionCancel /></ProtectedRoute>} />

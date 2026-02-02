@@ -6,7 +6,7 @@ import { successResponse, errorResponse, errors } from '../_shared/response.ts';
 const CheckoutRequestSchema = z.object({
   price_id: z.string().optional(),
   product_id: z.string().optional(),
-  plan_type: z.enum(['monthly', 'annual']).optional(),
+  plan_type: z.enum(['monthly', 'annual', 'max']).optional(),
   coupon_code: z.string().optional()
 }).refine(
   (data) => data.price_id || data.product_id || data.plan_type,
@@ -16,6 +16,7 @@ const CheckoutRequestSchema = z.object({
 const PRODUCT_MAP: Record<string, string> = {
   monthly: "prod_T7a3qkxm69uttK",
   annual: "prod_T7a5vTweAt6UZm",
+  max: "prod_TuK1PC63uRuok9",
 };
 
 Deno.serve(createHandler({
@@ -93,6 +94,11 @@ Deno.serve(createHandler({
 
   const origin = req.headers.get("origin") || "https://dailyabcillustrations.com";
   
+  // Determine if this is a subscription or one-time payment by checking the price
+  const priceDetails = await stripe.prices.retrieve(resolvedPriceId!);
+  const isSubscription = priceDetails.type === 'recurring';
+  console.log('[CREATE-CHECKOUT] Price type', { priceId: resolvedPriceId, type: priceDetails.type, isSubscription });
+  
   // Prepare checkout session configuration
   const sessionConfig: any = {
     customer: customerId,
@@ -103,8 +109,10 @@ Deno.serve(createHandler({
         quantity: 1,
       },
     ],
-    mode: "subscription" as const,
-    success_url: `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+    mode: isSubscription ? "subscription" : "payment",
+    success_url: isSubscription 
+      ? `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/subscription/cancel`,
     metadata: {
       user_id: user!.userId,

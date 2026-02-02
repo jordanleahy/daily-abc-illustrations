@@ -77,7 +77,7 @@ export default function Subscriptions() {
   const [checkingSubscription, setCheckingSubscription] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
 
-  const handleCheckout = async (planType: 'monthly' | 'annual') => {
+  const handleCheckout = async (planType: 'monthly' | 'annual' | 'max') => {
     if (!isAuthenticated) {
       toast.error('Please log in first');
       navigate('/auth');
@@ -306,7 +306,7 @@ export default function Subscriptions() {
 
                 <Button 
                   className="w-full" 
-                  onClick={() => handleCheckout(key as 'monthly' | 'annual')}
+                  onClick={() => handleCheckout(key as 'monthly' | 'annual' | 'max')}
                   disabled={loadingPlan === key}
                 >
                   {loadingPlan === key && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

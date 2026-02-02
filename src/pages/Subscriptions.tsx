@@ -50,6 +50,26 @@ const SUBSCRIPTION_PLANS: Record<string, {
   },
 };
 
+// One-time purchase products
+const ONE_TIME_PRODUCTS: Record<string, {
+  name: string;
+  price: string;
+  priceId: string;
+  productId: string;
+  features: string[];
+}> = {
+  max: {
+    name: 'Max',
+    price: '$500',
+    priceId: 'price_1SwVN2C8Q85n0xWFGu9cmPHV',
+    productId: 'prod_TuK1PC63uRuok9',
+    features: [
+      'One-time purchase',
+      'Lifetime access',
+    ],
+  },
+};
+
 export default function Subscriptions() {
   const { user, isAuthenticated } = useAuthContext();
   const navigate = useNavigate();
@@ -248,6 +268,49 @@ export default function Subscriptions() {
                 >
                   {loadingPlan === key && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Subscribe to {plan.name}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* One-Time Products */}
+        <h2 className="text-2xl font-bold mb-6 mt-12">One-Time Purchases</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          {Object.entries(ONE_TIME_PRODUCTS).map(([key, product]) => (
+            <Card key={key} className="relative">
+              <CardHeader>
+                <CardTitle>{product.name}</CardTitle>
+                <CardDescription className="text-2xl font-bold text-foreground">
+                  {product.price}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2">
+                  {product.features.map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                
+                <div className="pt-4 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Price ID: {product.priceId}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Product ID: {product.productId}
+                  </p>
+                </div>
+
+                <Button 
+                  className="w-full" 
+                  onClick={() => handleCheckout(key as 'monthly' | 'annual')}
+                  disabled={loadingPlan === key}
+                >
+                  {loadingPlan === key && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Purchase {product.name}
                 </Button>
               </CardContent>
             </Card>

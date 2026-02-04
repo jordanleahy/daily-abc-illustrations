@@ -33,6 +33,7 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
   const { toast } = useToast();
   const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingPosted, setIsMarkingPosted] = useState(false);
+  const [isOutstandPosting, setIsOutstandPosting] = useState(false);
 
   const slug = publicationSlug || book.marketing_url;
   const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${slug}`;
@@ -49,8 +50,7 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
     targetAge: book.metadata?.targetAge || null,
   });
 
-  const handleMarkPosted = async () => {
-    setIsMarkingPosted(true);
+  const markAsPosted = async (postedVia: 'manual' | 'outstand' = 'manual') => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.user.id) {
@@ -67,19 +67,57 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
         });
 
       if (error) throw error;
+      onPosted?.();
+    } catch (error) {
+      console.error('Failed to record post:', error);
+    }
+  };
 
+  const handleMarkPosted = async () => {
+    setIsMarkingPosted(true);
+    try {
+      await markAsPosted('manual');
       toast({ 
         title: 'Marked as posted!',
         description: 'LinkedIn post recorded successfully.',
       });
-      
-      onPosted?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to mark as posted:', error);
       toast({ title: 'Failed to save', variant: 'destructive' });
     } finally {
       setIsMarkingPosted(false);
+    }
+  };
+
+  const handleOutstandPost = async () => {
+    setIsOutstandPosting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('post-to-outstand', {
+        body: {
+          platform: 'linkedin',
+          content: fullPost,
+        },
+      });
+
+      if (error) throw error;
+
+      await markAsPosted('outstand');
+      
+      toast({ 
+        title: 'Posted to LinkedIn!',
+        description: 'Your post has been published via Outstand.',
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to post via Outstand:', error);
+      toast({ 
+        title: 'Failed to post', 
+        description: error instanceof Error ? error.message : 'Please try again or post manually.',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsOutstandPosting(false);
     }
   };
 
@@ -94,6 +132,9 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
       actionLabel="I've Posted to LinkedIn"
       isActionLoading={isMarkingPosted}
       onAction={handleMarkPosted}
+      onOutstandPost={handleOutstandPost}
+      isOutstandPosting={isOutstandPosting}
+      outstandLabel="Post to LinkedIn"
     >
       <CopyableSection
         label="Post Content"

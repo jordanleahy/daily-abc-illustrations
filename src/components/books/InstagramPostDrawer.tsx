@@ -41,6 +41,7 @@ export function InstagramPostDrawer({
   const { toast } = useToast();
   const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingPosted, setIsMarkingPosted] = useState(false);
+  const [isOutstandPosting, setIsOutstandPosting] = useState(false);
 
   const fullPost = generateGenericMarketingPost({
     bookName,
@@ -60,8 +61,7 @@ export function InstagramPostDrawer({
   const hashtags = hashtagsMatch ? hashtagsMatch[0].trim() : '';
   const caption = hashtags ? fullPost.replace(hashtags, '').trim() : fullPost;
 
-  const handleMarkPosted = async () => {
-    setIsMarkingPosted(true);
+  const markAsPosted = async (postedVia: 'manual' | 'outstand' = 'manual') => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session?.user.id) {
@@ -78,19 +78,57 @@ export function InstagramPostDrawer({
         });
 
       if (error) throw error;
+      onPosted?.();
+    } catch (error) {
+      console.error('Failed to record post:', error);
+    }
+  };
 
+  const handleMarkPosted = async () => {
+    setIsMarkingPosted(true);
+    try {
+      await markAsPosted('manual');
       toast({ 
         title: 'Marked as posted!',
         description: `${platform === 'instagram' ? 'Instagram' : 'Facebook'} post recorded.`,
       });
-      
-      onPosted?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to mark as posted:', error);
       toast({ title: 'Failed to save', variant: 'destructive' });
     } finally {
       setIsMarkingPosted(false);
+    }
+  };
+
+  const handleOutstandPost = async () => {
+    setIsOutstandPosting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('post-to-outstand', {
+        body: {
+          platform: platform,
+          content: fullPost,
+        },
+      });
+
+      if (error) throw error;
+
+      await markAsPosted('outstand');
+      
+      toast({ 
+        title: `Posted to ${platform === 'instagram' ? 'Instagram' : 'Facebook'}!`,
+        description: 'Your post has been published via Outstand.',
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Failed to post via Outstand:', error);
+      toast({ 
+        title: 'Failed to post', 
+        description: error instanceof Error ? error.message : 'Please try again or post manually.',
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsOutstandPosting(false);
     }
   };
 
@@ -106,6 +144,9 @@ export function InstagramPostDrawer({
       actionLabel={`I've Posted to ${platformName}`}
       isActionLoading={isMarkingPosted}
       onAction={handleMarkPosted}
+      onOutstandPost={handleOutstandPost}
+      isOutstandPosting={isOutstandPosting}
+      outstandLabel={`Post to ${platformName}`}
     >
       <CopyableSection
         label="Caption"

@@ -8,7 +8,7 @@ import {
   DrawerDescription, 
   DrawerFooter 
 } from '@/components/ui/drawer';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Send, Loader2 } from 'lucide-react';
 
 interface SocialDrawerLayoutProps {
   open: boolean;
@@ -23,11 +23,16 @@ interface SocialDrawerLayoutProps {
   isActionLoading?: boolean;
   onAction?: () => void;
   showAction?: boolean;
+  // Outstand integration
+  onOutstandPost?: () => void;
+  isOutstandPosting?: boolean;
+  outstandLabel?: string;
 }
 
 /**
  * Shared layout component for all social media post drawers
  * Provides consistent header, footer, and close behavior
+ * Supports both manual posting and Outstand.so integration
  */
 export function SocialDrawerLayout({
   open,
@@ -42,6 +47,9 @@ export function SocialDrawerLayout({
   isActionLoading = false,
   onAction,
   showAction = true,
+  onOutstandPost,
+  isOutstandPosting = false,
+  outstandLabel = 'Post with Outstand',
 }: SocialDrawerLayoutProps) {
   const handleClose = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,6 +62,14 @@ export function SocialDrawerLayout({
     e.stopPropagation();
     onAction?.();
   };
+
+  const handleOutstandPost = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onOutstandPost?.();
+  };
+
+  const isAnyLoading = isActionLoading || isOutstandPosting;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -72,20 +88,40 @@ export function SocialDrawerLayout({
           {children}
         </div>
 
-        <DrawerFooter className="pt-4">
+        <DrawerFooter className="pt-4 space-y-2">
+          {/* Primary action: Post with Outstand */}
+          {onOutstandPost && (
+            <Button
+              onClick={handleOutstandPost}
+              disabled={isAnyLoading}
+              className="w-full gap-2"
+            >
+              {isOutstandPosting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {isOutstandPosting ? 'Posting...' : outstandLabel}
+            </Button>
+          )}
+          
+          {/* Secondary action: Mark as manually posted */}
           {showAction && onAction && (
             <Button
+              variant={onOutstandPost ? "secondary" : "default"}
               onClick={handleAction}
-              disabled={isActionLoading}
+              disabled={isAnyLoading}
               className="w-full gap-2"
             >
               <ExternalLink className="h-4 w-4" />
               {isActionLoading ? actionLoadingLabel : actionLabel}
             </Button>
           )}
+          
           <Button
             variant="outline"
             onClick={handleClose}
+            disabled={isAnyLoading}
             className="w-full"
           >
             Close

@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.google-places-autocomplete]
 verify_jwt = false
 
+[functions.post-to-outstand]
+verify_jwt = false
+
 [functions.resort-places-autocomplete]
 verify_jwt = false

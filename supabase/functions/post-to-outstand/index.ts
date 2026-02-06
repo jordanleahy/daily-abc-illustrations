@@ -39,26 +39,33 @@ Deno.serve(createHandler({
   console.log(`[POST-TO-OUTSTAND] Posting to ${body.platform} for user ${user?.userId}`);
   console.log(`[POST-TO-OUTSTAND] Content length: ${body.content.length} chars`);
 
-  // Build the Outstand API request
-  const outstandPayload: Record<string, unknown> = {
+  // Build the Outstand API request using containers format
+  // Media must be objects with { url } not plain strings
+  const container: Record<string, unknown> = {
     content: body.content,
-    accounts: [body.platform],
   };
 
-  // Add scheduled time if provided
-  if (body.scheduledAt) {
-    outstandPayload.schedule_at = body.scheduledAt;
-    console.log(`[POST-TO-OUTSTAND] Scheduled for: ${body.scheduledAt}`);
-  }
-
-  // Add media if provided
+  // Add media as objects if provided
   if (body.mediaUrls && body.mediaUrls.length > 0) {
-    outstandPayload.media = body.mediaUrls;
+    container.media = body.mediaUrls.map(url => ({ url }));
     console.log(`[POST-TO-OUTSTAND] Media URLs: ${body.mediaUrls.length}`);
   }
 
+  const outstandPayload: Record<string, unknown> = {
+    accounts: [body.platform],
+    containers: [container],
+  };
+
+  // Add scheduled time if provided (camelCase per API docs)
+  if (body.scheduledAt) {
+    outstandPayload.scheduledAt = body.scheduledAt;
+    console.log(`[POST-TO-OUTSTAND] Scheduled for: ${body.scheduledAt}`);
+  }
+
+  console.log(`[POST-TO-OUTSTAND] Payload:`, JSON.stringify(outstandPayload));
+
   try {
-    const response = await fetch('https://api.outstand.so/v1/posts', {
+    const response = await fetch('https://api.outstand.so/v1/posts/', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OUTSTAND_API_KEY}`,

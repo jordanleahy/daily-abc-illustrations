@@ -39,8 +39,55 @@ Deno.serve(createHandler({
   console.log(`[POST-TO-OUTSTAND] Posting to ${body.platform} for user ${user?.userId}`);
   console.log(`[POST-TO-OUTSTAND] Content length: ${body.content.length} chars`);
 
-  // Build the Outstand API request using containers format
-  // Media must be objects with { url } not plain strings
+  // Step 1: Look up Outstand account ID by platform name
+  // The accounts field needs the actual Outstand account ID, not the platform name
+  const platformToNetwork: Record<string, string> = {
+    instagram: 'instagram',
+    facebook: 'facebook',
+    tiktok: 'tiktok',
+    linkedin: 'linkedin',
+  };
+
+  const network = platformToNetwork[body.platform];
+  let accountId: string | null = null;
+
+  try {
+    const accountsRes = await fetch('https://api.outstand.so/v1/accounts/', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OUTSTAND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const accountsText = await accountsRes.text();
+    console.log(`[POST-TO-OUTSTAND] Accounts response: ${accountsRes.status} - ${accountsText}`);
+
+    if (accountsRes.ok) {
+      const accountsData = JSON.parse(accountsText);
+      // Find the account matching the requested platform/network
+      const accounts = accountsData.data || accountsData.accounts || accountsData;
+      if (Array.isArray(accounts)) {
+        const match = accounts.find((a: any) => 
+          a.network === network || a.platform === network || a.type === network
+        );
+        if (match) {
+          accountId = match.id?.toString();
+          console.log(`[POST-TO-OUTSTAND] Found account ID: ${accountId} for ${network}`);
+        } else {
+          console.log(`[POST-TO-OUTSTAND] Available accounts:`, JSON.stringify(accounts.map((a: any) => ({ id: a.id, network: a.network, platform: a.platform, type: a.type, nickname: a.nickname }))));
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[POST-TO-OUTSTAND] Failed to fetch accounts:`, err);
+  }
+
+  if (!accountId) {
+    return errorResponse(`No ${body.platform} account found in Outstand. Please connect your ${body.platform} account in the Outstand dashboard.`, 400);
+  }
+
+  // Step 2: Build the Outstand API request using containers format
   const container: Record<string, unknown> = {
     content: body.content,
   };
@@ -48,7 +95,6 @@ Deno.serve(createHandler({
   // Add media as objects if provided — Outstand requires { url, filename } for each
   if (body.mediaUrls && body.mediaUrls.length > 0) {
     container.media = body.mediaUrls.map(url => {
-      // Extract filename from URL path, fallback to a generated name
       const urlPath = new URL(url).pathname;
       const filename = urlPath.split('/').pop() || `image-${Date.now()}.webp`;
       return { url, filename };
@@ -57,7 +103,7 @@ Deno.serve(createHandler({
   }
 
   const outstandPayload: Record<string, unknown> = {
-    accounts: [body.platform],
+    accounts: [accountId],
     containers: [container],
   };
 

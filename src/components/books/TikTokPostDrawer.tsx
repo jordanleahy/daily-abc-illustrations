@@ -137,6 +137,7 @@ export function TikTokPostDrawer({
   const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingPosted, setIsMarkingPosted] = useState(false);
   const [isOutstandPosting, setIsOutstandPosting] = useState(false);
+  const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
 
   const { caption, hashtags } = generateTikTokCaption(bookName, bookDescription || null, metadata);
   const fullPost = `${caption}\n\n${hashtags}`;
@@ -188,6 +189,7 @@ export function TikTokPostDrawer({
         body: {
           platform: 'tiktok',
           content: fullPost,
+          mediaUrls: selectedMediaUrls,
         },
       });
 
@@ -225,6 +227,9 @@ export function TikTokPostDrawer({
       onOutstandPost={handleOutstandPost}
       isOutstandPosting={isOutstandPosting}
       outstandLabel="Post to TikTok"
+      bookId={bookId}
+      selectedMediaUrls={selectedMediaUrls}
+      onMediaSelectionChange={setSelectedMediaUrls}
     >
       <CopyableSection
         label="Caption"

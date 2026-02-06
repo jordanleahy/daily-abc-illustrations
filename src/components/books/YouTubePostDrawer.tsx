@@ -33,6 +33,7 @@ export function YouTubePostDrawer({ open, onOpenChange, book, publicationSlug }:
   const { toast } = useToast();
   const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingUploaded, setIsMarkingUploaded] = useState(false);
+  const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
 
   const slug = publicationSlug || book.marketing_url;
   const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${slug}`;
@@ -93,6 +94,9 @@ export function YouTubePostDrawer({ open, onOpenChange, book, publicationSlug }:
       actionLabel="I've Uploaded to YouTube"
       isActionLoading={isMarkingUploaded}
       onAction={handleMarkUploaded}
+      bookId={book.id}
+      selectedMediaUrls={selectedMediaUrls}
+      onMediaSelectionChange={setSelectedMediaUrls}
     >
       <CopyableSection
         label="Title"

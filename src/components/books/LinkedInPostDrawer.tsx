@@ -34,6 +34,7 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
   const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingPosted, setIsMarkingPosted] = useState(false);
   const [isOutstandPosting, setIsOutstandPosting] = useState(false);
+  const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
 
   const slug = publicationSlug || book.marketing_url;
   const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${slug}`;
@@ -97,6 +98,7 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
         body: {
           platform: 'linkedin',
           content: fullPost,
+          mediaUrls: selectedMediaUrls,
         },
       });
 
@@ -135,6 +137,9 @@ export function LinkedInPostDrawer({ open, onOpenChange, book, publicationSlug, 
       onOutstandPost={handleOutstandPost}
       isOutstandPosting={isOutstandPosting}
       outstandLabel="Post to LinkedIn"
+      bookId={book.id}
+      selectedMediaUrls={selectedMediaUrls}
+      onMediaSelectionChange={setSelectedMediaUrls}
     >
       <CopyableSection
         label="Post Content"

@@ -9,6 +9,7 @@ import {
   DrawerFooter 
 } from '@/components/ui/drawer';
 import { ExternalLink, Send, Loader2 } from 'lucide-react';
+import { SocialImageGallery } from './SocialImageGallery';
 
 interface SocialDrawerLayoutProps {
   open: boolean;
@@ -27,12 +28,18 @@ interface SocialDrawerLayoutProps {
   onOutstandPost?: () => void;
   isOutstandPosting?: boolean;
   outstandLabel?: string;
+  // Image gallery
+  bookId?: string;
+  selectedMediaUrls?: string[];
+  onMediaSelectionChange?: (urls: string[]) => void;
+  maxMediaSelection?: number;
 }
 
 /**
  * Shared layout component for all social media post drawers
  * Provides consistent header, footer, and close behavior
  * Supports both manual posting and Outstand.so integration
+ * Optionally renders an image gallery when bookId is provided
  */
 export function SocialDrawerLayout({
   open,
@@ -50,6 +57,10 @@ export function SocialDrawerLayout({
   onOutstandPost,
   isOutstandPosting = false,
   outstandLabel = 'Post with Outstand',
+  bookId,
+  selectedMediaUrls,
+  onMediaSelectionChange,
+  maxMediaSelection = 20,
 }: SocialDrawerLayoutProps) {
   const handleClose = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,6 +97,15 @@ export function SocialDrawerLayout({
 
         <div className="px-4 space-y-4 overflow-y-auto flex-1">
           {children}
+
+          {bookId && selectedMediaUrls && onMediaSelectionChange && (
+            <SocialImageGallery
+              bookId={bookId}
+              selectedUrls={selectedMediaUrls}
+              onSelectionChange={onMediaSelectionChange}
+              maxSelection={maxMediaSelection}
+            />
+          )}
         </div>
 
         <DrawerFooter className="pt-4 space-y-2">

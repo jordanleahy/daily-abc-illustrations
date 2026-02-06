@@ -45,9 +45,14 @@ Deno.serve(createHandler({
     content: body.content,
   };
 
-  // Add media as objects if provided
+  // Add media as objects if provided — Outstand requires { url, filename } for each
   if (body.mediaUrls && body.mediaUrls.length > 0) {
-    container.media = body.mediaUrls.map(url => ({ url }));
+    container.media = body.mediaUrls.map(url => {
+      // Extract filename from URL path, fallback to a generated name
+      const urlPath = new URL(url).pathname;
+      const filename = urlPath.split('/').pop() || `image-${Date.now()}.webp`;
+      return { url, filename };
+    });
     console.log(`[POST-TO-OUTSTAND] Media URLs: ${body.mediaUrls.length}`);
   }
 

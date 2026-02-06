@@ -42,6 +42,7 @@ export function InstagramPostDrawer({
   const { handleCopy, isCopied } = useCopyWithFeedback();
   const [isMarkingPosted, setIsMarkingPosted] = useState(false);
   const [isOutstandPosting, setIsOutstandPosting] = useState(false);
+  const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
 
   const fullPost = generateGenericMarketingPost({
     bookName,
@@ -108,6 +109,7 @@ export function InstagramPostDrawer({
         body: {
           platform: platform,
           content: fullPost,
+          mediaUrls: selectedMediaUrls,
         },
       });
 
@@ -147,6 +149,9 @@ export function InstagramPostDrawer({
       onOutstandPost={handleOutstandPost}
       isOutstandPosting={isOutstandPosting}
       outstandLabel={`Post to ${platformName}`}
+      bookId={bookId}
+      selectedMediaUrls={selectedMediaUrls}
+      onMediaSelectionChange={setSelectedMediaUrls}
     >
       <CopyableSection
         label="Caption"

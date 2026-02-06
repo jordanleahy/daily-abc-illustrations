@@ -8,6 +8,7 @@ import { generateEtsyListing } from '@/utils/marketing/generateEtsyListing';
 import { generateBookPDF, fetchBookColoringImages, generatePDF } from '@/services/pdfGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { Check, Copy, Store, ExternalLink, Download, Palette, FileText } from 'lucide-react';
+import { SocialImageGallery } from './social-drawers/SocialImageGallery';
 
 interface EtsyPostDrawerProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
   const [isMarkingListed, setIsMarkingListed] = useState(false);
   const [isDownloadingColorPdf, setIsDownloadingColorPdf] = useState(false);
   const [isDownloadingColoringPdf, setIsDownloadingColoringPdf] = useState(false);
+  const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
 
   const { title, description, tags, fileName } = generateEtsyListing({
     bookName: book.book_name,
@@ -322,6 +324,13 @@ export function EtsyPostDrawer({ open, onOpenChange, book, onPosted }: EtsyPostD
               </Button>
             </div>
           </div>
+
+          {/* Image Gallery */}
+          <SocialImageGallery
+            bookId={book.id}
+            selectedUrls={selectedMediaUrls}
+            onSelectionChange={setSelectedMediaUrls}
+          />
         </div>
 
         <DrawerFooter className="pt-4">

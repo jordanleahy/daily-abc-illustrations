@@ -1,182 +1,102 @@
 
-# Outstand.so Integration Plan
+
+# Ordered Image Gallery for Social Media Drawers
 
 ## Overview
-Integrate Outstand.so for automated social media posting from your existing social drawers. The API key will be stored securely as a Supabase secret and accessed via a new edge function.
+Add a selectable image gallery to all social media bottom sheets. Images display as thumbnails organized by type, and each selection is **numbered in order** (1, 2, 3...) so the images are posted in exactly the sequence you chose. Maximum of 20 selections.
 
----
+## What You'll See
 
-## Step 1: Store API Key Securely
+When you open any social drawer (Instagram, Facebook, TikTok, LinkedIn, YouTube, Etsy), below the existing text sections:
 
-When implementation begins, I'll use the secret management tool to request your Outstand.so API key. It will be stored as:
-
-| Secret Name | Description |
-|-------------|-------------|
-| `OUTSTAND_API_KEY` | Your Outstand.so API key from Settings → API |
-
-This secret will only be accessible from edge functions, never exposed to the frontend.
-
----
-
-## Step 2: Create Edge Function
-
-**New file:** `supabase/functions/post-to-outstand/index.ts`
-
-The edge function will:
-- Accept POST requests with platform, content, and optional media
-- Authenticate the user via JWT
-- Call the Outstand.so API to create/schedule posts
-- Return success/error status
-
-```text
-┌─────────────────┐       ┌──────────────────────┐       ┌─────────────────┐
-│  Social Drawer  │──────▶│  post-to-outstand    │──────▶│  Outstand.so    │
-│  (Frontend)     │       │  (Edge Function)     │       │  API            │
-└─────────────────┘       └──────────────────────┘       └─────────────────┘
-        │                          │
-        │                          │ Uses OUTSTAND_API_KEY
-        │                          │ from Supabase secrets
-        └──────────────────────────┘
-```
-
-**Key features:**
-- Uses the existing `createHandler` factory for consistent auth/CORS handling
-- Supports all platforms: Instagram, Facebook, TikTok, LinkedIn
-- Optional scheduling for future posts
-- Returns Outstand post ID for tracking
-
----
-
-## Step 3: Modify Social Drawers
-
-Update the existing drawers to add a "Post via Outstand" button alongside the manual "I've Posted" button.
-
-**Files to modify:**
-- `src/components/books/InstagramPostDrawer.tsx`
-- `src/components/books/TikTokPostDrawer.tsx`
-- `src/components/books/LinkedInPostDrawer.tsx`
-- `src/components/books/social-drawers/SocialDrawerLayout.tsx` (add secondary action support)
-
-**UI Changes:**
-- Add "Post with Outstand" button (primary action)
-- Keep existing "I've Posted Manually" button (secondary)
-- Show loading state during Outstand API call
-- Auto-mark as posted on successful Outstand submission
-
----
-
-## Step 4: Track Outstand Posts (Optional Enhancement)
-
-Add a new column to track which posts were made via Outstand:
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `outstand_post_id` | `text` | Store Outstand's returned post ID |
-| `posted_via` | `text` | Track method: 'manual' or 'outstand' |
-
-This enables future features like checking post status or viewing analytics.
-
----
+- A new **"Select Images (0/20)"** section with thumbnails grouped by type
+- **Cover/Educational** -- the full-color illustrations
+- **Content** -- pages with text overlay (the letter pages)
+- **Coloring** -- the printable coloring pages with the color reference thumbnail in the corner
+- Tapping a thumbnail selects it and shows a **numbered blue badge** (1, 2, 3...) indicating post order
+- Tapping again deselects it and **renumbers** all remaining selections to stay contiguous
+- A "Clear all" button resets the selection
+- When you post via Outstand, images are sent in your chosen order
 
 ## Technical Details
 
-### Edge Function Structure
+### 1. New Component: `SocialImageGallery`
 
-```typescript
-// supabase/functions/post-to-outstand/index.ts
-import { createHandler, parseBody } from '../_shared/handler.ts';
-import { successResponse, errorResponse } from '../_shared/response.ts';
+**File:** `src/components/books/social-drawers/SocialImageGallery.tsx`
 
-interface OutstandRequest {
-  platform: 'instagram' | 'facebook' | 'tiktok' | 'linkedin';
-  content: string;
-  mediaUrls?: string[];
-  scheduledAt?: string;
-}
+**Data fetching:** Uses `useQuery` to fetch from `page_image_urls` joined with `pages`:
 
-Deno.serve(createHandler({
-  name: 'post-to-outstand',
-  clientMode: 'user',
-  requireAuth: true,
-}, async ({ req, user }) => {
-  const OUTSTAND_API_KEY = Deno.env.get('OUTSTAND_API_KEY');
-  if (!OUTSTAND_API_KEY) {
-    return errorResponse('Outstand API key not configured', 500);
-  }
-
-  const body = await parseBody<OutstandRequest>(req);
-  
-  // Call Outstand.so API
-  const response = await fetch('https://api.outstand.so/v1/posts', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OUTSTAND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      platform: body.platform,
-      content: body.content,
-      media: body.mediaUrls,
-      scheduled_at: body.scheduledAt,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    return errorResponse(`Outstand API error: ${error}`, response.status);
-  }
-
-  const result = await response.json();
-  return successResponse({ postId: result.id, status: 'scheduled' });
-}));
+```text
+page_image_urls (is_latest=true, book_id=bookId)
+  -> joined with pages (page_type, page_number)
 ```
 
-### Drawer Integration Example
+**Image extraction per page row:**
+| Category Label | Source Column | Condition |
+|---|---|---|
+| Cover | `image_url` | `page_type = 'cover'` |
+| Educational | `image_url` | `page_type = 'educational'` |
+| Content (A, B...) | `text_image_url` | `page_type = 'content'` and URL exists |
+| Coloring (A, B...) | `printable_coloring_image_url` | URL exists on any page |
 
-```typescript
-// In InstagramPostDrawer.tsx
-const handlePostWithOutstand = async () => {
-  setIsPosting(true);
-  try {
-    const { error } = await supabase.functions.invoke('post-to-outstand', {
-      body: {
-        platform: 'instagram',
-        content: fullPost,
-        // mediaUrls: [coverImageUrl], // If available
-      },
-    });
-    
-    if (error) throw error;
-    
-    toast({ title: 'Posted to Instagram via Outstand!' });
-    markAsPosted('instagram');
-    onOpenChange(false);
-  } catch (err) {
-    toast({ title: 'Failed to post', variant: 'destructive' });
-  } finally {
-    setIsPosting(false);
-  }
-};
+**Ordered selection state:** The selection is stored as an **ordered array** of URLs (`string[]`), not a Set. This preserves insertion order.
+
+- **On select:** Append the URL to the end of the array (if under max 20)
+- **On deselect:** Remove the URL from the array; remaining items keep their relative order and badges renumber automatically
+- The badge number is derived from `selectedUrls.indexOf(url) + 1`
+
+**Props:**
+```text
+bookId: string
+selectedUrls: string[]              -- ordered array of selected image URLs
+onSelectionChange: (urls: string[]) => void
+maxSelection?: number               -- defaults to 20
 ```
 
----
+**UI layout:**
+- 3-column grid on mobile, 4-column on desktop
+- Each thumbnail is an `AspectRatio` (1:1) with the image inside
+- Selected thumbnails get a `ring-2 ring-primary` border and a numbered badge in the top-right corner
+- Section headers for each image type group
+- Counter text: "3/20 selected" with a "Clear" button
+
+### 2. Update `SocialDrawerLayout`
+
+**File:** `src/components/books/social-drawers/SocialDrawerLayout.tsx`
+
+Add optional props to enable the gallery:
+- `bookId?: string`
+- `selectedMediaUrls?: string[]`
+- `onMediaSelectionChange?: (urls: string[]) => void`
+- `maxMediaSelection?: number` (default 20)
+
+When `bookId` is provided, render `SocialImageGallery` between `{children}` and the footer, inside the existing scrollable area. This means every drawer that passes `bookId` automatically gets the gallery.
+
+### 3. Update All Social Drawers
+
+Each drawer gets:
+1. A `useState<string[]>([])` for `selectedMediaUrls`
+2. Pass `bookId`, `selectedMediaUrls`, and `onMediaSelectionChange` to `SocialDrawerLayout`
+3. Include `mediaUrls: selectedMediaUrls` in the `post-to-outstand` edge function call body (the array is already in the user's chosen order)
+
+**Files to modify:**
+- `src/components/books/InstagramPostDrawer.tsx` -- already has `bookId` prop
+- `src/components/books/TikTokPostDrawer.tsx` -- already has `bookId` prop
+- `src/components/books/LinkedInPostDrawer.tsx` -- uses `book.id`
+- `src/components/books/YouTubePostDrawer.tsx` -- uses `book.id`
+- `src/components/books/EtsyPostDrawer.tsx` -- uses its own layout, so the gallery is embedded directly in its JSX (same component, just rendered inline)
+
+### 4. No Edge Function Changes
+
+The `post-to-outstand` edge function already accepts `mediaUrls` as an array and passes it to the Outstand API as `media`. The ordered array from the frontend is forwarded as-is, preserving the user's chosen sequence.
 
 ## Implementation Order
 
-1. **Add Secret** - Store OUTSTAND_API_KEY securely
-2. **Create Edge Function** - Build `post-to-outstand` with Outstand.so API integration
-3. **Update SocialDrawerLayout** - Add support for secondary action button
-4. **Update Instagram/Facebook Drawer** - Add Outstand posting option
-5. **Update TikTok Drawer** - Add Outstand posting option
-6. **Update LinkedIn Drawer** - Add Outstand posting option
-7. **Test End-to-End** - Verify posting works for each platform
-
----
-
-## Questions to Confirm
-
-Before implementation:
-1. **Which platforms do you have connected in Outstand.so?** (Instagram, Facebook, TikTok, LinkedIn, or all?)
-2. **Do you want immediate posting or scheduled posting?** (I can add a time picker for scheduling)
-3. **Should I check Outstand.so API docs for the exact endpoint format?** (The example above is a reasonable guess; I'll verify during implementation)
+1. Create `SocialImageGallery` component with fetch logic, grouped display, and ordered selection
+2. Update `SocialDrawerLayout` to accept gallery props and render the gallery
+3. Update Instagram/Facebook drawer (single component with `platform` prop)
+4. Update TikTok drawer
+5. Update LinkedIn drawer
+6. Update YouTube drawer
+7. Update Etsy drawer (embed gallery directly in its custom layout)
 

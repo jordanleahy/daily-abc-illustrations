@@ -12,6 +12,7 @@ Deno.serve(createHandler({
   name: 'get-landing-page-data',
   clientMode: 'service',
   requireAuth: false,
+  methods: ['GET', 'POST'],
 }, async ({ supabase }) => {
   const todayEastern = getTodayEastern();
   console.log('🚀 Starting landing page data fetch for date:', todayEastern);

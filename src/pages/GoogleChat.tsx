@@ -210,7 +210,7 @@ export default function GoogleChat() {
       if (!createdBookId) return null;
       const { data, error } = await supabase
         .from('books')
-        .select('status, book_name, book_description, metadata')
+        .select('status, book_name, book_description, metadata, category')
         .eq('id', createdBookId)
         .single();
       if (error) throw error;
@@ -2004,6 +2004,7 @@ export default function GoogleChat() {
                 bookTitle={bookData?.book_name}
                 bookDescription={bookData?.book_description || undefined}
                 characterTheme={(bookData?.metadata as any)?.characterTheme}
+                bookCategory={bookData?.category || undefined}
               />
             </SheetContent>
           </Sheet>
@@ -2045,10 +2046,11 @@ export default function GoogleChat() {
               onToggleStatus={handleToggleBookStatus}
               isPublishing={updateBookStatusMutation.isPending}
               bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
-              bookTitle={bookData?.book_name}
-              bookDescription={bookData?.book_description || undefined}
-              characterTheme={(bookData?.metadata as any)?.characterTheme}
-            />
+                bookTitle={bookData?.book_name}
+                bookDescription={bookData?.book_description || undefined}
+                characterTheme={(bookData?.metadata as any)?.characterTheme}
+                bookCategory={bookData?.category || undefined}
+              />
           </div>
         )}
       </div>

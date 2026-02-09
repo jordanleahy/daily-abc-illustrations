@@ -11,8 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
-import { copyToClipboard, copyImageToClipboard } from '@/utils/clipboardHelpers';
-import { enhancePromptForGeneration } from '@/utils/promptEnhancer';
+import { copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
@@ -117,9 +116,7 @@ export function BookEditorPanel({
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
-  const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   
   const [isReplacing, setIsReplacing] = useState(false);
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
@@ -138,8 +135,6 @@ export function BookEditorPanel({
     return localStorage.getItem('qa-panel-onboarding-seen') === 'true';
   });
   
-  // Derive hasClickedCopy from whether prompt exists for current page OR page was copied
-  const hasClickedCopy = !!getCurrentPagePrompt(currentPageNumber) || copiedPages.has(currentPageNumber);
   
   // Handle close with context-aware navigation
   const handleClose = () => {
@@ -691,22 +686,15 @@ CRITICAL REQUIREMENTS:
     }
   }, [currentPageNumber, currentPageText, currentPageWords, pages, bookId, generateMetadata]);
 
-  // Reset states when page changes (not when copiedPages changes on same page)
+  // Reset states when page changes
   useEffect(() => {
-    setShowConfirmation(false);
     setIsEditingText(false);
     
     // Reset word learning state
     setCurrentWordIndex(0);
     setWordStatuses({});
-  }, [currentPageNumber]); // Removed copiedPages to prevent immediate trigger
+  }, [currentPageNumber]);
   
-  // Hide confirmation immediately when image is pasted/uploaded
-  useEffect(() => {
-    if (currentPageImage) {
-      setShowConfirmation(false);
-    }
-  }, [currentPageImage]);
   
   // Word Learning Helper handlers
   const handleNavigateWord = (direction: 'prev' | 'next') => {
@@ -784,78 +772,6 @@ CRITICAL REQUIREMENTS:
   // Prompts are now sanitized at extraction time (in pageHelpers.ts)
   // No need for stripTitleFromPrompt - prompts are already clean
 
-  // Handle copy with confirmation and delayed transition
-  const handleCopyPrompt = async () => {
-    // Mark onboarding as seen when copying from the onboarding overlay
-    if (!hasSeenOnboarding) {
-      localStorage.setItem('qa-panel-onboarding-seen', 'true');
-      setHasSeenOnboarding(true);
-    }
-    
-    const prompt = getCurrentPagePrompt(currentPageNumber);
-    
-    // Add user feedback when no prompt is found
-    if (!prompt) {
-      console.error(`[Copy Prompt] No prompt available for page ${currentPageNumber}`);
-      const { toast } = await import("@/hooks/use-toast");
-      toast({
-        title: "No prompt available",
-        description: `The image prompt for page ${currentPageNumber} hasn't been generated yet. Please wait for the AI to finish creating the outline.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    console.log(`[Copy Prompt] Copying prompt for page ${currentPageNumber}, length: ${prompt.length}`);
-    
-    if (prompt) {
-      try {
-        // Run QA Theme Agent on first copy if book is created
-        if (isBookCreated && createdBookId && !hasRunQaAgent) {
-          setHasRunQaAgent(true);
-          // Fire and forget - run in background, don't wait
-          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/qa-theme-agent`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ bookId: createdBookId }),
-          }).catch(error => {
-            console.error('QA Theme Agent error (non-blocking):', error);
-          });
-        }
-
-        // Enhance prompt with server-side enhancements (negative prompt, aspect ratio, etc.)
-        const currentPage = pages?.find(p => p.page_number === currentPageNumber);
-        const pageType = currentPage?.page_type || (currentPageNumber === 1 ? 'cover' : currentPageNumber === 2 ? 'educational' : 'content');
-        const enhancedPrompt = enhancePromptForGeneration({
-          prompt,
-          pageType,
-          bookTitle,
-          bookCategory,
-        });
-        
-        await copyToClipboard(enhancedPrompt);
-        setShowConfirmation(true);
-      
-        // Mark this page as copied
-        setCopiedPages(prev => new Set(prev).add(currentPageNumber));
-
-        // Create book immediately if not already created (with additional guard)
-        if (!isBookCreated && !createBookMutation.isPending && !createBookMutation.isSuccess) {
-          onCreateBook();
-        }
-
-        // Transition to upload after 5 seconds
-        setTimeout(() => {
-          setShowConfirmation(false);
-        }, 5000);
-      } catch (error) {
-        console.error('Failed to copy prompt:', error);
-      }
-    }
-  };
 
   return (
     <div className="flex flex-col max-h-[90vh] md:h-full bg-background pt-[env(safe-area-inset-top,1rem)] md:pt-0">
@@ -1076,10 +992,8 @@ CRITICAL REQUIREMENTS:
               imageMode === 'color' ? (
                 <ColorModeUploadSection
                   onImageUpload={onImageUpload}
-                  onCopyPrompt={handleCopyPrompt}
                   onGenerate={handleGenerateWithBookCreation}
                   isGenerating={isGeneratingColorImage}
-                  hasPrompt={!!getCurrentPagePrompt(currentPageNumber)}
                   disabled={createBookMutation.isPending}
                   onCancel={() => setIsReplacing(false)}
                 />
@@ -1113,16 +1027,6 @@ CRITICAL REQUIREMENTS:
                   </Button>
                 </div>
               )
-            ) : showConfirmation ? (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 animate-in zoom-in duration-300">
-                  <Check className="h-8 w-8 text-green-600" />
-                </div>
-                <p className="text-base font-semibold mb-2">Prompt Copied!</p>
-                <p className="text-xs text-muted-foreground">
-                  Upload area loading...
-                </p>
-              </div>
             ) : imageMode === 'text' ? (
               isGeneratingAllTextImages || textImageProgress.status !== 'idle' ? (
                 <TextImageGenerationProgress
@@ -1153,10 +1057,8 @@ CRITICAL REQUIREMENTS:
             ) : imageMode === 'color' ? (
               <ColorModeUploadSection
                 onImageUpload={onImageUpload}
-                onCopyPrompt={handleCopyPrompt}
                 onGenerate={handleGenerateWithBookCreation}
                 isGenerating={isGeneratingColorImage}
-                hasPrompt={!!getCurrentPagePrompt(currentPageNumber)}
                 disabled={createBookMutation.isPending}
               />
             ) : (

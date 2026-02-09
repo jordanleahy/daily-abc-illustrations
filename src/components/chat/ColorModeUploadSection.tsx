@@ -1,25 +1,21 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Upload, Wand2, Loader2, ClipboardPaste } from 'lucide-react';
+import { Upload, Wand2, Loader2, ClipboardPaste } from 'lucide-react';
 import { processImage } from '@/utils/imageProcessor';
 import { useToast } from '@/hooks/use-toast';
 
 interface ColorModeUploadSectionProps {
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
-  onCopyPrompt: () => void;
   onGenerate?: () => void;
   isGenerating?: boolean;
-  hasPrompt?: boolean;
   disabled?: boolean;
   onCancel?: () => void;
 }
 
 export function ColorModeUploadSection({
   onImageUpload,
-  onCopyPrompt,
   onGenerate,
   isGenerating = false,
-  hasPrompt = false,
   disabled = false,
   onCancel,
 }: ColorModeUploadSectionProps) {
@@ -193,18 +189,6 @@ export function ColorModeUploadSection({
             {isGenerating ? 'Generating...' : 'Generate'}
           </Button>
 
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCopyPrompt();
-            }}
-            variant="outline"
-            className="w-full h-12 gap-2"
-            disabled={disabled || isGenerating || !hasPrompt}
-          >
-            <Copy className="h-5 w-5" />
-            Copy Prompt
-          </Button>
         </div>
       )}
     </div>

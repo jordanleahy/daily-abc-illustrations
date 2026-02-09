@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyToClipboard, copyImageToClipboard } from '@/utils/clipboardHelpers';
+import { enhancePromptForGeneration } from '@/utils/promptEnhancer';
 import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
@@ -69,6 +70,7 @@ interface BookEditorPanelProps {
   bookTitle?: string;
   bookDescription?: string;
   characterTheme?: string;
+  bookCategory?: string;
   onColoringImageGenerated?: (pageNumber: number, imageUrl: string) => void;
   onTextImageGenerated?: (pageNumber: number, imageUrl: string) => void;
 }
@@ -109,6 +111,7 @@ export function BookEditorPanel({
   bookTitle,
   bookDescription,
   characterTheme,
+  bookCategory,
   onColoringImageGenerated,
   onTextImageGenerated,
 }: BookEditorPanelProps) {
@@ -823,8 +826,17 @@ CRITICAL REQUIREMENTS:
           });
         }
 
-        // Prompts are pre-sanitized at extraction time, copy directly
-        await copyToClipboard(prompt);
+        // Enhance prompt with server-side enhancements (negative prompt, aspect ratio, etc.)
+        const currentPage = pages?.find(p => p.page_number === currentPageNumber);
+        const pageType = currentPage?.page_type || (currentPageNumber === 1 ? 'cover' : currentPageNumber === 2 ? 'educational' : 'content');
+        const enhancedPrompt = enhancePromptForGeneration({
+          prompt,
+          pageType,
+          bookTitle,
+          bookCategory,
+        });
+        
+        await copyToClipboard(enhancedPrompt);
         setShowConfirmation(true);
       
         // Mark this page as copied

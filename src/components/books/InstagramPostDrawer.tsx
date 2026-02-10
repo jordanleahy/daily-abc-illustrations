@@ -104,26 +104,52 @@ export function InstagramPostDrawer({
 
   const handleOutstandPost = async () => {
     setIsOutstandPosting(true);
+    const requestBody = {
+      platform: platform,
+      content: fullPost,
+      mediaUrls: selectedMediaUrls,
+    };
+    console.log(`[OutstandPost] 🚀 Starting ${platform} post`);
+    console.log(`[OutstandPost] 📝 Content length: ${fullPost.length} chars`);
+    console.log(`[OutstandPost] 🖼️ Media URLs selected: ${selectedMediaUrls.length}`, selectedMediaUrls);
+    console.log(`[OutstandPost] 📦 Request body:`, JSON.stringify(requestBody, null, 2));
+    
     try {
+      const startTime = Date.now();
       const { data, error } = await supabase.functions.invoke('post-to-outstand', {
-        body: {
-          platform: platform,
-          content: fullPost,
-          mediaUrls: selectedMediaUrls,
-        },
+        body: requestBody,
       });
+      const elapsed = Date.now() - startTime;
 
-      if (error) throw error;
+      console.log(`[OutstandPost] ⏱️ Response received in ${elapsed}ms`);
+      console.log(`[OutstandPost] 📥 Response data:`, JSON.stringify(data, null, 2));
+      
+      if (error) {
+        console.error(`[OutstandPost] ❌ Supabase function error:`, error);
+        console.error(`[OutstandPost] ❌ Error type: ${typeof error}, message: ${error?.message || 'unknown'}`);
+        throw error;
+      }
 
+      if (data?.error) {
+        console.error(`[OutstandPost] ❌ API returned error in data:`, data.error);
+        throw new Error(typeof data.error === 'string' ? data.error : JSON.stringify(data.error));
+      }
+
+      console.log(`[OutstandPost] ✅ Success! Post ID: ${data?.postId}, Status: ${data?.status}`);
       await markAsPosted('outstand');
       
       toast({ 
         title: `Posted to ${platform === 'instagram' ? 'Instagram' : 'Facebook'}!`,
-        description: 'Your post has been published via Outstand.',
+        description: `Post published via Outstand (ID: ${data?.postId || 'unknown'}).`,
       });
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to post via Outstand:', error);
+      console.error(`[OutstandPost] ❌ FAILED to post to ${platform}:`, error);
+      console.error(`[OutstandPost] ❌ Error details:`, {
+        name: error instanceof Error ? error.name : 'unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       toast({ 
         title: 'Failed to post', 
         description: error instanceof Error ? error.message : 'Please try again or post manually.',

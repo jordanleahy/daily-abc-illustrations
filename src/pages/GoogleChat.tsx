@@ -64,6 +64,7 @@ export default function GoogleChat() {
   const [selectedClothingBrand, setSelectedClothingBrand] = useState<ClothingBrandId | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
+  const [cityValidationError, setCityValidationError] = useState<string | null>(null);
   const [selectedMannerType, setSelectedMannerType] = useState<MannerTypeId | null>(null);
   const [selectedMannersSetting, setSelectedMannersSetting] = useState<string | null>(null); // home, school, both
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
@@ -78,6 +79,13 @@ export default function GoogleChat() {
       setSelectedKidId(kidProfiles[0].id);
     }
   }, [kidProfiles, selectedKidId]);
+  
+  // Clear city validation error once a city is selected
+  useEffect(() => {
+    if (selectedCity) {
+      setCityValidationError(null);
+    }
+  }, [selectedCity]);
   
   // Get location state for pre-filled prompts and target words from recommendations
   const locationState = window.history.state?.usr || {};
@@ -1122,8 +1130,13 @@ export default function GoogleChat() {
       handleViewCreatedBook();
       return;
     }
-    // Handle book creation - support both 'create_book' value and 'confirm' id (used by Manners agent)
-    if (action.value === 'create_book' || action.id === 'confirm') {
+    // Handle book creation / title approval - block if city hasn't been selected
+    const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
+    if (isProceedAction) {
+      if (!selectedCity) {
+        setCityValidationError('Please select a city before proceeding to the next step.');
+        return;
+      }
       handleCreateBook();
       return;
     }
@@ -1940,6 +1953,15 @@ export default function GoogleChat() {
               </div>
             )}
           </div>
+
+          {/* City validation error - inline message */}
+          {cityValidationError && (
+            <div className="mx-auto max-w-4xl px-4 pt-2">
+              <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {cityValidationError}
+              </div>
+            </div>
+          )}
 
           {/* Input Area - Fixed Footer */}
           <InputArea

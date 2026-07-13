@@ -91,7 +91,7 @@ export function ResortOptionManager({ questionId }: ResortOptionManagerProps) {
 
   const createMutation = useMutation({
     mutationFn: async (data: { id: string; label: string; [key: string]: unknown }) => {
-      const { error } = await supabase.from('resorts').insert(data);
+      const { error } = await supabase.from('resorts').insert(data as any);
       if (error) throw error;
     },
     onSuccess: () => {

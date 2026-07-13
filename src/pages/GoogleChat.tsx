@@ -1489,7 +1489,7 @@ export default function GoogleChat() {
             const updateColumn = imageMode === 'text' ? 'text_image_url' : 'coloring_image_url';
             const { error: updateError } = await supabase
               .from('page_image_urls')
-              .update({ [updateColumn]: publicUrl })
+              .update({ [updateColumn]: publicUrl } as any)
               .eq('id', latestRecord.id);
             
             if (updateError) throw updateError;

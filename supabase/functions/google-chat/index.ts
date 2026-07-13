@@ -314,6 +314,15 @@ The skip button will render from the [SUGGEST] block above.
     .map(opt => `${opt.id}: ${opt.emoji || ''} ${opt.label}${opt.description ? ` - ${opt.description}` : ''}`)
     .join('\n');
   
+  const isCityQuestion = question.id === 'city';
+  const skipOption = isCityQuestion ? '' : `skip-${question.id}: ⏭️ Skip this question`;
+  const stepRequirement = isCityQuestion
+    ? '5. THIS QUESTION IS MANDATORY. You MUST get a city answer from the user. DO NOT proceed to title/outline generation until a city is selected.'
+    : '5. DO NOT proceed to title/outline generation until this question is answered or skipped';
+  const skipViolation = isCityQuestion
+    ? '- Skipping this mandatory question'
+    : '- Skipping this question without explicit user request';
+  
   return `
 
 🚨🚨🚨 MANDATORY DISCOVERY QUESTION - STRICT COMPLIANCE REQUIRED 🚨🚨🚨
@@ -326,13 +335,13 @@ ${question.description || ''}
 2. You MUST use ONLY the options listed below - these are from our curated database
 3. You are FORBIDDEN from inventing, suggesting, or accepting ANY options not in this list
 4. You MUST include the EXACT [SUGGEST] block below, copied VERBATIM into your response
-5. DO NOT proceed to title/outline generation until this question is answered or skipped
+${stepRequirement}
 
 🔴 COPY THIS EXACT BLOCK INTO YOUR RESPONSE:
 
 [SUGGEST]
 ${optionsText}
-skip-${question.id}: ⏭️ Skip this question
+${skipOption}
 [/SUGGEST]
 
 📝 Your response format:
@@ -342,7 +351,7 @@ The buttons will NOT render unless you include the exact [SUGGEST]...[/SUGGEST] 
 ⛔ VIOLATIONS THAT ARE FORBIDDEN:
 - Suggesting options not in the list above
 - Accepting user input that doesn't match an option ID
-- Skipping this question without explicit user request
+${skipViolation}
 - Proceeding to next step before user responds
 
 ⚠️ WAIT for user to select an option before proceeding.
@@ -563,6 +572,52 @@ serve(async (req) => {
           conditional_on_answer_id: (aq as any).conditional_on_answer_id || null,
         });
       }
+      
+      // Ensure city question is always part of the discovery flow regardless of agent_questions toggle
+      if (!enabledQuestionsWithDetails.some(eq => eq.question_id === 'city')) {
+        const { data: cityQuestionData } = await supabase
+          .from('questions')
+          .select('id, label, description, static_options, placeholder_key, options_table, options_value_column, options_label_column')
+          .eq('id', 'city')
+          .single();
+        
+        if (cityQuestionData) {
+          const cityQuestion = cityQuestionData as QuestionDetails;
+          let cityResolvedOptions: StaticOption[] | undefined;
+          
+          if (cityQuestion.options_table && cityQuestion.options_value_column && cityQuestion.options_label_column) {
+            try {
+              const { data: citiesData } = await supabase
+                .from(cityQuestion.options_table)
+                .select(`${cityQuestion.options_value_column}, ${cityQuestion.options_label_column}`)
+                .limit(20);
+              
+              if (citiesData) {
+                cityResolvedOptions = citiesData.map((row: Record<string, unknown>) => ({
+                  id: String(row[cityQuestion.options_value_column!]),
+                  label: String(row[cityQuestion.options_label_column!]),
+                }));
+              }
+            } catch (err) {
+              console.error('❌ Exception fetching cities for mandatory city question:', err);
+            }
+          }
+          
+          enabledQuestionsWithDetails.push({
+            question_id: 'city',
+            sort_order: 0,
+            question: cityQuestion,
+            resolvedOptions: cityResolvedOptions,
+            conditional_on_question_id: null,
+            conditional_on_answer_id: null,
+          });
+          enabledQuestions.add('city');
+          console.log('📋 Mandatory city question injected into discovery flow');
+        }
+      }
+      
+      // Re-sort so injected city respects its configured position
+      enabledQuestionsWithDetails.sort((a, b) => a.sort_order - b.sort_order);
       
       if (agent?.instructions) {
         // Fetch shared templates and interpolate placeholders
@@ -809,14 +864,11 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}${spellingGuide ? `\n📝 ${spellingGuide}` : ''}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.${visualPrompt || ''}`
       : '';
 
-    // City context - optional discovery question for urban setting (only if city question is enabled)
-    const isCityEnabled = enabledQuestions.has('city');
+    // City context - MANDATORY discovery question for every book
     const cityVisualPrompt = city && isValidCity(city) ? getCityVisualPromptSync(city) : null;
-    const cityContext = isCityEnabled
-      ? (city && isValidCity(city)
-          ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
-          : '')
-      : `\n\n📋 CITY QUESTION DISABLED: Do NOT ask about city/location preferences.`;
+    const cityContext = city && isValidCity(city)
+      ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
+      : `\n\n🚨 MANDATORY CITY QUESTION:\n🏙️ CITY IS REQUIRED FOR EVERY BOOK.\n✅ You MUST ask the user to select a city from the [SUGGEST] block before proceeding.\n❌ DO NOT skip this question. DO NOT proceed to title or outline until a city is selected.`;
 
     // Manner type context - for Manners book agent
     // Labels now fetched from database via frontend - only need context injection here

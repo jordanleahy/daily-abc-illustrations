@@ -147,7 +147,7 @@ export async function updateBookPDFUrl(
       .update({
         [column]: pdfUrl,
         [timestampColumn]: new Date().toISOString()
-      })
+      } as any)
       .eq('id', bookId);
 
     if (error) {
@@ -175,7 +175,7 @@ async function clearPDFUrl(bookId: string, type: PDFType): Promise<void> {
       .update({
         [column]: null,
         [timestampColumn]: null
-      })
+      } as any)
       .eq('id', bookId);
   } catch (error) {
     console.error(`[PDFStorage] Error clearing PDF URL:`, error);

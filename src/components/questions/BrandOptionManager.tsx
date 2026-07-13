@@ -71,7 +71,7 @@ export function BrandOptionManager({ questionId }: BrandOptionManagerProps) {
 
   const createMutation = useMutation({
     mutationFn: async (data: { id: string; label: string; [key: string]: unknown }) => {
-      const { error } = await supabase.from('brands').insert(data);
+      const { error } = await supabase.from('brands').insert(data as any);
       if (error) throw error;
     },
     onSuccess: () => {

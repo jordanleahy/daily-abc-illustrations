@@ -140,7 +140,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       if (existingRecord) {
         await supabase
           .from('page_image_urls')
-          .update(updateData)
+          .update(updateData as any)
           .eq('id', existingRecord.id);
       } else {
         const insertData = {

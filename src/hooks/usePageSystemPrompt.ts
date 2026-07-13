@@ -217,7 +217,7 @@ export function usePageSystemPrompt(pageId: string) {
           table: 'page_system_prompts',
           filter: `page_id=eq.${pageId}`
         },
-        (payload) => {
+        (payload: any) => {
           const data = payload.new as any;
           // Only invalidate if this affects current page's latest prompt
           if (data && (data.is_latest || data.is_deployed)) {

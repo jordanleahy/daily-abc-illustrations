@@ -30,11 +30,23 @@ export function useIsBookAddedAsHabit(bookId: string | undefined) {
 
       // Check if this habit is actually scheduled for TODAY
       const habitId = habitsQuery.data.id;
-      // @ts-ignore - Supabase type depth issue
+      
+      // habit_completions references habit_assignment_id, not habit_id directly
+      const { data: assignments, error: assignmentError } = await supabase
+        .from('habit_assignments')
+        .select('id')
+        .eq('habit_id', habitId)
+        .limit(1);
+      
+      if (assignmentError) throw assignmentError;
+      if (!assignments || assignments.length === 0) return false;
+      
+      const assignmentId = assignments[0].id;
+      
       const completionQuery = await supabase
         .from('habit_completions')
         .select('id')
-        .eq('habit_id', habitId)
+        .eq('habit_assignment_id', assignmentId)
         .eq('completion_date', today)
         .limit(1);
 

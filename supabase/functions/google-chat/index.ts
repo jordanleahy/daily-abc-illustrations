@@ -314,6 +314,15 @@ The skip button will render from the [SUGGEST] block above.
     .map(opt => `${opt.id}: ${opt.emoji || ''} ${opt.label}${opt.description ? ` - ${opt.description}` : ''}`)
     .join('\n');
   
+  const isCityQuestion = question.id === 'city';
+  const skipOption = isCityQuestion ? '' : `skip-${question.id}: ⏭️ Skip this question`;
+  const stepRequirement = isCityQuestion
+    ? '5. THIS QUESTION IS MANDATORY. You MUST get a city answer from the user. DO NOT proceed to title/outline generation until a city is selected.'
+    : '5. DO NOT proceed to title/outline generation until this question is answered or skipped';
+  const skipViolation = isCityQuestion
+    ? '- Skipping this mandatory question'
+    : '- Skipping this question without explicit user request';
+  
   return `
 
 🚨🚨🚨 MANDATORY DISCOVERY QUESTION - STRICT COMPLIANCE REQUIRED 🚨🚨🚨
@@ -326,13 +335,13 @@ ${question.description || ''}
 2. You MUST use ONLY the options listed below - these are from our curated database
 3. You are FORBIDDEN from inventing, suggesting, or accepting ANY options not in this list
 4. You MUST include the EXACT [SUGGEST] block below, copied VERBATIM into your response
-5. DO NOT proceed to title/outline generation until this question is answered or skipped
+${stepRequirement}
 
 🔴 COPY THIS EXACT BLOCK INTO YOUR RESPONSE:
 
 [SUGGEST]
 ${optionsText}
-skip-${question.id}: ⏭️ Skip this question
+${skipOption}
 [/SUGGEST]
 
 📝 Your response format:
@@ -342,7 +351,7 @@ The buttons will NOT render unless you include the exact [SUGGEST]...[/SUGGEST] 
 ⛔ VIOLATIONS THAT ARE FORBIDDEN:
 - Suggesting options not in the list above
 - Accepting user input that doesn't match an option ID
-- Skipping this question without explicit user request
+${skipViolation}
 - Proceeding to next step before user responds
 
 ⚠️ WAIT for user to select an option before proceeding.

@@ -1130,10 +1130,11 @@ export default function GoogleChat() {
       handleViewCreatedBook();
       return;
     }
-    // Handle book creation - support both 'create_book' value and 'confirm' id (used by Manners agent)
-    if (action.value === 'create_book' || action.id === 'confirm') {
+    // Handle book creation / title approval - block if city hasn't been selected
+    const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
+    if (isProceedAction) {
       if (!selectedCity) {
-        setCityValidationError('Please select a city before creating your book.');
+        setCityValidationError('Please select a city before proceeding to the next step.');
         return;
       }
       handleCreateBook();

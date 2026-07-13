@@ -564,6 +564,52 @@ serve(async (req) => {
         });
       }
       
+      // Ensure city question is always part of the discovery flow regardless of agent_questions toggle
+      if (!enabledQuestionsWithDetails.some(eq => eq.question_id === 'city')) {
+        const { data: cityQuestionData } = await supabase
+          .from('questions')
+          .select('id, label, description, static_options, placeholder_key, options_table, options_value_column, options_label_column')
+          .eq('id', 'city')
+          .single();
+        
+        if (cityQuestionData) {
+          const cityQuestion = cityQuestionData as QuestionDetails;
+          let cityResolvedOptions: StaticOption[] | undefined;
+          
+          if (cityQuestion.options_table && cityQuestion.options_value_column && cityQuestion.options_label_column) {
+            try {
+              const { data: citiesData } = await supabase
+                .from(cityQuestion.options_table)
+                .select(`${cityQuestion.options_value_column}, ${cityQuestion.options_label_column}`)
+                .limit(20);
+              
+              if (citiesData) {
+                cityResolvedOptions = citiesData.map((row: Record<string, unknown>) => ({
+                  id: String(row[cityQuestion.options_value_column!]),
+                  label: String(row[cityQuestion.options_label_column!]),
+                }));
+              }
+            } catch (err) {
+              console.error('❌ Exception fetching cities for mandatory city question:', err);
+            }
+          }
+          
+          enabledQuestionsWithDetails.push({
+            question_id: 'city',
+            sort_order: 0,
+            question: cityQuestion,
+            resolvedOptions: cityResolvedOptions,
+            conditional_on_question_id: null,
+            conditional_on_answer_id: null,
+          });
+          enabledQuestions.add('city');
+          console.log('📋 Mandatory city question injected into discovery flow');
+        }
+      }
+      
+      // Re-sort so injected city respects its configured position
+      enabledQuestionsWithDetails.sort((a, b) => a.sort_order - b.sort_order);
+      
       if (agent?.instructions) {
         // Fetch shared templates and interpolate placeholders
         const sharedTemplates = await fetchSharedTemplates(supabase);

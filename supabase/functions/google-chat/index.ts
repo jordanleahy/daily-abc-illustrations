@@ -855,14 +855,11 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}${spellingGuide ? `\n📝 ${spellingGuide}` : ''}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.${visualPrompt || ''}`
       : '';
 
-    // City context - optional discovery question for urban setting (only if city question is enabled)
-    const isCityEnabled = enabledQuestions.has('city');
+    // City context - MANDATORY discovery question for every book
     const cityVisualPrompt = city && isValidCity(city) ? getCityVisualPromptSync(city) : null;
-    const cityContext = isCityEnabled
-      ? (city && isValidCity(city)
-          ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
-          : '')
-      : `\n\n📋 CITY QUESTION DISABLED: Do NOT ask about city/location preferences.`;
+    const cityContext = city && isValidCity(city)
+      ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
+      : `\n\n🚨 MANDATORY CITY QUESTION:\n🏙️ CITY IS REQUIRED FOR EVERY BOOK.\n✅ You MUST ask the user to select a city from the [SUGGEST] block before proceeding.\n❌ DO NOT skip this question. DO NOT proceed to title or outline until a city is selected.`;
 
     // Manner type context - for Manners book agent
     // Labels now fetched from database via frontend - only need context injection here

@@ -64,6 +64,7 @@ export default function GoogleChat() {
   const [selectedClothingBrand, setSelectedClothingBrand] = useState<ClothingBrandId | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
+  const [cityValidationError, setCityValidationError] = useState<string | null>(null);
   const [selectedMannerType, setSelectedMannerType] = useState<MannerTypeId | null>(null);
   const [selectedMannersSetting, setSelectedMannersSetting] = useState<string | null>(null); // home, school, both
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
@@ -1124,6 +1125,10 @@ export default function GoogleChat() {
     }
     // Handle book creation - support both 'create_book' value and 'confirm' id (used by Manners agent)
     if (action.value === 'create_book' || action.id === 'confirm') {
+      if (!selectedCity) {
+        setCityValidationError('Please select a city before creating your book.');
+        return;
+      }
       handleCreateBook();
       return;
     }

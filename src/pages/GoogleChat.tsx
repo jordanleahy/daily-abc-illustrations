@@ -1953,6 +1953,15 @@ export default function GoogleChat() {
             )}
           </div>
 
+          {/* City validation error - inline message */}
+          {cityValidationError && (
+            <div className="mx-auto max-w-4xl px-4 pt-2">
+              <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {cityValidationError}
+              </div>
+            </div>
+          )}
+
           {/* Input Area - Fixed Footer */}
           <InputArea
             input={input}

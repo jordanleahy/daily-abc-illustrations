@@ -80,6 +80,13 @@ export default function GoogleChat() {
     }
   }, [kidProfiles, selectedKidId]);
   
+  // Clear city validation error once a city is selected
+  useEffect(() => {
+    if (selectedCity) {
+      setCityValidationError(null);
+    }
+  }, [selectedCity]);
+  
   // Get location state for pre-filled prompts and target words from recommendations
   const locationState = window.history.state?.usr || {};
   const initialPrompt = locationState.initialPrompt || '';

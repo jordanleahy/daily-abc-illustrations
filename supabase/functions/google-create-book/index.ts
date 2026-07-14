@@ -14,6 +14,7 @@ import {
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
+import { resolveSavedBookName } from '../_shared/coverPromptConstants.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),

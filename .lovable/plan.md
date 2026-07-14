@@ -1,41 +1,61 @@
+# Three ways to improve the cover title (never include character names)
 
-# Faster Next-Page Image Loads
+Goal: Cover titles like **"Summer ABCs in Jersey City"** or **"Winter Rhymes at Stowe"** — driven by book type + season + location, never the character theme (Bluey, Paw Patrol, etc.).
 
-Goal: When you tap the black "Next" button on a published/public book page, the new image should appear instantly instead of fading in slowly.
+Today the title (`bookName`) is whatever the creation agent returns in `google-create-book` (line ~778), and character names often leak in. There's already a well-built deterministic composer at `supabase/functions/_shared/coverPromptConstants.ts` → `buildCoverTitle()` that ignores character names, but nothing actually calls it for the saved title.
 
-Three small, targeted changes — all frontend, no business-logic churn.
+Below are three approaches, ordered from smallest/safest to most thorough. They can also stack.
 
-## 1. Aggressive next-page preloading
+---
 
-File: `src/hooks/usePublicBookImagePreloader.ts` (and its consumer on the public reading view).
+## Option 1 — Deterministic override at save time (smallest, safest)
 
-- Currently only the first 3 pages are marked `priority` and the rest trickle in via batched preloads. On a 12/28-page book, page N+1 often isn't cached yet when you tap Next.
-- Change: in addition to the existing bulk preload, add a small "window" preloader driven by the currently visible page index — force-fetch pages `current+1` and `current+2` at high priority whenever the current page changes.
-- Implementation: extend the hook to accept an optional `currentPageIndex` and call `optimizeImageUrl` + `new Image()` for the next 2 URLs immediately. Reuses existing service-worker cache, so no new infra.
+Compute the title ourselves right before insert, ignoring whatever the agent produced.
 
-## 2. Lower transform size + priority swap for the visible page
+- In `supabase/functions/google-create-book/index.ts`, just before `book_name: sanitizeText(bookData.bookName, 200)` (~line 778), call the existing `buildCoverTitle({ bookType, gradeLevel, season })` and append location:
+  - `[Grade] [Season] [BookTypeDisplay] [in <City> | at <Resort>]`
+- Use the discovery attributes already passed into this function (`season`, `city`, `resort`/`location`, `gradeLevel`).
+- Fall back to the agent's `bookName` only when no season *and* no location are known.
 
-File: `src/components/daily-published/PublicPageImage.tsx` and `usePublicBookImagePreloader.ts`.
+Pros: one-file change, deterministic, character names are structurally impossible.
+Cons: less "creative" phrasing.
 
-- Today the preloader requests `width: 1200`, but on mobile (430 CSS px × dpr 3 ≈ 1290, and the image is rendered smaller than full width) 800px is plenty and downloads ~40% faster.
-- Change:
-  - Lower preloader `width` from 1200 → 800 for the public reader path.
-  - In `PublicPageImage`, pass `priority={true}` for the currently active page (not just `isFirstImage`) so `<img fetchpriority="high">` is set on each new page too.
+## Option 2 — Sanitizer that strips character names from the agent title (defense-in-depth)
 
-## 3. Keep the previous image visible until the new one decodes
+Keep the agent's creative title, but scrub it.
 
-File: `src/components/daily-published/PublicPageImage.tsx`.
+- New helper `sanitizeCoverTitle(bookName, { characterTheme, selectedCharacterIds })` in `supabase/functions/_shared/coverPromptConstants.ts`.
+- Build a blocklist from `characterThemes.ts` (theme label + known character names per theme, e.g. Bluey → [Bluey, Bingo, Bandit, Chilli]).
+- Regex-remove those tokens (case-insensitive, word-boundary), collapse whitespace, and if the result is empty/too short, fall back to `buildCoverTitle(...)` from Option 1.
+- Apply at the same insert point in `google-create-book/index.ts`.
 
-- Right now, on page change `imageLoaded` resets, the gradient placeholder fades in, then the new image crossfades in — that's the "slow" feeling even when the fetch itself is fast.
-- Change: remove the reset-to-placeholder on page change. Render the previous `<BookImage>` underneath and only swap opacity once the new image's `onLoad` fires. No placeholder flash → perceived load time drops to near zero for cached pages.
+Pros: preserves creative phrasing when safe; catches character leaks even in edge paths (duplication, re-runs).
+Cons: needs a maintained blocklist per theme.
+
+## Option 3 — Constrain the agent up front + validate (prompt-side fix)
+
+Prevent the model from ever writing a character-named title.
+
+- In `google-create-book/index.ts` where the JSON structure prompt is assembled (~line 340), add explicit rules to the `CRITICAL INSTRUCTIONS`:
+  - "`bookName` MUST follow the pattern `[Season?] [BookType] [in <City> | at <Resort>]?`."
+  - "`bookName` MUST NOT contain any character names, franchise names, or theme names (e.g. Bluey, Paw Patrol, Frozen)."
+  - Give 2-3 examples: `"Summer ABCs in Jersey City"`, `"Winter Rhymes at Stowe"`, `"Spring Colors Book"`.
+- Add a lightweight post-check: if the returned `bookName` matches the character blocklist from Option 2, replace it with `buildCoverTitle(...)` before insert.
+
+Pros: fixes the source, keeps agent flexibility for new book types.
+Cons: LLM compliance isn't 100% — must be paired with the post-check to be safe.
+
+---
+
+## Recommendation
+
+Ship **Option 1 + Option 2** together: deterministic composer as the primary path, sanitizer as the fallback for legacy/edge flows. Option 3 is a nice add-on later if you want the agent to keep authoring creative titles.
 
 ## Technical notes
 
-- No changes to edge functions, DB, or the protected image-optimization core (`BookImage`, `optimizeImageUrl`, service worker). We only tune inputs and the local render state.
-- Respects `docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md` rules: still routes through `BookImage` + `useImagePreloader`.
-- Verification: build passes; manually tap Next on a public book and confirm next image appears without a visible placeholder flash; Network tab shows `width=800` and `fetchpriority=high` on the active page.
+- All three keep changes inside `supabase/functions/google-create-book/index.ts` and `supabase/functions/_shared/coverPromptConstants.ts` — no DB schema, no frontend changes, no new deps.
+- `buildCoverTitle()` already exists and already excludes character names by design — we just need to actually use it.
+- Location wiring: `city` is already passed in; `resort` isn't currently a parameter of `google-create-book` and would need to be threaded through from `useGoogleCreateBook` (small addition) if we want "at <Resort>" support.
+- Respects existing memory rules: ABC = 28 pages, no hardcoded audience, character-name discipline.
 
-## Out of scope
-
-- No changes to book creation, chat, or city validation flows.
-- No new dependencies.
+Which option (or combination) should I build?

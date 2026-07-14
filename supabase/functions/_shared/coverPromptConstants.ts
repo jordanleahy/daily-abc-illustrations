@@ -35,20 +35,6 @@ export const COVER_ANTI_BOOK_DIRECTIVE =
   'FLAT ILLUSTRATION ONLY — NOT A PHYSICAL BOOK. This is a flat, full-bleed, edge-to-edge illustration. It is NOT a photograph or 3D render of a book, board book, hardcover, storybook, or any book-shaped object. DO NOT draw a book spine, book pages, page edges, book covers with rounded corners, a book drop shadow, a book on a table, or any perspective/depth that suggests a physical book. The output is a picture — treat the canvas as the artwork itself, filling the entire frame with the scene.';
 
 /**
- * Anti-book directive for cover images. Prevents the model from rendering a
- * physical board book / hardcover object (spine, page edges, 3D perspective,
- * drop shadow of a book) and forces a flat, edge-to-edge illustration.
- *
- * Include on EVERY cover image prompt — no caller should skip this.
- */
-export const COVER_ANTI_BOOK_DIRECTIVE =
-  'FLAT ILLUSTRATION ONLY — NOT A PHYSICAL BOOK. This is a flat, full-bleed, edge-to-edge illustration. It is NOT a photograph or 3D render of a book, board book, hardcover, storybook, or any book-shaped object. DO NOT draw a book spine, book pages, page edges, book covers with rounded corners, a book drop shadow, a book on a table, or any perspective/depth that suggests a physical book. The output is a picture — treat the canvas as the artwork itself, filling the entire frame with the scene.';
-
-
-
-
-
-/**
  * Aspect ratio instructions for different cover formats
  */
 export const COVER_ASPECT_RATIOS = {

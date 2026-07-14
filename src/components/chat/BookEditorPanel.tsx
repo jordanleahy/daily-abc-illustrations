@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
+import { ErrorDetailsPanel, type ErrorDetails } from './ErrorDetailsPanel';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -127,6 +128,18 @@ export function BookEditorPanel({
   const [isGeneratingColorImage, setIsGeneratingColorImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
   const [isEditingWestin, setIsEditingWestin] = useState(false);
+  const [lastError, setLastError] = useState<ErrorDetails | null>(null);
+
+  // Show a toast AND capture the full error for the details panel.
+  const reportGenError = (source: string, error: any, data?: any) => {
+    const parsed = parseLovableAiError(error, data);
+    setLastError({ ...parsed, source, at: new Date().toISOString() });
+    toast({
+      title: 'Generation failed',
+      description: parsed.message,
+      variant: 'destructive',
+    });
+  };
   
   const { toast } = useToast();
   

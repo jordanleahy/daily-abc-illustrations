@@ -152,6 +152,86 @@ export function buildCoverTitle(config: AttributeDrivenCoverConfig): string {
   return parts.join(' ');
 }
 
+// ============================================================================
+// SAVED BOOK NAME (H1 for cover) — deterministic + sanitized
+// ============================================================================
+
+/**
+ * Character/franchise name blocklist. Cover titles must NEVER include these.
+ * Keep in sync with src/config/characterThemes.ts theme keys.
+ */
+const CHARACTER_NAME_BLOCKLIST: string[] = [
+  // Franchises / themes
+  'Paw Patrol', 'Frozen', 'Peppa Pig', 'Bluey', 'CoComelon', 'Cocomelon',
+  'Moana', 'Mickey Mouse', 'Mickey', 'Mario', 'Sesame Street', 'Benji Davies',
+  'Bear Stories', 'Bear Memories', 'Dora', 'Little Mermaid', 'Ariel',
+  // Bluey characters
+  'Bingo', 'Bandit', 'Chilli',
+  // Paw Patrol pups
+  'Ryder', 'Chase', 'Marshall', 'Skye', 'Rubble', 'Rocky', 'Zuma', 'Everest',
+  // Frozen
+  'Elsa', 'Anna', 'Olaf', 'Sven', 'Kristoff',
+  // Peppa
+  'George Pig', 'Mummy Pig', 'Daddy Pig',
+  // Mario
+  'Luigi', 'Bowser', 'Princess Peach', 'Yoshi', 'Toad',
+  // Sesame
+  'Elmo', 'Big Bird', 'Cookie Monster', 'Grover', 'Bert', 'Ernie', 'Oscar',
+  // Mickey universe
+  'Minnie', 'Donald', 'Goofy', 'Pluto',
+  // Dora
+  'Boots', 'Swiper',
+];
+
+/**
+ * Compose the saved book_name (H1) for a book cover.
+ * Format: "[Grade] [Season] [BookType] [in <City> | at <Resort>]"
+ * Character names are structurally impossible here.
+ */
+export function composeSavedBookName(config: AttributeDrivenCoverConfig & { resort?: string; city?: string }): string {
+  const base = buildCoverTitle(config); // e.g. "Pre-K Summer ABC Book"
+  if (config.resort) return `${base} at ${config.resort}`;
+  if (config.city) return `${base} in ${config.city}`;
+  return base;
+}
+
+/**
+ * Strip character/franchise/theme names from a title.
+ * Returns null if scrubbing leaves the title empty or too short.
+ */
+export function sanitizeCoverTitle(bookName: string): string | null {
+  if (!bookName) return null;
+  let cleaned = bookName;
+  for (const name of CHARACTER_NAME_BLOCKLIST) {
+    const pattern = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    cleaned = cleaned.replace(pattern, '');
+  }
+  cleaned = cleaned
+    .replace(/\s+(and|&|with|featuring|starring)\s+(?=\s|$|[,.!?])/gi, ' ')
+    .replace(/[,\s]+/g, ' ')
+    .replace(/\s+([,.!?])/g, '$1')
+    .trim();
+  if (cleaned.length < 4) return null;
+  return cleaned;
+}
+
+/**
+ * Final resolver used at save time. Prefer deterministic composition when we
+ * have season or location; otherwise scrub the agent's title; fall back to
+ * the deterministic composition as a last resort.
+ */
+export function resolveSavedBookName(
+  agentBookName: string,
+  config: AttributeDrivenCoverConfig & { resort?: string; city?: string }
+): string {
+  if (config.season || config.city || config.resort) {
+    return composeSavedBookName(config);
+  }
+  const scrubbed = sanitizeCoverTitle(agentBookName);
+  if (scrubbed) return scrubbed;
+  return composeSavedBookName(config);
+}
+
 /**
  * SECTION 2: Build the background scene description
  * 

@@ -308,13 +308,11 @@ export function BookEditorPanel({
       });
 
       if (error) {
-        const message = getLovableAiErrorMessage(error, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-coloring-image', error, data);
         return;
       }
       if (!data?.success) {
-        const message = getLovableAiErrorMessage(null, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-coloring-image', null, data);
         return;
       }
 

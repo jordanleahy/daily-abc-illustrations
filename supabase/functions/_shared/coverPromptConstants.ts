@@ -187,12 +187,23 @@ const CHARACTER_NAME_BLOCKLIST: string[] = [
  * Compose the saved book_name (H1) for a book cover.
  * Format: "[Grade] [Season] [BookType] [in <City> | at <Resort>]"
  * Character names are structurally impossible here.
+ *
+ * Fallback ladder when attributes are missing:
+ *   - resort   → "<base> at <Resort>"
+ *   - city     → "<base> in <City>"
+ *   - season   → base already includes season (e.g. "Summer ABC Book")
+ *   - grade    → base already includes grade (e.g. "Pre-K ABC Book")
+ *   - nothing  → warm generic ("My ABC Book" instead of bare "ABC Book")
  */
 export function composeSavedBookName(config: AttributeDrivenCoverConfig & { resort?: string; city?: string }): string {
   const base = buildCoverTitle(config); // e.g. "Pre-K Summer ABC Book"
   if (config.resort) return `${base} at ${config.resort}`;
   if (config.city) return `${base} in ${config.city}`;
-  return base;
+  if (config.season || config.gradeLevel) return base;
+  // No season, grade, or location — warm up the bare book type so it doesn't
+  // read like a placeholder ("ABC Book" → "My ABC Book").
+  const bookTypeDisplay = BOOK_TYPE_DISPLAY_NAMES[config.bookType?.toLowerCase()] || 'Storybook';
+  return `My ${bookTypeDisplay}`;
 }
 
 /**
@@ -211,26 +222,56 @@ export function sanitizeCoverTitle(bookName: string): string | null {
     .replace(/[,\s]+/g, ' ')
     .replace(/\s+([,.!?])/g, '$1')
     .trim();
+  // Reject empties, too-short scraps, or leftover filler like "Book" / "The Book".
   if (cleaned.length < 4) return null;
+  const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+  if (wordCount < 2 && !/[a-z]{4,}/i.test(cleaned)) return null;
+  if (/^(the\s+)?book$/i.test(cleaned)) return null;
   return cleaned;
 }
 
 /**
- * Final resolver used at save time. Prefer deterministic composition when we
- * have season or location; otherwise scrub the agent's title; fall back to
- * the deterministic composition as a last resort.
+ * Final resolver used at save time. Layered fallback so the title always
+ * reads well regardless of which attributes are present:
+ *
+ *   1. Full context (season OR city OR resort) → deterministic compose.
+ *   2. Agent title is clean & meaningful → use it, prefixing grade if we
+ *      have one and it isn't already in the title.
+ *   3. Grade-only context → deterministic compose ("Pre-K ABC Book").
+ *   4. Nothing usable → warm generic from composeSavedBookName ("My ABC Book").
  */
 export function resolveSavedBookName(
   agentBookName: string,
   config: AttributeDrivenCoverConfig & { resort?: string; city?: string }
 ): string {
+  // 1. Rich context wins — deterministic, no character leaks possible.
   if (config.season || config.city || config.resort) {
     return composeSavedBookName(config);
   }
+
+  // 2. Try the agent's creative title, scrubbed of character names.
   const scrubbed = sanitizeCoverTitle(agentBookName);
-  if (scrubbed) return scrubbed;
+  if (scrubbed) {
+    // Prefix grade if we have it and it isn't already present.
+    if (config.gradeLevel) {
+      const gradeLabels: Record<string, string> = {
+        'PRE_K': 'Pre-K',
+        'K': 'Kindergarten',
+        'GRADE_1': '1st Grade',
+        'GRADE_2': '2nd Grade',
+      };
+      const gradeLabel = gradeLabels[config.gradeLevel] || config.gradeLevel;
+      const alreadyHasGrade = new RegExp(`\\b${gradeLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(scrubbed);
+      return alreadyHasGrade ? scrubbed : `${gradeLabel} ${scrubbed}`;
+    }
+    return scrubbed;
+  }
+
+  // 3 & 4. Deterministic fallback (handles grade-only and empty-context cases).
   return composeSavedBookName(config);
 }
+
+
 
 /**
  * SECTION 2: Build the background scene description

@@ -292,6 +292,66 @@ export function resolveSavedBookName(
 }
 
 
+// ============================================================================
+// COVER IMAGE PROMPT HARDENING
+// ============================================================================
+
+/**
+ * Wrap any incoming cover image prompt with the mandatory flat-illustration /
+ * anti-book directives and a title safe-area (title is composited in HTML at
+ * read time, not baked into the image).
+ *
+ * Every code path that generates a cover image MUST route its prompt through
+ * this function — that's the single choke point that prevents the model from
+ * rendering a physical book, and prevents baked-in title text from fighting
+ * the CSS overlay.
+ */
+export function buildFlatCoverImagePrompt(basePrompt: string): string {
+  const trimmed = (basePrompt || '').trim();
+  const sections: string[] = [
+    COVER_ANTI_BOOK_DIRECTIVE,
+    COVER_TITLE_SAFE_AREA,
+  ];
+  if (trimmed) sections.push(trimmed);
+  // Belt-and-suspenders: also forbid text in the image itself, since the
+  // title arrives as an HTML overlay.
+  sections.push(NO_TEXT_INSTRUCTION);
+  return sections.join('\n\n');
+}
+
+/**
+ * Guarantee that a cover page row carries a non-empty title + text-overlay
+ * text derived from the resolved book_name. Any caller that persists a
+ * `page_type = 'cover'` row must pipe it through this helper so a blank cover
+ * title is structurally impossible.
+ */
+export function enforceCoverPageTitle<T extends {
+  page_type?: string;
+  title?: string | null;
+  content?: {
+    textOverlay?: { enabled?: boolean; text?: string; position?: string; createdAt?: string };
+    [k: string]: unknown;
+  };
+  [k: string]: unknown;
+}>(page: T, resolvedBookName: string): T {
+  if (page.page_type !== 'cover') return page;
+  const safeTitle = (resolvedBookName || '').trim() || (page.title || '').trim() || 'Cover';
+  const existingOverlay = page.content?.textOverlay ?? {};
+  return {
+    ...page,
+    title: safeTitle,
+    content: {
+      ...(page.content ?? {}),
+      textOverlay: {
+        enabled: true,
+        text: safeTitle,
+        position: existingOverlay.position ?? 'top-center',
+        createdAt: existingOverlay.createdAt ?? new Date().toISOString(),
+      },
+    },
+  };
+}
+
 
 /**
  * SECTION 2: Build the background scene description

@@ -25,6 +25,26 @@ export const NO_TEXT_INSTRUCTION =
   'No text overlays. DO NOT add any text, labels, signs, words, letters, captions, or written content. Clean illustration only.';
 
 /**
+ * Anti-book directive for cover images. Prevents the model from rendering a
+ * physical board book / hardcover object (spine, page edges, 3D perspective,
+ * drop shadow of a book) and forces a flat, edge-to-edge illustration.
+ *
+ * Include on EVERY cover image prompt — no caller should skip this.
+ */
+export const COVER_ANTI_BOOK_DIRECTIVE =
+  'FLAT ILLUSTRATION ONLY — NOT A PHYSICAL BOOK. This is a flat, full-bleed, edge-to-edge illustration. It is NOT a photograph or 3D render of a book, board book, hardcover, storybook, or any book-shaped object. DO NOT draw a book spine, book pages, page edges, book covers with rounded corners, a book drop shadow, a book on a table, or any perspective/depth that suggests a physical book. The output is a picture — treat the canvas as the artwork itself, filling the entire frame with the scene.';
+
+/**
+ * Instruction to leave a clean band for the CSS title overlay composited at
+ * read time. Used together with `includeTitle: false` so the model does not
+ * bake title text into the image.
+ */
+export const COVER_TITLE_SAFE_AREA =
+  'TITLE SAFE AREA: Leave the top ~22% of the canvas as clean, uncluttered sky / background / soft gradient. A title will be overlaid in HTML on top of that band — do not place characters, faces, landmarks, or busy detail there. Do not render any letters or words in the image itself.';
+
+
+
+/**
  * Aspect ratio instructions for different cover formats
  */
 export const COVER_ASPECT_RATIOS = {
@@ -271,6 +291,66 @@ export function resolveSavedBookName(
   return composeSavedBookName(config);
 }
 
+
+// ============================================================================
+// COVER IMAGE PROMPT HARDENING
+// ============================================================================
+
+/**
+ * Wrap any incoming cover image prompt with the mandatory flat-illustration /
+ * anti-book directives and a title safe-area (title is composited in HTML at
+ * read time, not baked into the image).
+ *
+ * Every code path that generates a cover image MUST route its prompt through
+ * this function — that's the single choke point that prevents the model from
+ * rendering a physical book, and prevents baked-in title text from fighting
+ * the CSS overlay.
+ */
+export function buildFlatCoverImagePrompt(basePrompt: string): string {
+  const trimmed = (basePrompt || '').trim();
+  const sections: string[] = [
+    COVER_ANTI_BOOK_DIRECTIVE,
+    COVER_TITLE_SAFE_AREA,
+  ];
+  if (trimmed) sections.push(trimmed);
+  // Belt-and-suspenders: also forbid text in the image itself, since the
+  // title arrives as an HTML overlay.
+  sections.push(NO_TEXT_INSTRUCTION);
+  return sections.join('\n\n');
+}
+
+/**
+ * Guarantee that a cover page row carries a non-empty title + text-overlay
+ * text derived from the resolved book_name. Any caller that persists a
+ * `page_type = 'cover'` row must pipe it through this helper so a blank cover
+ * title is structurally impossible.
+ */
+export function enforceCoverPageTitle<T extends {
+  page_type?: string;
+  title?: string | null;
+  content?: {
+    textOverlay?: { enabled?: boolean; text?: string; position?: string; createdAt?: string };
+    [k: string]: unknown;
+  };
+  [k: string]: unknown;
+}>(page: T, resolvedBookName: string): T {
+  if (page.page_type !== 'cover') return page;
+  const safeTitle = (resolvedBookName || '').trim() || (page.title || '').trim() || 'Cover';
+  const existingOverlay = page.content?.textOverlay ?? {};
+  return {
+    ...page,
+    title: safeTitle,
+    content: {
+      ...(page.content ?? {}),
+      textOverlay: {
+        enabled: true,
+        text: safeTitle,
+        position: existingOverlay.position ?? 'top-center',
+        createdAt: existingOverlay.createdAt ?? new Date().toISOString(),
+      },
+    },
+  };
+}
 
 
 /**

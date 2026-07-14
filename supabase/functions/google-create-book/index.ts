@@ -14,7 +14,7 @@ import {
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
-import { resolveSavedBookName } from '../_shared/coverPromptConstants.ts';
+import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -771,23 +771,27 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       }
     }));
 
+    // Resolve the final book title once so cover row + book row stay in sync.
+    const resolvedBookName = sanitizeText(
+      resolveSavedBookName(bookData.bookName, {
+        bookType: bookType || 'abc',
+        gradeLevel,
+        season,
+        city,
+        resort: location,
+        characterTheme,
+        selectedCharacterIds,
+      }),
+      200
+    );
+
     // Insert book with sanitized data and metadata
     const { data: book, error: bookError } = await supabase
       .from('books')
       .insert({
         user_id: userId,
-        book_name: sanitizeText(
-          resolveSavedBookName(bookData.bookName, {
-            bookType: bookType || 'abc',
-            gradeLevel,
-            season,
-            city,
-            resort: location,
-            characterTheme,
-            selectedCharacterIds,
-          }),
-          200
-        ),
+        book_name: resolvedBookName,
+
         category: sanitizeText(bookData.category || 'General', 100),
         book_description: sanitizeText(bookData.bookDescription || '', 1000),
         total_pages: sanitizedPages.length,
@@ -847,16 +851,23 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     const pages = sanitizedPages.map((page: any) => {
       const pageType = page.pageType || 'content'; // Default to content if not specified
       const actualPageNumber = page.pageNumber; // Use AI-provided 1-based page number directly
-      
+      const isCover = pageType === 'cover';
+
       // Determine text overlay behavior based on page type
       let textOverlayEnabled = false;
-      if (pageType === 'cover' || pageType === 'educational') {
+      if (isCover || pageType === 'educational') {
         textOverlayEnabled = true; // Cover and educational pages ALWAYS have text
       } else {
         textOverlayEnabled = showTextOverlay; // Content pages use user preference
       }
-      
-      return {
+
+      // Cover image prompts MUST route through the flat-illustration wrapper
+      // so the model never renders a physical book, and title text is left
+      // to the HTML overlay instead of being baked into the image.
+      const rawPrompt = fullPrompts?.[actualPageNumber] || '';
+      const imagePrompt = isCover ? buildFlatCoverImagePrompt(rawPrompt) : rawPrompt;
+
+      const row = {
         book_id: book.id,
         page_type: pageType,
         letter: sanitizeText(page.letter || `Page ${actualPageNumber}`, 10),
@@ -868,16 +879,22 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
           funFact: sanitizeText(page.content?.funFact || '', 500),
           activity: sanitizeText(page.content?.activity || '', 500),
-          imagePrompt: fullPrompts?.[actualPageNumber] || '', // Use full prompt if available from session
+          imagePrompt,
           textOverlay: {
             enabled: textOverlayEnabled,
             text: sanitizeText(page.title, 100),
-            position: 'bottom-center' as const,
+            position: isCover ? 'top-center' as const : 'bottom-center' as const,
             createdAt: new Date().toISOString()
           }
         }
       };
+
+      // Structural guarantee: cover row ALWAYS carries the resolved book title
+      // in both `title` and `content.textOverlay.text`. Cannot be blank.
+      return isCover ? enforceCoverPageTitle(row, resolvedBookName) : row;
     });
+
+
 
     console.log(`Inserting ${pages.length} pages: ${pages.filter((p: any) => p.page_type === 'cover').length} cover, ${pages.filter((p: any) => p.page_type === 'educational').length} educational, ${pages.filter((p: any) => p.page_type === 'content').length} content`);
 

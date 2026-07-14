@@ -853,17 +853,19 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       const actualPageNumber = page.pageNumber; // Use AI-provided 1-based page number directly
       const isCover = pageType === 'cover';
 
-      // Determine text overlay behavior based on page type
+      // Determine text overlay behavior based on page type.
+      // POLICY: cover pages NEVER show a text overlay.
       let textOverlayEnabled = false;
-      if (isCover || pageType === 'educational') {
-        textOverlayEnabled = true; // Cover and educational pages ALWAYS have text
+      if (isCover) {
+        textOverlayEnabled = false;
+      } else if (pageType === 'educational') {
+        textOverlayEnabled = true; // Educational pages always show text
       } else {
         textOverlayEnabled = showTextOverlay; // Content pages use user preference
       }
 
       // Cover image prompts MUST route through the flat-illustration wrapper
-      // so the model never renders a physical book, and title text is left
-      // to the HTML overlay instead of being baked into the image.
+      // so the model never renders a physical book and never bakes in any text.
       const rawPrompt = fullPrompts?.[actualPageNumber] || '';
       const imagePrompt = isCover ? buildFlatCoverImagePrompt(rawPrompt) : rawPrompt;
 
@@ -883,15 +885,16 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           textOverlay: {
             enabled: textOverlayEnabled,
             text: sanitizeText(page.title, 100),
-            position: isCover ? 'top-center' as const : 'bottom-center' as const,
+            position: 'bottom-center' as const,
             createdAt: new Date().toISOString()
           }
         }
       };
 
-      // Structural guarantee: cover row ALWAYS carries the resolved book title
-      // in both `title` and `content.textOverlay.text`. Cannot be blank.
+      // Cover row keeps the resolved book title on `title` for accessibility /
+      // admin listings, but `textOverlay.enabled` stays false (enforced inside).
       return isCover ? enforceCoverPageTitle(row, resolvedBookName) : row;
+
     });
 
 

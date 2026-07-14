@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
+import { ErrorDetailsPanel, type ErrorDetails } from './ErrorDetailsPanel';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -127,6 +128,18 @@ export function BookEditorPanel({
   const [isGeneratingColorImage, setIsGeneratingColorImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
   const [isEditingWestin, setIsEditingWestin] = useState(false);
+  const [lastError, setLastError] = useState<ErrorDetails | null>(null);
+
+  // Show a toast AND capture the full error for the details panel.
+  const reportGenError = (source: string, error: any, data?: any) => {
+    const parsed = parseLovableAiError(error, data);
+    setLastError({ ...parsed, source, at: new Date().toISOString() });
+    toast({
+      title: 'Generation failed',
+      description: parsed.message,
+      variant: 'destructive',
+    });
+  };
   
   const { toast } = useToast();
   
@@ -295,13 +308,11 @@ export function BookEditorPanel({
       });
 
       if (error) {
-        const message = getLovableAiErrorMessage(error, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-coloring-image', error, data);
         return;
       }
       if (!data?.success) {
-        const message = getLovableAiErrorMessage(null, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-coloring-image', null, data);
         return;
       }
 
@@ -319,8 +330,7 @@ export function BookEditorPanel({
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
     } catch (error: any) {
       console.error('Error generating coloring image:', error);
-      const message = getLovableAiErrorMessage(error);
-      toast({ title: "Generation failed", description: message, variant: "destructive" });
+      reportGenError('generate-coloring-image', error);
     } finally {
       setIsGeneratingColoringImage(false);
     }
@@ -351,13 +361,11 @@ export function BookEditorPanel({
       });
 
       if (error) {
-        const message = getLovableAiErrorMessage(error, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-color-image', error, data);
         return;
       }
       if (!data?.success) {
-        const message = getLovableAiErrorMessage(null, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-color-image', null, data);
         return;
       }
       
@@ -368,8 +376,7 @@ export function BookEditorPanel({
       ]);
     } catch (error: any) {
       console.error('Error generating color image:', error);
-      const message = getLovableAiErrorMessage(error);
-      toast({ title: "Generation failed", description: message, variant: "destructive" });
+      reportGenError('generate-color-image', error);
     } finally {
       setIsGeneratingColorImage(false);
     }
@@ -423,13 +430,11 @@ export function BookEditorPanel({
       });
 
       if (error) {
-        const message = getLovableAiErrorMessage(error, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-color-image', error, data);
         return;
       }
       if (!data?.success) {
-        const message = getLovableAiErrorMessage(null, data);
-        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        reportGenError('generate-color-image', null, data);
         return;
       }
       
@@ -440,8 +445,7 @@ export function BookEditorPanel({
       ]);
     } catch (error: any) {
       console.error('Error generating color image with book creation:', error);
-      const message = getLovableAiErrorMessage(error);
-      toast({ title: "Generation failed", description: message, variant: "destructive" });
+      reportGenError('generate-color-image', error);
     } finally {
       setIsGeneratingColorImage(false);
     }
@@ -822,6 +826,9 @@ CRITICAL REQUIREMENTS:
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {lastError && (
+          <ErrorDetailsPanel error={lastError} onDismiss={() => setLastError(null)} />
+        )}
         {/* Image Upload/Display Area */}
         <div className="space-y-2" key={`page-${currentPageNumber}-${imageMode}`}>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">

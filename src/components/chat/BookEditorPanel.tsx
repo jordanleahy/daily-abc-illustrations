@@ -826,6 +826,9 @@ CRITICAL REQUIREMENTS:
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {lastError && (
+          <ErrorDetailsPanel error={lastError} onDismiss={() => setLastError(null)} />
+        )}
         {/* Image Upload/Display Area */}
         <div className="space-y-2" key={`page-${currentPageNumber}-${imageMode}`}>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">

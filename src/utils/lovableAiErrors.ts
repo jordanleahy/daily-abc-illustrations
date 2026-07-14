@@ -14,41 +14,63 @@ export interface LovableAiError {
  * Checks for 402 (credits exhausted), 429 (rate limited), and 422 (no image generated) errors
  */
 export function parseLovableAiError(error: any, data?: any): LovableAiError {
-  const errorMessage = error?.message || data?.error || '';
-  const errorCode = data?.errorCode || '';
-  
+  // Collect every place a message could hide, in priority order.
+  const specificMessage: string =
+    (typeof data?.error === 'string' && data.error) ||
+    (typeof data?.error?.message === 'string' && data.error.message) ||
+    (typeof data?.message === 'string' && data.message) ||
+    (typeof error?.context?.error === 'string' && error.context.error) ||
+    (typeof error?.message === 'string' && error.message) ||
+    '';
+  const errorCode = data?.errorCode || data?.error?.code || '';
+  const haystack = `${specificMessage} ${errorCode}`.toLowerCase();
+
   // Check for credits exhausted (402)
-  const isCreditsExhausted = 
-    errorMessage.includes('credits') ||
-    errorMessage.includes('402') ||
-    errorMessage.includes('Payment required');
-  
+  const isCreditsExhausted =
+    haystack.includes('credits') ||
+    haystack.includes('402') ||
+    haystack.includes('payment required');
+
   // Check for rate limit (429)
-  const isRateLimited = 
-    errorMessage.includes('Rate limit') ||
-    errorMessage.includes('429') ||
-    errorMessage.includes('Too Many Requests');
-  
+  const isRateLimited =
+    haystack.includes('rate limit') ||
+    haystack.includes('429') ||
+    haystack.includes('too many requests');
+
   // Check for no image generated (422)
-  const isNoImageGenerated = 
+  const isNoImageGenerated =
     errorCode === 'NO_IMAGE_GENERATED' ||
-    errorMessage.includes('couldn\'t generate');
-  
-  let message = 'Could not generate image';
-  
+    haystack.includes("couldn't generate") ||
+    haystack.includes('no image');
+
+  // Content moderation (OpenAI image policy blocks — character IP, etc.)
+  const isModerationBlocked =
+    haystack.includes('content_policy_violation') ||
+    haystack.includes('moderation_blocked') ||
+    haystack.includes('safety') ||
+    haystack.includes('policy violation');
+
+  let message: string;
   if (isCreditsExhausted) {
     message = 'Lovable AI credits exhausted. Please add credits in Settings → Workspace → Usage.';
   } else if (isRateLimited) {
     message = 'Rate limit exceeded. Please wait a moment and try again.';
+  } else if (isModerationBlocked) {
+    message = 'The image prompt was blocked by content safety (often character names like Bluey or Elsa). Try a descriptive version without the character name.';
   } else if (isNoImageGenerated) {
-    message = 'The AI couldn\'t generate the edited image. Try a different edit prompt.';
+    message = "The AI couldn't generate the edited image. Try a different edit prompt.";
+  } else if (specificMessage) {
+    // Surface the real underlying error instead of hiding it behind a generic string.
+    message = specificMessage;
+  } else {
+    message = 'Could not generate image';
   }
-  
+
   return {
     isCreditsExhausted,
     isRateLimited,
     isNoImageGenerated,
-    message
+    message,
   };
 }
 
@@ -58,3 +80,4 @@ export function parseLovableAiError(error: any, data?: any): LovableAiError {
 export function getLovableAiErrorMessage(error: any, data?: any): string {
   return parseLovableAiError(error, data).message;
 }
+

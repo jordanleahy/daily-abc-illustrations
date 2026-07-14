@@ -1,61 +1,41 @@
-# Three ways to improve the cover title (never include character names)
+# 3 potential reasons the image generation is failing
 
-Goal: Cover titles like **"Summer ABCs in Jersey City"** or **"Winter Rhymes at Stowe"** — driven by book type + season + location, never the character theme (Bluey, Paw Patrol, etc.).
-
-Today the title (`bookName`) is whatever the creation agent returns in `google-create-book` (line ~778), and character names often leak in. There's already a well-built deterministic composer at `supabase/functions/_shared/coverPromptConstants.ts` → `buildCoverTitle()` that ignores character names, but nothing actually calls it for the saved title.
-
-Below are three approaches, ordered from smallest/safest to most thorough. They can also stack.
+Screenshot shows the generic toast **"Generation failed / Could not generate image"** on a content page ("Play rhymes with Day"). That exact wording is the *default fallback* in `src/utils/lovableAiErrors.ts:37` — returned only when the error doesn't match credits (402), rate-limit (429), or "no image" (422). So whatever went wrong, it's an unclassified failure — most likely one of these three.
 
 ---
 
-## Option 1 — Deterministic override at save time (smallest, safest)
+## Reason 1 — The image prompt was rejected by content moderation (character IP)
 
-Compute the title ourselves right before insert, ignoring whatever the agent produced.
+The page prompt starts with *"Whimsical children's book style. Bluey and Bingo…"*. OpenAI's `gpt-image` models (used for content pages via `IMAGE_GENERATION_MODEL` in `generate-color-image/index.ts:62`) return `content_policy_violation` on prompts that name copyrighted characters like Bluey. That error string doesn't contain "credits", "rate limit", or "couldn't generate", so `parseLovableAiError` falls through to the generic message.
 
-- In `supabase/functions/google-create-book/index.ts`, just before `book_name: sanitizeText(bookData.bookName, 200)` (~line 778), call the existing `buildCoverTitle({ bookType, gradeLevel, season })` and append location:
-  - `[Grade] [Season] [BookTypeDisplay] [in <City> | at <Resort>]`
-- Use the discovery attributes already passed into this function (`season`, `city`, `resort`/`location`, `gradeLevel`).
-- Fall back to the agent's `bookName` only when no season *and* no location are known.
+**How to verify:** check `supabase--edge_function_logs` for `generate-color-image` around the failure timestamp — look for `content_policy_violation` / `moderation_blocked` / 400 from the AI Gateway.
 
-Pros: one-file change, deterministic, character names are structurally impossible.
-Cons: less "creative" phrasing.
-
-## Option 2 — Sanitizer that strips character names from the agent title (defense-in-depth)
-
-Keep the agent's creative title, but scrub it.
-
-- New helper `sanitizeCoverTitle(bookName, { characterTheme, selectedCharacterIds })` in `supabase/functions/_shared/coverPromptConstants.ts`.
-- Build a blocklist from `characterThemes.ts` (theme label + known character names per theme, e.g. Bluey → [Bluey, Bingo, Bandit, Chilli]).
-- Regex-remove those tokens (case-insensitive, word-boundary), collapse whitespace, and if the result is empty/too short, fall back to `buildCoverTitle(...)` from Option 1.
-- Apply at the same insert point in `google-create-book/index.ts`.
-
-Pros: preserves creative phrasing when safe; catches character leaks even in edge paths (duplication, re-runs).
-Cons: needs a maintained blocklist per theme.
-
-## Option 3 — Constrain the agent up front + validate (prompt-side fix)
-
-Prevent the model from ever writing a character-named title.
-
-- In `google-create-book/index.ts` where the JSON structure prompt is assembled (~line 340), add explicit rules to the `CRITICAL INSTRUCTIONS`:
-  - "`bookName` MUST follow the pattern `[Season?] [BookType] [in <City> | at <Resort>]?`."
-  - "`bookName` MUST NOT contain any character names, franchise names, or theme names (e.g. Bluey, Paw Patrol, Frozen)."
-  - Give 2-3 examples: `"Summer ABCs in Jersey City"`, `"Winter Rhymes at Stowe"`, `"Spring Colors Book"`.
-- Add a lightweight post-check: if the returned `bookName` matches the character blocklist from Option 2, replace it with `buildCoverTitle(...)` before insert.
-
-Pros: fixes the source, keeps agent flexibility for new book types.
-Cons: LLM compliance isn't 100% — must be paired with the post-check to be safe.
+**Fix direction:** either scrub character names from the outgoing prompt (analogous to what we now do for cover *titles*), or route Bluey-themed content pages to a Gemini image model, which has a different policy.
 
 ---
 
-## Recommendation
+## Reason 2 — The prompt failed schema validation before reaching the model
 
-Ship **Option 1 + Option 2** together: deterministic composer as the primary path, sanitizer as the fallback for legacy/edge flows. Option 3 is a nice add-on later if you want the agent to keep authoring creative titles.
+`generate-color-image/index.ts:43` early-returns `errors.badRequest(...)` if `pageId`, `bookId`, or `prompt` is missing/empty. The client calls `getCurrentPagePrompt(currentPageNumber)` (`BookEditorPanel.tsx:331`) — if the DB row's `content.imagePrompt` is empty (e.g. the book was created before prompts were generated, or `generate-page-system-prompts` failed silently at book create — see `google-create-book/index.ts:1110–1118` where prompt generation errors are swallowed), the call goes out with `prompt=""` and gets a 400. The frontend `getLovableAiErrorMessage` doesn't recognize "Missing required parameters" either, so → generic "Could not generate image".
 
-## Technical notes
+**How to verify:** query `pages` for this book and check `content->>'imagePrompt'` for the failing page. Also check `book_system_prompts` / edge logs to see if prompts were ever generated.
 
-- All three keep changes inside `supabase/functions/google-create-book/index.ts` and `supabase/functions/_shared/coverPromptConstants.ts` — no DB schema, no frontend changes, no new deps.
-- `buildCoverTitle()` already exists and already excludes character names by design — we just need to actually use it.
-- Location wiring: `city` is already passed in; `resort` isn't currently a parameter of `google-create-book` and would need to be threaded through from `useGoogleCreateBook` (small addition) if we want "at <Resort>" support.
-- Respects existing memory rules: ABC = 28 pages, no hardcoded audience, character-name discipline.
+**Fix direction:** show the real error message from the edge function (drop the fallback wrapper when a specific message is present), and add a page-level "regenerate prompt" affordance when `content.imagePrompt` is empty.
 
-Which option (or combination) should I build?
+---
+
+## Reason 3 — Upstream Gateway timeout or transient 5xx that's being masked
+
+Image generation runs through the Lovable AI Gateway with `stream: true`. If the upstream provider times out, drops the connection, or returns a 5xx *after* the SSE stream opens, the edge function catches it and returns `{ success: false, error: "..." }`. Because that error string doesn't match any of the three patterns in `lovableAiErrors.ts`, the UI shows the generic message and hides the actual cause (e.g. `"Stream ended without image_generation.completed"` or `"Upstream 502"`).
+
+**How to verify:** `supabase--edge_function_logs` for `generate-color-image` — look for stream-abort or non-2xx upstream status. If the function itself never logged the invocation, it was a client-side network failure (also shows the same toast).
+
+**Fix direction:** surface the real underlying message in the toast, and add one automatic retry inside `handleGenerateColorImage` for transient upstream failures.
+
+---
+
+## Recommendation for next step
+
+The single most valuable move is to **stop swallowing the real error**: change `getLovableAiErrorMessage` to prefer any specific message from `data?.error` / `error?.message` over the "Could not generate image" fallback. That instantly tells us which of the three above (or something else) is actually happening on this book/page, so the real fix is targeted rather than guessed.
+
+Want me to build that logging fix, or investigate one specific reason first (I can pull the edge-function logs and the row's `content.imagePrompt` in build mode)?

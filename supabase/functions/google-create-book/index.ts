@@ -776,7 +776,18 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       .from('books')
       .insert({
         user_id: userId,
-        book_name: sanitizeText(bookData.bookName, 200),
+        book_name: sanitizeText(
+          resolveSavedBookName(bookData.bookName, {
+            bookType: bookType || 'abc',
+            gradeLevel,
+            season,
+            city,
+            resort: location,
+            characterTheme,
+            selectedCharacterIds,
+          }),
+          200
+        ),
         category: sanitizeText(bookData.category || 'General', 100),
         book_description: sanitizeText(bookData.bookDescription || '', 1000),
         total_pages: sanitizedPages.length,

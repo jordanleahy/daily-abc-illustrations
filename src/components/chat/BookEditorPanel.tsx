@@ -445,8 +445,7 @@ export function BookEditorPanel({
       ]);
     } catch (error: any) {
       console.error('Error generating color image with book creation:', error);
-      const message = getLovableAiErrorMessage(error);
-      toast({ title: "Generation failed", description: message, variant: "destructive" });
+      reportGenError('generate-color-image', error);
     } finally {
       setIsGeneratingColorImage(false);
     }

@@ -1,39 +1,41 @@
-Confirming intent: city should be treated as a mandatory discovery question in every book creation conversation, regardless of the `city` toggle in the AgentQuestionsManager.
 
-## Implementation Plan
+# Faster Next-Page Image Loads
 
-### 1. Modify `supabase/functions/google-chat/index.ts`
+Goal: When you tap the black "Next" button on a published/public book page, the new image should appear instantly instead of fading in slowly.
 
-#### a) Force city to always be an enabled question
-- Remove the `isCityEnabled` check for the `city` context block.
-- Always render the city status context:
-  - If `city` is already selected: show the selected city and instruct the agent NOT to ask again.
-  - If `city` is not yet selected: add a firm instruction that the agent MUST ask the user to choose a city before moving on.
+Three small, targeted changes — all frontend, no business-logic churn.
 
-#### b) Ensure the dynamic discovery block includes city
-- The dynamic discovery block currently only builds from `enabledQuestionsWithDetails`.
-- Augment the list so that `city` is always present as a required question if not already answered, even when the database-driven `enabledQuestions` list does not include it.
-- Alternatively, keep the database list and prepend a synthetic city question before it.
+## 1. Aggressive next-page preloading
 
-#### c) Make city a blocker for the "proceed to title" stage
-- Update `allOptionalQuestionsComplete` / `allDynamicQuestionsComplete` so that `city` is treated as mandatory.
-- Do not allow the system prompt to present the title/approval block until `city` is present in `existingContextKeys` or `answeredQuestionIds`.
+File: `src/hooks/usePublicBookImagePreloader.ts` (and its consumer on the public reading view).
 
-#### d) Update `titleExamples` and fallback city prompt
-- Keep the existing city-aware title formatting.
-- Ensure the fallback when no city is selected does not use an arbitrary default; instead, it must wait until the user chooses one.
+- Currently only the first 3 pages are marked `priority` and the rest trickle in via batched preloads. On a 12/28-page book, page N+1 often isn't cached yet when you tap Next.
+- Change: in addition to the existing bulk preload, add a small "window" preloader driven by the currently visible page index — force-fetch pages `current+1` and `current+2` at high priority whenever the current page changes.
+- Implementation: extend the hook to accept an optional `currentPageIndex` and call `optimizeImageUrl` + `new Image()` for the next 2 URLs immediately. Reuses existing service-worker cache, so no new infra.
 
-### 2. Frontend impact
+## 2. Lower transform size + priority swap for the visible page
 
-- No changes needed in `src/pages/GoogleChat.tsx` or `src/hooks/useGoogleChat.ts` for the core flow, because the existing city selection UI and `action.cityId` parsing already work.
-- Optionally, update the city search drawer copy to make it clear this step is required, not optional.
+File: `src/components/daily-published/PublicPageImage.tsx` and `usePublicBookImagePreloader.ts`.
 
-### 3. Verification
+- Today the preloader requests `width: 1200`, but on mobile (430 CSS px × dpr 3 ≈ 1290, and the image is rendered smaller than full width) 800px is plenty and downloads ~40% faster.
+- Change:
+  - Lower preloader `width` from 1200 → 800 for the public reader path.
+  - In `PublicPageImage`, pass `priority={true}` for the currently active page (not just `isFirstImage`) so `<img fetchpriority="high">` is set on each new page too.
 
-- Deploy the updated `google-chat` edge function.
-- Start a new book creation conversation with the `city` toggle disabled in the database and confirm the agent still asks for a city.
-- Verify that the agent cannot proceed to title suggestions until a city is selected.
+## 3. Keep the previous image visible until the new one decodes
+
+File: `src/components/daily-published/PublicPageImage.tsx`.
+
+- Right now, on page change `imageLoaded` resets, the gradient placeholder fades in, then the new image crossfades in — that's the "slow" feeling even when the fetch itself is fast.
+- Change: remove the reset-to-placeholder on page change. Render the previous `<BookImage>` underneath and only swap opacity once the new image's `onLoad` fires. No placeholder flash → perceived load time drops to near zero for cached pages.
+
+## Technical notes
+
+- No changes to edge functions, DB, or the protected image-optimization core (`BookImage`, `optimizeImageUrl`, service worker). We only tune inputs and the local render state.
+- Respects `docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md` rules: still routes through `BookImage` + `useImagePreloader`.
+- Verification: build passes; manually tap Next on a public book and confirm next image appears without a visible placeholder flash; Network tab shows `width=800` and `fetchpriority=high` on the active page.
 
 ## Out of scope
-- No changes to the database schema or `agent_questions` toggles.
-- No changes to other edge functions (e.g., book creation, image generation).
+
+- No changes to book creation, chat, or city validation flows.
+- No new dependencies.

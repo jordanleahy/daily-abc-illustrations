@@ -80,6 +80,7 @@ import { RewardContainer } from '@/components/ui/reward-container';
 import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
+import { optimizeImageUrl } from '@/utils/imageOptimization';
 
 /** Aspect ratio options for video export */
 export type VideoAspectRatio = 'portrait' | 'landscape' | 'square';
@@ -259,6 +260,25 @@ export function UnifiedReadingView({
   
   // Prefetch TTS audio for upcoming pages (improves audio playback performance)
   useTTSPrefetch(reorderedPages, currentPageIndex, { enabled: reorderedPages.length > 0 });
+
+  // Aggressively preload the next 2 page images so tapping "Next" feels instant.
+  // Uses browser cache + service worker; no-op when getImageUrl is not provided.
+  useEffect(() => {
+    if (!getImageUrl || reorderedPages.length === 0) return;
+    const nextIndices = [currentPageIndex + 1, currentPageIndex + 2].filter(
+      (i) => i < reorderedPages.length
+    );
+    nextIndices.forEach((i) => {
+      const url = getImageUrl(reorderedPages[i]);
+      if (!url) return;
+      const optimized = optimizeImageUrl(url, { width: 800, quality: 85 });
+      if (!optimized) return;
+      const img = new Image();
+      img.fetchPriority = 'high' as any;
+      img.decoding = 'async';
+      img.src = optimized;
+    });
+  }, [currentPageIndex, reorderedPages, getImageUrl]);
   
   // Per-page word learning state persistence
   const [pageWordStates, setPageWordStates] = useState<Record<string, {

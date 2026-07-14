@@ -141,7 +141,7 @@ export default function LibraryBookView() {
         <BookImage
           src={imageMap[page.page_number]}
           alt={`Letter ${page.letter} - ${page.title}`}
-          priority={page.id === pages[startingPageIndex]?.id}
+          priority={true}
           className="rounded-lg w-full h-full object-contain"
           disableHoverEffects={true}
           enableVisibilityToggle={true}

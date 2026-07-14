@@ -21,6 +21,6 @@ export function usePublicBookImagePreloader(pages: Page[] | undefined, bookId: s
       }
       return null;
     },
-    { priorityCount: 3, width: 1200, batchSize: 6, batchDelay: 200 }
+    { priorityCount: 3, width: 800, batchSize: 6, batchDelay: 200 }
   );
 }

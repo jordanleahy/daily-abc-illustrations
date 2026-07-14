@@ -23,6 +23,6 @@ export function useLibraryBookImagePreloader(bookId: string | undefined, pages: 
   useTypedImagePreloader(
     pagesWithImages,
     page => page.imageUrl,
-    { priorityCount: 3, width: 1200, batchSize: 6, batchDelay: 200 }
+    { priorityCount: 3, width: 800, batchSize: 6, batchDelay: 200 }
   );
 }

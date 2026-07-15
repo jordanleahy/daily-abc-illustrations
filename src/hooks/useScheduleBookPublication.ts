@@ -125,6 +125,7 @@ export const useScheduleBookPublication = () => {
         .from('books')
         .update({ 
           is_library_book: true,
+          status: 'published',
           updated_at: new Date().toISOString()
         })
         .eq('id', bookId);

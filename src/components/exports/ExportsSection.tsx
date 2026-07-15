@@ -16,6 +16,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateLibraryQueries } from '@/utils/invalidateLibraryQueries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -440,6 +441,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         .from('books')
         .update({ status: 'published', is_library_book: true, updated_at: new Date().toISOString() })
         .eq('id', contentId);
+
+      invalidateLibraryQueries(queryClient);
 
       // Get OG image URL from existing SEO metadata (from previous publication)
       let ogImageUrl: string | null = null;
@@ -892,6 +895,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             .from('books')
             .update({ status: 'published', is_library_book: true, updated_at: new Date().toISOString() })
             .eq('id', contentId);
+
+          invalidateLibraryQueries(queryClient);
 
           // Generate SEO metadata for the new publication
           await generateSeoMetadata(newPublication.id);

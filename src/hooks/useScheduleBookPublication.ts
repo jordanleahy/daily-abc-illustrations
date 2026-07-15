@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getPlaceholderPublishDate } from '@/utils/queueDateUtils';
+import { invalidateLibraryQueries } from '@/utils/invalidateLibraryQueries';
 
 interface SchedulePublicationParams {
   bookId: string;
@@ -147,11 +148,7 @@ export const useScheduleBookPublication = () => {
       toast.success('Book added to publication queue', {
         description: 'It will publish in order based on when it was added.',
       });
-      queryClient.invalidateQueries({ queryKey: ['book'] });
-      queryClient.invalidateQueries({ queryKey: ['books'] });
-      queryClient.invalidateQueries({ queryKey: ['book-publication-status'] });
-      queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['library-books'] });
+      invalidateLibraryQueries(queryClient);
     },
     onError: (error) => {
       console.error('Error scheduling book:', error);

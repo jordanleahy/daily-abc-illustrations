@@ -1131,6 +1131,7 @@ export default function GoogleChat() {
   }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
+    console.log('[QuickReply] action clicked:', { id: action.id, value: action.value, activeCity, selectedCity });
     // Handle special actions
     if (action.value === 'open_qa') {
       handleOpenEditorPanel();
@@ -1144,12 +1145,15 @@ export default function GoogleChat() {
     const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
     if (isProceedAction) {
       if (!activeCity) {
+        console.warn('[QuickReply] blocked: no activeCity resolved', { selectedCity, messageCount: messages.length });
         setCityValidationError('Please select a city before proceeding to the next step.');
         return;
       }
+      console.log('[QuickReply] proceeding to handleCreateBook with city:', activeCity);
       handleCreateBook();
       return;
     }
+
     if (action.value === 'refine_outline') {
       // Focus the input to encourage user to continue chatting
       setTimeout(() => {

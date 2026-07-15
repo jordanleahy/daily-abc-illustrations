@@ -441,6 +441,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         .update({ status: 'published', is_library_book: true, updated_at: new Date().toISOString() })
         .eq('id', contentId);
 
+      invalidateLibraryQueries(queryClient);
+
       // Get OG image URL from existing SEO metadata (from previous publication)
       let ogImageUrl: string | null = null;
       if (existingPublication?.id) {

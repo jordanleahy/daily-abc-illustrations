@@ -887,6 +887,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
            throw insertError;
          }
 
+          // Mark book as published + library so it appears in the public Library
+          await supabase
+            .from('books')
+            .update({ status: 'published', is_library_book: true, updated_at: new Date().toISOString() })
+            .eq('id', contentId);
+
           // Generate SEO metadata for the new publication
           await generateSeoMetadata(newPublication.id);
 

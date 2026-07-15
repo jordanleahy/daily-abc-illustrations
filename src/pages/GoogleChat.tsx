@@ -155,49 +155,11 @@ export default function GoogleChat() {
   );
 
   const createBookMutation = useGoogleCreateBook();
-  const { data: cities = [] } = useCities();
 
   // Word metadata hook for regenerating word carousel data
   const { generateMetadata } = useWordMetadata();
 
-  const normalizeCityText = useCallback((value: string) => (
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-  ), []);
-
-  const resolvedCityFromConversation = useMemo<CityId | null>(() => {
-    if (selectedCity) return selectedCity;
-
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const msg = messages[i];
-      if (msg.role !== 'user' || typeof msg.content !== 'string') continue;
-
-      const rawContent = msg.content.trim();
-      const normalizedContent = normalizeCityText(rawContent);
-      if (!normalizedContent) continue;
-
-      const matchedCity = cities.find(city => {
-        const normalizedId = normalizeCityText(city.id.replace(/_/g, ' '));
-        const normalizedLabel = normalizeCityText(city.label);
-        return normalizedContent === normalizedId ||
-          normalizedContent === normalizedLabel ||
-          normalizedContent.includes(normalizedLabel);
-      });
-
-      if (matchedCity) return matchedCity.id;
-
-      const previousAssistant = messages.slice(0, i).reverse().find(previous => previous.role === 'assistant' && typeof previous.content === 'string');
-      const assistantAskedCity = typeof previousAssistant?.content === 'string' && /city|location|place/i.test(previousAssistant.content);
-      if (assistantAskedCity && rawContent.length >= 2 && !/^(yes|no|ok|okay|sure|approve|create|looks|perfect)$/i.test(rawContent)) {
-        return `CITY_CUSTOM:${rawContent}`;
-      }
-    }
-
-    return null;
-  }, [cities, messages, normalizeCityText, selectedCity]);
+  const { activeCity, resolvedCityFromConversation } = useResolvedCity(messages, selectedCity);
 
   useEffect(() => {
     if (!selectedCity && resolvedCityFromConversation) {
@@ -205,7 +167,6 @@ export default function GoogleChat() {
     }
   }, [resolvedCityFromConversation, selectedCity]);
 
-  const activeCity = selectedCity || resolvedCityFromConversation;
 
   // Track locally created book ID (separate from session data for immediate UI updates)
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);

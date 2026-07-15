@@ -205,6 +205,8 @@ export default function GoogleChat() {
     }
   }, [resolvedCityFromConversation, selectedCity]);
 
+  const activeCity = selectedCity || resolvedCityFromConversation;
+
   // Track locally created book ID (separate from session data for immediate UI updates)
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
   
@@ -743,7 +745,7 @@ export default function GoogleChat() {
       environment: selectedEnvironment,
       clothingBrand: selectedClothingBrand,
       location: selectedLocation,
-      city: selectedCity,
+      city: activeCity,
       mannerType: selectedMannerType,
       mannersSetting: selectedMannersSetting
     });
@@ -773,13 +775,13 @@ export default function GoogleChat() {
         environment: selectedEnvironment,
         clothingBrand: selectedClothingBrand,
         location: selectedLocation,
-        city: selectedCity,
+        city: activeCity,
         mannerType: selectedMannerType,
         mannersSetting: selectedMannersSetting
       });
     };
     reader.readAsDataURL(file);
-  }, [input, sendMessageWithImage, messages, shouldShowReviewButton, createdBookId, characterFlow.themeId, selectedBookType]);
+  }, [input, sendMessageWithImage, messages, shouldShowReviewButton, createdBookId, characterFlow.themeId, selectedBookType, activeCity]);
 
   // Auto-generate cover prompt for QA panel
   const handleGenerateCoverPrompt = useCallback(async () => {
@@ -811,11 +813,11 @@ export default function GoogleChat() {
       environment: selectedEnvironment,
       clothingBrand: selectedClothingBrand,
       location: selectedLocation,
-      city: selectedCity,
+      city: activeCity,
       mannerType: selectedMannerType,
       mannersSetting: selectedMannersSetting
     });
-  }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId, selectedMannersSetting]);
+  }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId, selectedMannersSetting, activeCity]);
 
   const handleCreateBook = useCallback(async () => {
     // Guard 1: No active session
@@ -954,7 +956,7 @@ export default function GoogleChat() {
         environment: selectedEnvironment || undefined,
         clothingBrand: selectedClothingBrand || undefined,
         location: selectedLocation || undefined,
-        city: selectedCity || undefined,
+        city: activeCity || undefined,
         // Manners-specific discovery attributes
         mannerType: selectedMannerType || undefined,
         mannersSetting: selectedMannersSetting || undefined,
@@ -996,7 +998,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity]);
 
   // Create book and wait for result - returns book ID and pages for immediate image generation
   const handleCreateBookAndWait = useCallback(async (): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
@@ -1180,7 +1182,7 @@ export default function GoogleChat() {
     // Handle book creation / title approval - block if city hasn't been selected
     const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
     if (isProceedAction) {
-      if (!selectedCity) {
+      if (!activeCity) {
         setCityValidationError('Please select a city before proceeding to the next step.');
         return;
       }
@@ -1321,7 +1323,7 @@ export default function GoogleChat() {
         environment: action.environmentId || selectedEnvironment,
         clothingBrand: action.clothingBrandId || selectedClothingBrand,
         location: action.locationId || selectedLocation,
-        city: action.cityId || selectedCity,
+        city: action.cityId || activeCity,
         mannerType: action.mannerTypeId || selectedMannerType,
         mannersSetting: mannersSettingValue
       });
@@ -1332,7 +1334,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity, selectedMannerType, selectedMannersSetting, characterFlow]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
@@ -1356,6 +1358,8 @@ export default function GoogleChat() {
         setSelectedEnvironment(null); // Reset environment selection
         setSelectedClothingBrand(null); // Reset clothing brand selection
         setSelectedLocation(null); // Reset location selection
+        setSelectedCity(null); // Reset city selection
+        setCityValidationError(null);
         setSelectedMannerType(null); // Reset manner type selection
         setSelectedMannersSetting(null); // Reset manners setting selection
         setReplacePageMode({});

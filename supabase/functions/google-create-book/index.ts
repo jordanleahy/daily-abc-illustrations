@@ -788,7 +788,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         bookType: bookType || 'abc',
         gradeLevel,
         season,
-        city,
+        city: cityLabel ?? undefined, // resolved human label — never a "CITY_*" token
         resort: location,
         characterTheme,
         selectedCharacterIds,

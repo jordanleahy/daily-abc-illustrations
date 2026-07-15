@@ -896,6 +896,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             .update({ status: 'published', is_library_book: true, updated_at: new Date().toISOString() })
             .eq('id', contentId);
 
+          invalidateLibraryQueries(queryClient);
+
           // Generate SEO metadata for the new publication
           await generateSeoMetadata(newPublication.id);
 

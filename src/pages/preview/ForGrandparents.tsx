@@ -125,7 +125,7 @@ const ForGrandparents = () => {
                 Can I access this from anywhere?
               </h3>
               <p className="text-muted-foreground">
-                Yes! Chairlift Habits works on any device with internet access. Create books, check reading progress, and stay connected whether you're across town or across the country.
+                Yes! Shelly & Thatch works on any device with internet access. Create books, check reading progress, and stay connected whether you're across town or across the country.
               </p>
             </div>
             <div className="p-6 rounded-lg border border-border bg-card">
@@ -141,7 +141,7 @@ const ForGrandparents = () => {
                 Is it easy to use for someone not tech-savvy?
               </h3>
               <p className="text-muted-foreground">
-                Absolutely. Chairlift Habits is designed to be simple and intuitive. Create custom books with just a few clicks, and viewing reading progress is as easy as checking email.
+                Absolutely. Shelly & Thatch is designed to be simple and intuitive. Create custom books with just a few clicks, and viewing reading progress is as easy as checking email.
               </p>
             </div>
             <div className="p-6 rounded-lg border border-border bg-card">

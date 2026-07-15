@@ -31,7 +31,7 @@ const BlogHome = () => {
       <PreviewSection variant="hero">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Chairlift Blog
+            Shelly & Thatch Blog
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Short, practical guidance for parents who want stronger reading habits at home.

@@ -52,7 +52,7 @@ const ProductOverview = () => {
             One app for books, habits, and rewards
           </p>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Chairlift Education replaces scattered apps, loose charts, and guesswork. View reading, habits, and rewards from one dashboard, built for busy parents.
+            Shelly & Thatch replaces scattered apps, loose charts, and guesswork. View reading, habits, and rewards from one dashboard, built for busy parents.
           </p>
         </div>
       </PreviewSection>
@@ -95,7 +95,7 @@ const ProductOverview = () => {
             On every device, always in sync
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Chairlift works seamlessly across web, iOS, and Android—so you can check in on reading anytime, anywhere. Whether you're planning on a laptop or reviewing progress on the go, your data is always in sync and ready when you are.
+            Shelly & Thatch works seamlessly across web, iOS, and Android—so you can check in on reading anytime, anywhere. Whether you're planning on a laptop or reviewing progress on the go, your data is always in sync and ready when you are.
           </p>
         </div>
       </PreviewSection>

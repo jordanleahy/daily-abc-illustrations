@@ -146,8 +146,8 @@ const CityLanding = () => {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Coming Soon to {displayName}</h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  We're working on creating custom educational books for {displayName}. 
-                  Partner with us to bring Chairlift to your community.
+                  We're working on creating custom educational books for {displayName}.
+                  Partner with us to bring Shelly & Thatch to your community.
                 </p>
                 <Button asChild>
                   <a href="mailto:partnerships@chairlifthabits.com">

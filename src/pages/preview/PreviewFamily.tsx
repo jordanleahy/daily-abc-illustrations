@@ -68,7 +68,7 @@ export default function PreviewFamily() {
               Built for Growing Families
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Whether you have one child or five, Chairlift Habits scales with your family.
+              Whether you have one child or five, Shelly & Thatch scales with your family.
             </p>
           </div>
 

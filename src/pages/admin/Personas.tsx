@@ -12,7 +12,7 @@ export default function Personas() {
         <div className="container max-w-5xl mx-auto py-8 px-4 space-y-8">
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">Target Audience Profiles</h2>
-            <p className="text-muted-foreground">Marketing personas for Chairlift Habits</p>
+            <p className="text-muted-foreground">Marketing personas for Shelly & Thatch</p>
           </div>
           
           {/* Connectivity Carol Persona */}

@@ -104,7 +104,7 @@ export default async (request: Request, context: Context) => {
     }
 
     // Prepare metadata values - prioritize dailyPublished.title for reliability
-    const title = seoMetadata?.seo_title || dailyPublished.title || 'Chairlift Habits';
+    const title = seoMetadata?.seo_title || dailyPublished.title || 'Shelly & Thatch';
     const description = seoMetadata?.seo_description || dailyPublished.description || 'Explore educational illustrated books for children';
     const imageUrl = seoMetadata?.og_image_url || `${SUPABASE_URL}/storage/v1/object/public/page-images/default-book-cover.jpg`;
     const canonicalUrl = `https://chairlifthabits.com/book/${slug}`;
@@ -117,7 +117,7 @@ export default async (request: Request, context: Context) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <meta name="description" content="${description}">
-  
+
   <!-- OpenGraph Meta Tags -->
   <meta property="og:type" content="book">
   <meta property="og:title" content="${title}">
@@ -126,7 +126,7 @@ export default async (request: Request, context: Context) => {
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="${canonicalUrl}">
-  <meta property="og:site_name" content="ChairLift">
+  <meta property="og:site_name" content="Shelly & Thatch">
   
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">

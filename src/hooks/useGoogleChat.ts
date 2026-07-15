@@ -13,6 +13,7 @@ import type { CityId } from '@/types/city';
 import { MANNER_TYPE_LABELS, type MannerTypeId } from '@/types/mannerType';
 import { MANNERS_SETTING_OPTIONS, type MannersSettingId } from '@/types/mannersSetting';
 import { ID_PREFIX, hasPrefix } from '@/types/idRegistry';
+import { useCities } from '@/hooks/useCities';
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -60,6 +61,7 @@ export const useGoogleChat = (
 ) => {
   const queryClient = useQueryClient();
   const { user, session } = useAuthContext();
+  const { data: cities = [] } = useCities();
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async (
@@ -391,8 +393,9 @@ export const useGoogleChat = (
         const isClothingBrandId = (id: string) => hasPrefix(id, ID_PREFIX.CLOTHING_BRAND) || CLOTHING_BRAND_OPTIONS.some(b => b.id === id);
         // Location IDs use LOCATION_ prefix (e.g., LOCATION_VAIL_RESORT)
         const isLocationId = (id: string) => hasPrefix(id, ID_PREFIX.LOCATION) || id === 'skip-location';
-        // City IDs use CITY_ prefix (e.g., CITY_JERSEY_CITY)
-        const isCityId = (id: string) => hasPrefix(id, ID_PREFIX.CITY) || id === 'skip-city';
+        // City IDs may be prefix-based (CITY_*) or DB-backed legacy IDs (JERSEY_CITY, HOBOKEN, etc.)
+        const cityIds = new Set(cities.map(city => city.id));
+        const isCityId = (id: string) => hasPrefix(id, ID_PREFIX.CITY) || cityIds.has(id) || id === 'skip-city';
         // Manner setting IDs use SETTING_ prefix (e.g., SETTING_home)
         const isMannerSettingId = (id: string) => hasPrefix(id, ID_PREFIX.MANNER_SETTING) || id === 'skip-setting' || MANNERS_SETTING_OPTIONS.some(s => s.id === id);
         const mannerTypeIds: Set<string> = new Set(Object.keys(MANNER_TYPE_LABELS));

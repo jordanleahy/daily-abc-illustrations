@@ -13,7 +13,7 @@ import {
 } from '../_shared/agentOrchestration.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
-import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, type ValidCity } from '../_shared/cities.ts';
+import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, getCityGroundTruthPromptAsync, type ValidCity } from '../_shared/cities.ts';
 import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
 
 const conversationMessageSchema = z.object({
@@ -437,14 +437,27 @@ IMPORTANT - WORD LEARNING FOCUS:
       }
     }
 
-    // Add city visual profile if a city was selected
-    if (city && isValidCity(city)) {
-      const cityVisualPrompt = getCityVisualPromptSync(city);
-      if (cityVisualPrompt) {
-        systemPrompt += `\n${cityVisualPrompt}`;
-        console.log(`[City Context] Applied visual profile for: ${city}`);
+    // Add city visual profile + ground-truth (canonical Google Place, nearby
+    // landmarks, Wikipedia summary) for any resolvable city — predetermined DB
+    // id OR freeform CITY_CUSTOM:label typed by the user.
+    if (city) {
+      try {
+        const cityGroundTruth = await getCityGroundTruthPromptAsync(city, supabase);
+        if (cityGroundTruth) {
+          systemPrompt += `\n${cityGroundTruth}`;
+          console.log(`[City Context] Applied ground-truth prompt for: ${city} → ${cityLabel}`);
+        } else if (isValidCity(city)) {
+          // Fallback to sync DB-only prompt if ground-truth returned nothing
+          const cityVisualPrompt = getCityVisualPromptSync(city);
+          if (cityVisualPrompt) systemPrompt += `\n${cityVisualPrompt}`;
+        }
+      } catch (err) {
+        console.warn('[City Context] Ground-truth enrichment failed, falling back to sync:', err);
+        const cityVisualPrompt = isValidCity(city) ? getCityVisualPromptSync(city) : null;
+        if (cityVisualPrompt) systemPrompt += `\n${cityVisualPrompt}`;
       }
     }
+
 
     const prompt = `Based on this conversation, create a complete children's book:
 ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}

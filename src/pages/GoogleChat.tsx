@@ -1120,7 +1120,7 @@ export default function GoogleChat() {
         environment: selectedEnvironment || undefined,
         clothingBrand: selectedClothingBrand || undefined,
         location: selectedLocation || undefined,
-        city: selectedCity || undefined,
+        city: activeCity || undefined,
       });
       
       // Set local book ID immediately

@@ -40,7 +40,7 @@ import type { ClothingBrandId } from '@/types/clothingBrand';
 import type { LocationId } from '@/types/location';
 import type { CityId } from '@/types/city';
 import type { MannerTypeId } from '@/types/mannerType';
-import { useCities } from '@/hooks/useCities';
+import { useResolvedCity } from '@/hooks/useResolvedCity';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';

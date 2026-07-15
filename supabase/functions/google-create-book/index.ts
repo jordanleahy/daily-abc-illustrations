@@ -165,6 +165,17 @@ serve(async (req) => {
     await initLocationsCache();
     await initCitiesCache(supabase);
 
+    // Resolve raw city token (e.g. "CITY_NEW_YORK_CITY", "CITY_CUSTOM:Paris")
+    // into a human label ONCE. Everything downstream (cover prompt, book title,
+    // metadata) uses cityLabel. The raw `city` id is only kept for the city
+    // visual-profile lookup, which is keyed by id.
+    const cityLabel = resolveCityToken(city);
+    if (city && !cityLabel) {
+      console.warn(`[City Resolution] Could not resolve city token "${city}" to a human label — cover title will omit it.`);
+    } else if (cityLabel) {
+      console.log(`[City Resolution] "${city}" → "${cityLabel}"`);
+    }
+
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
       return text

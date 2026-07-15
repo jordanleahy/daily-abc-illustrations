@@ -825,13 +825,14 @@ CRITICAL REQUIREMENTS:
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {lastError && (
           <ErrorDetailsPanel error={lastError} onDismiss={() => setLastError(null)} />
         )}
         {/* Image Upload/Display Area */}
-        <div className="flex flex-col gap-2 flex-1 min-h-0" key={`page-${currentPageNumber}-${imageMode}`}>
-          <div className="flex-1 min-h-0 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
+        <div className="flex flex-col gap-2" key={`page-${currentPageNumber}-${imageMode}`}>
+          <div className="relative w-full h-[60vh] md:h-[70vh] min-h-[320px] rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
+
 
 
             {currentPageImage && !isReplacing ? (

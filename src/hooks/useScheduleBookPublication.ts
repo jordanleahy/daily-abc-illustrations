@@ -151,7 +151,22 @@ export const useScheduleBookPublication = () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['book-publication-status'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['library-books'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
+      // Invalidate every library/city/daily-published-derived query so the
+      // public Library reflects the new publication without waiting for staleTime.
+      queryClient.invalidateQueries({
+        predicate: (q) => {
+          const k = q.queryKey[0];
+          return typeof k === 'string' && (
+            k.startsWith('library') ||
+            k.startsWith('city-books') ||
+            k.startsWith('all-books') ||
+            k.startsWith('daily-published') ||
+            k.startsWith('seo-metadata') ||
+            k.startsWith('upcoming-daily-published')
+          );
+        },
+      });
     },
     onError: (error) => {
       console.error('Error scheduling book:', error);

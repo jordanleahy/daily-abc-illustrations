@@ -824,6 +824,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           clothingBrand: clothingBrand || null,
           location: location || null,
           city: city || null,
+          cityLabel: cityLabel || null,
           // Manners-specific discovery attributes
           mannerType: mannerType || null,
           mannersSetting: mannersSetting || null

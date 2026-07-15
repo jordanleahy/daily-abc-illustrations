@@ -115,7 +115,7 @@ export default function Schedule() {
   const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
   return <>
       <MetaHead metadata={{
-      title: "ChairLift - Publishing Schedule",
+      title: "Shelly & Thatch - Publishing Schedule",
       description: "View the daily publishing schedule for ABC illustration books. New books publish every day at 7:01 AM Eastern Time.",
       type: "website"
     }} />

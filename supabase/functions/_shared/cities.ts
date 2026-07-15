@@ -233,6 +233,59 @@ export function getCityLabelSync(cityId: string): string {
 }
 
 /**
+ * Resolve a raw city token (e.g. "CITY_NEW_YORK_CITY", "CITY_CUSTOM",
+ * "CITY_CUSTOM:Paris") to a human-readable label suitable for the cover
+ * prompt and the saved book title.
+ *
+ * Rules:
+ *  - "NONE" / empty / null → null (no city)
+ *  - "CITY_CUSTOM:<label>" → "<label>" (freeform user input, title-cased)
+ *  - "CITY_CUSTOM" alone   → null (unresolved, refuse to leak token)
+ *  - Known DB id           → cities[].label
+ *  - Unknown "CITY_FOO_BAR" fallback → "Foo Bar" (strip prefix, title-case)
+ *  - Anything else         → the input string as-is (already a label)
+ *
+ * NEVER returns a string starting with "CITY_" — the whole point of this
+ * function is to keep that token out of `books.book_name` and cover art.
+ */
+export function resolveCityToken(rawCity?: string | null): string | null {
+  if (!rawCity) return null;
+  const value = String(rawCity).trim();
+  if (!value || value === 'NONE' || value === 'skip-city') return null;
+
+  // Freeform custom city carried as "CITY_CUSTOM:<user text>"
+  if (value.startsWith('CITY_CUSTOM:')) {
+    const custom = value.slice('CITY_CUSTOM:'.length).trim();
+    return custom ? titleCase(custom) : null;
+  }
+  // Bare "CITY_CUSTOM" with no payload — refuse to leak the token.
+  if (value === 'CITY_CUSTOM') return null;
+
+  // Known DB id — use its human label from the cache.
+  if (citiesCache) {
+    const city = citiesCache.find(c => c.id === value);
+    if (city?.label) return city.label;
+  }
+
+  // Unknown CITY_* id: strip prefix, title-case underscores.
+  if (value.startsWith('CITY_')) {
+    return titleCase(value.slice('CITY_'.length).replace(/_/g, ' '));
+  }
+
+  // Not a token — assume it's already a human label.
+  return value;
+}
+
+function titleCase(input: string): string {
+  return input
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+/**
  * Get city with emoji for display
  */
 export async function getCityDisplay(cityId: string, supabase: SupabaseClient): Promise<string> {

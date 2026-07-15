@@ -13,7 +13,7 @@ import {
 } from '../_shared/agentOrchestration.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
-import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
+import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, type ValidCity } from '../_shared/cities.ts';
 import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
 
 const conversationMessageSchema = z.object({
@@ -164,6 +164,17 @@ serve(async (req) => {
     // Initialize caches from database
     await initLocationsCache();
     await initCitiesCache(supabase);
+
+    // Resolve raw city token (e.g. "CITY_NEW_YORK_CITY", "CITY_CUSTOM:Paris")
+    // into a human label ONCE. Everything downstream (cover prompt, book title,
+    // metadata) uses cityLabel. The raw `city` id is only kept for the city
+    // visual-profile lookup, which is keyed by id.
+    const cityLabel = resolveCityToken(city);
+    if (city && !cityLabel) {
+      console.warn(`[City Resolution] Could not resolve city token "${city}" to a human label — cover title will omit it.`);
+    } else if (cityLabel) {
+      console.log(`[City Resolution] "${city}" → "${cityLabel}"`);
+    }
 
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -777,7 +788,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         bookType: bookType || 'abc',
         gradeLevel,
         season,
-        city,
+        city: cityLabel ?? undefined, // resolved human label — never a "CITY_*" token
         resort: location,
         characterTheme,
         selectedCharacterIds,
@@ -813,6 +824,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           clothingBrand: clothingBrand || null,
           location: location || null,
           city: city || null,
+          cityLabel: cityLabel || null,
           // Manners-specific discovery attributes
           mannerType: mannerType || null,
           mannersSetting: mannersSetting || null

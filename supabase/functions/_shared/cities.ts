@@ -445,3 +445,208 @@ export async function getCitySuggestBlock(supabase: SupabaseClient): Promise<str
   
   return cityLines.join('\n');
 }
+
+// ---------------------------------------------------------------------------
+// Ground-truth enrichment: resolve any city (predetermined OR freeform) to a
+// canonical Google Place + nearby landmarks + short Wikipedia summary and
+// return a prompt block. Uses in-memory cache per invocation to avoid repeat
+// network hops for the same label.
+// ---------------------------------------------------------------------------
+
+interface CityGroundTruth {
+  label: string;
+  formattedAddress?: string;
+  latitude?: number;
+  longitude?: number;
+  types?: string[];
+  landmarks: Array<{ name: string; type: string; description?: string }>;
+  wikipediaSummary?: string;
+}
+
+const groundTruthCache = new Map<string, CityGroundTruth | null>();
+
+async function geocodeCityViaPlaces(label: string, apiKey: string): Promise<{
+  placeId: string;
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  types: string[];
+} | null> {
+  try {
+    const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.id,places.formattedAddress,places.location,places.types,places.displayName',
+      },
+      body: JSON.stringify({
+        textQuery: label,
+        includedType: 'locality',
+        maxResultCount: 1,
+      }),
+    });
+    const data = await res.json();
+    const place = data?.places?.[0];
+    if (!place) return null;
+    return {
+      placeId: place.id,
+      formattedAddress: place.formattedAddress || label,
+      latitude: place.location?.latitude,
+      longitude: place.location?.longitude,
+      types: place.types || [],
+    };
+  } catch (err) {
+    console.warn('[CityGroundTruth] geocode failed:', err);
+    return null;
+  }
+}
+
+async function fetchNearbyLandmarksFromPlaces(
+  lat: number,
+  lng: number,
+  apiKey: string
+): Promise<Array<{ name: string; type: string; description?: string; rating: number; ratingCount: number }>> {
+  const buckets = [
+    ['park', 'national_park'],
+    ['historical_landmark', 'monument', 'tourist_attraction'],
+    ['museum', 'art_gallery', 'performing_arts_theater'],
+  ];
+  const all: any[] = [];
+  await Promise.all(buckets.map(async (types) => {
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.types,places.editorialSummary,places.rating,places.userRatingCount',
+        },
+        body: JSON.stringify({
+          includedTypes: types,
+          maxResultCount: 8,
+          locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: 8000 } },
+          rankPreference: 'POPULARITY',
+        }),
+      });
+      const data = await res.json();
+      for (const p of data?.places || []) {
+        all.push({
+          id: p.id,
+          name: p.displayName?.text || '',
+          type: (p.types?.[0] || 'landmark').replace(/_/g, ' '),
+          description: p.editorialSummary?.text || '',
+          rating: p.rating || 0,
+          ratingCount: p.userRatingCount || 0,
+        });
+      }
+    } catch (err) {
+      console.warn('[CityGroundTruth] nearby search failed:', err);
+    }
+  }));
+  // Dedup by id, sort by popularity, cap 10
+  const seen = new Set<string>();
+  const unique = all.filter(p => p.name && !seen.has(p.id) && seen.add(p.id));
+  unique.sort((a, b) => (b.ratingCount || 0) - (a.ratingCount || 0));
+  return unique.slice(0, 10);
+}
+
+async function fetchWikipediaSummary(label: string): Promise<string | undefined> {
+  try {
+    const title = encodeURIComponent(label.replace(/\s+/g, '_'));
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`, {
+      headers: { 'accept': 'application/json', 'user-agent': 'ChairliftHabits/1.0 (books)' },
+    });
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    const extract: string | undefined = data?.extract;
+    if (!extract) return undefined;
+    // Cap to ~600 chars to keep prompt lean
+    return extract.length > 600 ? extract.slice(0, 600).trim() + '…' : extract;
+  } catch (err) {
+    console.warn('[CityGroundTruth] wikipedia fetch failed:', err);
+    return undefined;
+  }
+}
+
+/**
+ * Resolve a raw city token (predetermined DB id OR freeform CITY_CUSTOM:label)
+ * to a canonical Google Place, pull top nearby landmarks, and grab a short
+ * Wikipedia summary. Returns a prompt-ready block that can be appended to
+ * illustration-director / graphic-designer / cover prompts.
+ *
+ * Combines with existing DB-backed visual profile when available.
+ */
+export async function getCityGroundTruthPromptAsync(
+  rawCity: string | null | undefined,
+  supabase: SupabaseClient
+): Promise<string | null> {
+  const label = resolveCityToken(rawCity ?? null);
+  if (!label) return null;
+
+  // Start from existing DB visual prompt if this is a known city id
+  let dbBlock: string | null = null;
+  if (rawCity && isValidCity(rawCity)) {
+    dbBlock = await getCityVisualPrompt(rawCity, supabase);
+  }
+
+  // Cache per label
+  const cacheKey = label.toLowerCase();
+  let ground: CityGroundTruth | null;
+  if (groundTruthCache.has(cacheKey)) {
+    ground = groundTruthCache.get(cacheKey) ?? null;
+  } else {
+    const apiKey = Deno.env.get('GOOGLE_API_KEY');
+    let landmarks: CityGroundTruth['landmarks'] = [];
+    let geocoded: Awaited<ReturnType<typeof geocodeCityViaPlaces>> = null;
+    if (apiKey) {
+      geocoded = await geocodeCityViaPlaces(label, apiKey);
+      if (geocoded?.latitude && geocoded?.longitude) {
+        const nearby = await fetchNearbyLandmarksFromPlaces(geocoded.latitude, geocoded.longitude, apiKey);
+        landmarks = nearby.map(l => ({ name: l.name, type: l.type, description: l.description }));
+      }
+    } else {
+      console.warn('[CityGroundTruth] GOOGLE_API_KEY missing — skipping Places lookup');
+    }
+    const wiki = await fetchWikipediaSummary(label);
+    ground = {
+      label,
+      formattedAddress: geocoded?.formattedAddress,
+      latitude: geocoded?.latitude,
+      longitude: geocoded?.longitude,
+      types: geocoded?.types,
+      landmarks,
+      wikipediaSummary: wiki,
+    };
+    groundTruthCache.set(cacheKey, ground);
+  }
+
+  if (!ground) return dbBlock;
+
+  const parts: string[] = [];
+  if (dbBlock) parts.push(dbBlock.trim());
+
+  const gtLines: string[] = [];
+  gtLines.push(`\n🌐 CANONICAL PLACE (ground truth for ${ground.label.toUpperCase()}):`);
+  if (ground.formattedAddress) gtLines.push(`• Resolved location: ${ground.formattedAddress}`);
+  if (ground.latitude && ground.longitude) gtLines.push(`• Coordinates: ${ground.latitude.toFixed(4)}, ${ground.longitude.toFixed(4)}`);
+
+  if (ground.wikipediaSummary) {
+    gtLines.push(`\n📖 CULTURAL CONTEXT (from Wikipedia, use for atmosphere/culture cues — do NOT quote verbatim):`);
+    gtLines.push(ground.wikipediaSummary);
+  }
+
+  if (ground.landmarks.length) {
+    gtLines.push(`\n📍 REAL NEARBY LANDMARKS (use ONLY these named places for authentic backgrounds — do not invent):`);
+    for (const lm of ground.landmarks) {
+      const desc = lm.description ? ` — ${lm.description}` : '';
+      gtLines.push(`  • ${lm.name} (${lm.type})${desc}`);
+    }
+  }
+
+  gtLines.push(`\n⚠️ GROUNDING RULES: Prefer the named landmarks above over generic scenery. Reflect the cultural context in signage, food, clothing, and street life. Do NOT hallucinate landmarks that are not listed. Never render the raw token "CITY_CUSTOM" or any "CITY_*" string in the illustration.`);
+
+  parts.push(gtLines.join('\n'));
+  return parts.join('\n');
+}
+

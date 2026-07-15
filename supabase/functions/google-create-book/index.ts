@@ -13,7 +13,7 @@ import {
 } from '../_shared/agentOrchestration.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
-import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
+import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, type ValidCity } from '../_shared/cities.ts';
 import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
 
 const conversationMessageSchema = z.object({

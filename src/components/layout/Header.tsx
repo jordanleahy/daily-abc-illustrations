@@ -89,7 +89,7 @@ interface HeaderProps {
  * appropriate interface and navigation options.
  */
 export function Header({
-  title = "Chairlift Education",
+  title = "Shelly & Thatch",
   subtitle,
   bookId,
   showQRCode = true,

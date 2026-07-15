@@ -104,7 +104,7 @@ const Index = () => {
             {/* Free tier: Welcome section */}
             <div className="space-y-2">
               <h1 className="text-4xl font-bold">
-                Chairlift Habits
+                Shelly & Thatch
               </h1>
               <p className="text-xl text-muted-foreground">
                 where habits are developed and curiosity cultures educational moments

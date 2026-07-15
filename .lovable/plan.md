@@ -1,41 +1,28 @@
-# 3 potential reasons the image generation is failing
+# Fill available vertical height in the image preview
 
-Screenshot shows the generic toast **"Generation failed / Could not generate image"** on a content page ("Play rhymes with Day"). That exact wording is the *default fallback* in `src/utils/lovableAiErrors.ts:37` — returned only when the error doesn't match credits (402), rate-limit (429), or "no image" (422). So whatever went wrong, it's an unclassified failure — most likely one of these three.
+## Problem
+In `BookEditorPanel` the current image sits inside `aspect-square`, so it renders as a 1:1 box regardless of how tall the drawer is. On a phone in landscape or on a tall drawer, large empty bands appear above/below the image (visible in the screenshot).
 
----
+## Change
+Convert the image container from a fixed aspect ratio to a flex child that grows to fill the drawer's remaining height, while the title bar, action toolbar, and footer buttons stay pinned.
 
-## Reason 1 — The image prompt was rejected by content moderation (character IP)
+### Files
+- `src/components/chat/BookEditorPanel.tsx`
 
-The page prompt starts with *"Whimsical children's book style. Bluey and Bingo…"*. OpenAI's `gpt-image` models (used for content pages via `IMAGE_GENERATION_MODEL` in `generate-color-image/index.ts:62`) return `content_policy_violation` on prompts that name copyrighted characters like Bluey. That error string doesn't contain "credits", "rate limit", or "couldn't generate", so `parseLovableAiError` falls through to the generic message.
+### Edits
+1. Make the scrollable content region a flex column (`flex flex-col` in place of the current `space-y-4` stack) so children can claim remaining height.
+2. Replace `aspect-square` on the image container (line 834) with `flex-1 min-h-[50vh]`:
+   - `flex-1` — grow to fill leftover vertical space in the drawer.
+   - `min-h-[50vh]` — guarantees a usable size on very short viewports (fallback so the image never collapses).
+   - Keep `overflow-hidden rounded-lg border-2 border-dashed border-primary/30 bg-muted/30`.
+3. Keep the inner `<BookImage className="w-full h-full object-contain" />` — `object-contain` already preserves the image's aspect ratio inside whatever box it's given, so the picture scales up to the taller container without cropping or stretching.
+4. Verify overlays (Westin loader, text overlay, action buttons) still position correctly since they use `absolute inset-0` / `bottom-0` inside the same wrapper — no changes needed there.
+5. Keep the rest of the panel (title, `Text/Color` chips, Back/Next footer) outside the growing region so they don't shrink.
 
-**How to verify:** check `supabase--edge_function_logs` for `generate-color-image` around the failure timestamp — look for `content_policy_violation` / `moderation_blocked` / 400 from the AI Gateway.
+### Out of scope
+- No change to `PageImageSection.tsx` (different surface — reader view, not editor).
+- No change to image generation, prompts, or `BookImage`.
+- No layout changes to the outer sheet/drawer chrome.
 
-**Fix direction:** either scrub character names from the outgoing prompt (analogous to what we now do for cover *titles*), or route Bluey-themed content pages to a Gemini image model, which has a different policy.
-
----
-
-## Reason 2 — The prompt failed schema validation before reaching the model
-
-`generate-color-image/index.ts:43` early-returns `errors.badRequest(...)` if `pageId`, `bookId`, or `prompt` is missing/empty. The client calls `getCurrentPagePrompt(currentPageNumber)` (`BookEditorPanel.tsx:331`) — if the DB row's `content.imagePrompt` is empty (e.g. the book was created before prompts were generated, or `generate-page-system-prompts` failed silently at book create — see `google-create-book/index.ts:1110–1118` where prompt generation errors are swallowed), the call goes out with `prompt=""` and gets a 400. The frontend `getLovableAiErrorMessage` doesn't recognize "Missing required parameters" either, so → generic "Could not generate image".
-
-**How to verify:** query `pages` for this book and check `content->>'imagePrompt'` for the failing page. Also check `book_system_prompts` / edge logs to see if prompts were ever generated.
-
-**Fix direction:** show the real error message from the edge function (drop the fallback wrapper when a specific message is present), and add a page-level "regenerate prompt" affordance when `content.imagePrompt` is empty.
-
----
-
-## Reason 3 — Upstream Gateway timeout or transient 5xx that's being masked
-
-Image generation runs through the Lovable AI Gateway with `stream: true`. If the upstream provider times out, drops the connection, or returns a 5xx *after* the SSE stream opens, the edge function catches it and returns `{ success: false, error: "..." }`. Because that error string doesn't match any of the three patterns in `lovableAiErrors.ts`, the UI shows the generic message and hides the actual cause (e.g. `"Stream ended without image_generation.completed"` or `"Upstream 502"`).
-
-**How to verify:** `supabase--edge_function_logs` for `generate-color-image` — look for stream-abort or non-2xx upstream status. If the function itself never logged the invocation, it was a client-side network failure (also shows the same toast).
-
-**Fix direction:** surface the real underlying message in the toast, and add one automatic retry inside `handleGenerateColorImage` for transient upstream failures.
-
----
-
-## Recommendation for next step
-
-The single most valuable move is to **stop swallowing the real error**: change `getLovableAiErrorMessage` to prefer any specific message from `data?.error` / `error?.message` over the "Could not generate image" fallback. That instantly tells us which of the three above (or something else) is actually happening on this book/page, so the real fix is targeted rather than guessed.
-
-Want me to build that logging fix, or investigate one specific reason first (I can pull the edge-function logs and the row's `content.imagePrompt` in build mode)?
+## Technical notes
+`object-contain` letterboxes rather than crops, so an image that's square-ish will still show side padding when the box becomes tall + narrow — this is desired (no cropping of illustrations). If the user later wants the image to also expand horizontally by cropping, that's a separate `object-cover` decision.

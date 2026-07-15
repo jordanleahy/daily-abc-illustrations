@@ -29,8 +29,8 @@ export default function About() {
   return (
     <PreviewPageLayout>
       <Helmet>
-        <title>About Us | Chairlift Habits</title>
-        <meta name="description" content="Helping toddlers grow one habit at a time. Learn how Chairlift Habits was built by a parent who needed a better way to teach daily habits through personalized stories." />
+        <title>About Us | Shelly & Thatch</title>
+        <meta name="description" content="Daily personalized books for children. Learn how Shelly & Thatch was built by a parent who needed a better way to teach daily habits through personalized stories." />
       </Helmet>
 
       {/* Hero Section */}
@@ -53,7 +53,7 @@ export default function About() {
           </h2>
           <div className="prose prose-lg max-w-none space-y-4">
             <p className="text-lg text-muted-foreground">
-              I built Chairlift Habits as a parent of two trying to keep up with daily life. I wanted to teach my toddler meaningful habits, but I had no time to search for books, read reviews, buy them, and wait. The few books I found stopped working within days. They did not match her interests, her struggles, or the world she saw each day.
+              I built Shelly & Thatch as a parent of two trying to keep up with daily life. I wanted to teach my toddler meaningful habits, but I had no time to search for books, read reviews, buy them, and wait. The few books I found stopped working within days. They did not match her interests, her struggles, or the world she saw each day.
             </p>
             <p className="text-lg text-muted-foreground">
               I needed a new approach. Stories shaped around her. Stories with the characters she loved. Stories tied to the habits she needed in that moment. Stories created in minutes. If a story stayed relevant for fourteen days, that was enough.
@@ -78,7 +78,7 @@ export default function About() {
           </div>
           <div className="prose prose-lg max-w-none space-y-4">
             <p className="text-lg text-muted-foreground">
-              The name Chairlift Habits comes from the more than four hundred times I have taken my daughter snowboarding. Each ride up the chairlift gives us a quiet moment without distractions. It became the perfect time to practice one idea together.
+              The name Shelly & Thatch comes from the more than four hundred times I have taken my daughter snowboarding. Each ride up the chairlift gives us a quiet moment without distractions. It became the perfect time to practice one idea together.
             </p>
             <p className="text-lg text-muted-foreground">
               Often it was the foundations of reading. One word. One sound. One habit. That rhythm shaped everything that followed.
@@ -115,7 +115,7 @@ export default function About() {
               Parents need support that fits the pace and pressure of real life. Toddlers learn best when stories feel familiar and simple. When these two truths align, habits start to grow.
             </p>
             <p className="text-lg text-muted-foreground font-medium text-foreground">
-              Chairlift Habits gives families a clear path to early learning. One story. One moment. One habit each day.
+              Shelly & Thatch gives families a clear path to early learning. One story. One moment. One habit each day.
             </p>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function About() {
               I have spent my career as a healthcare product designer with a focus on clinical AI. My work centers on turning complex problems into clear, usable systems that help clinicians. I learned the value of simplicity, structure, and daily improvement in that environment.
             </p>
             <p className="text-lg text-muted-foreground">
-              Chairlift Habits grew out of that same mindset. As a parent, I needed a practical way to build healthy habits with my children without adding more stress. I built the tool I needed, then shaped it into something other families could use.
+              Shelly & Thatch grew out of that same mindset. As a parent, I needed a practical way to build healthy habits with my children without adding more stress. I built the tool I needed, then shaped it into something other families could use.
             </p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function About() {
             Get Involved
           </h2>
           <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-            Chairlift Habits is not a VC-backed company. It is a small-business passion project built in real time by a parent who cares about early learning. Your voice matters. If you have an idea or see a way to make this better for your family, tell me. I will work to find the best path forward and build what brings value to you.
+            Shelly & Thatch is not a VC-backed company. It is a small-business passion project built in real time by a parent who cares about early learning. Your voice matters. If you have an idea or see a way to make this better for your family, tell me. I will work to find the best path forward and build what brings value to you.
           </p>
           <Button 
             size="lg" 

@@ -28,7 +28,7 @@ const AIStudio = () => {
               Stories that feel personal
             </h2>
             <p className="text-lg text-muted-foreground mb-6">
-              Bring a few details about your child, and Chairlift creates a story built just for them.
+              Bring a few details about your child, and Shelly & Thatch creates a story built just for them.
             </p>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">

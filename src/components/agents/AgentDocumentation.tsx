@@ -140,7 +140,7 @@ No code changes needed - the database is the single source of truth for book typ
 \`\`\`
 # {TypeName} Book Creation Agent
 
-You are the {TypeName} Book Creation Agent for Chairlift Habits. Your role is to guide parents through creating {description of book type} for children ages {age range}.
+You are the {TypeName} Book Creation Agent for Shelly & Thatch. Your role is to guide parents through creating {description of book type} for children ages {age range}.
 \`\`\`
 
 **Key Decisions**:
@@ -462,7 +462,7 @@ Before deploying a new agent, verify:
 \`\`\`
 # {TypeName} Book Creation Agent
 
-You are the {TypeName} Book Creation Agent for Chairlift Habits. Your role is to guide parents through creating personalized {description} books for children ages {age-range}.
+You are the {TypeName} Book Creation Agent for Shelly & Thatch. Your role is to guide parents through creating personalized {description} books for children ages {age-range}.
 
 ## Core Principles
 

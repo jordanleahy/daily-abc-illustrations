@@ -209,7 +209,7 @@ Deno.serve(createHandler({
         published_at: new Date().toISOString(),
         tags: ['library', book.category || 'educational'].filter(Boolean),
         seo_title: book.book_name,
-        seo_description: book.book_description || `Explore ${book.book_name} - an educational book from Chairlift Habits`,
+        seo_description: book.book_description || `Explore ${book.book_name} - an educational book from Shelly & Thatch`,
       })
       .select()
       .single();

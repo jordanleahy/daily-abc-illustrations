@@ -122,7 +122,7 @@ const ForFamilies = () => {
           <div className="space-y-6">
             <div className="p-6 rounded-lg border border-border bg-card">
               <h3 className="font-semibold text-foreground mb-2">
-                How does Chairlift work for multiple kids?
+                How does Shelly & Thatch work for multiple kids?
               </h3>
               <p className="text-muted-foreground">
                 Each child gets their own profile with separate reading history, habits, and coin balances. Parents see all children in one dashboard and can switch between individual and family views.

@@ -16,7 +16,7 @@ const TermsOfService = () => {
       <MetaHead
         metadata={{
           title: getSiteTitle('Terms of Service'),
-          description: 'Terms of Service for ChairLift - Legal agreement governing use of our educational platform.',
+          description: 'Terms of Service for Shelly & Thatch - Legal agreement governing use of our educational platform.',
           siteName: SITE_CONFIG.name,
           type: 'website',
           url: window.location.href,
@@ -39,8 +39,8 @@ const TermsOfService = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">1) Agreement to Terms</h2>
                 <p>
-                  These Terms of Service ("Terms") are a legally binding agreement between Van7, LLC d/b/a ChairLift 
-                  ("ChairLift," "Company," "we," "us," or "our") and you ("you," "User") governing your access to and use of
+                  These Terms of Service ("Terms") are a legally binding agreement between Van7, LLC d/b/a Shelly & Thatch 
+                  ("Shelly & Thatch," "Company," "we," "us," or "our") and you ("you," "User") governing your access to and use of
                   dailyabcillustrations.com and related apps, services, and APIs (the "Service"). Our Privacy Policy is incorporated by reference.
                 </p>
                 <p>
@@ -53,7 +53,7 @@ const TermsOfService = () => {
                 
                 <h3 className="text-xl font-semibold mb-3">2.1 Overview</h3>
                 <p>
-                  ChairLift is an AI-powered educational platform that helps adults create personalized ABC books and
+                  Shelly & Thatch is an AI-powered educational platform that helps adults create personalized ABC books and
                   illustrations for children.
                 </p>
                 <p>Features may include:</p>
@@ -357,7 +357,7 @@ const TermsOfService = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">20) Contact</h2>
                 <div className="bg-muted p-6 rounded-lg">
-                  <p className="font-semibold">Van7, LLC (DBA ChairLift)</p>
+                  <p className="font-semibold">Van7, LLC (DBA Shelly & Thatch)</p>
                   <p><strong>Email:</strong> dailyabcillustrations@gmail.com</p>
                   <p><strong>Website:</strong> https://dailyabcillustrations.com</p>
                 </div>

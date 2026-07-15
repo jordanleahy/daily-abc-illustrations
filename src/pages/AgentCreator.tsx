@@ -79,7 +79,7 @@ const AgentCreatorContent = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <Helmet>
-        <title>Agent Creator | Chairlift Habits</title>
+        <title>Agent Creator | Shelly & Thatch</title>
       </Helmet>
 
       {/* Header */}

@@ -11,7 +11,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const SYSTEM_PROMPT = `You are an Agent Creator assistant that helps administrators design new specialized book creation agents for Chairlift Habits, an educational children's book platform.
+const SYSTEM_PROMPT = `You are an Agent Creator assistant that helps administrators design new specialized book creation agents for Shelly & Thatch, an educational children's book platform.
 
 ## Your Role
 Guide the user through a structured 6-step discovery process to gather all information needed to create a new book creation agent.

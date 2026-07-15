@@ -6,9 +6,9 @@
  */
 
 // LocalStorage keys
-const VIDEO_LIST_CACHE_KEY = 'chairlift-video-list-cache';
-const VIDEO_CACHE_TIMESTAMP_KEY = 'chairlift-video-cache-timestamp';
-const VIDEO_ACCESS_LOG_KEY = 'chairlift-video-access-log';
+const VIDEO_LIST_CACHE_KEY = 'shelly-thatch-video-list-cache';
+const VIDEO_CACHE_TIMESTAMP_KEY = 'shelly-thatch-video-cache-timestamp';
+const VIDEO_ACCESS_LOG_KEY = 'shelly-thatch-video-access-log';
 
 // Cache durations
 const VIDEO_LIST_CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours for video list

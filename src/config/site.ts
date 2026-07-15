@@ -5,12 +5,12 @@
 
 export const SITE_CONFIG = {
   // Basic site information
-  name: 'Chairlift Habits',
-  tagline: 'Chairlift Habits',
+  name: 'Shelly & Thatch',
+  tagline: 'Daily personalized books for children',
   description: 'Stay connected through daily personalized books designed just for your grandchild',
   subheading: 'where habits are developed and curiosity cultures educational moments',
   author: 'Lovable',
-  
+
   // URLs and social
   url: typeof window !== 'undefined' ? window.location.origin : '',
   productionUrl: 'https://chairlifthabits.com',
@@ -18,19 +18,19 @@ export const SITE_CONFIG = {
     handle: '@lovable_dev',
     creator: '@lovable_dev',
   },
-  
+
   // SEO and OpenGraph
   locale: 'en_US',
   defaultImage: {
     url: 'https://chairlifthabits.com/images/og-homepage.png',
     width: 1200,
     height: 630,
-    alt: 'Chairlift Habits - Helping toddlers grow one habit at a time',
+    alt: 'Shelly & Thatch - Daily personalized books for children',
   },
-  
+
   // Content specific
   dailyContent: {
-    title: 'Chairlift Habits',
+    title: 'Shelly & Thatch',
     description: 'New books published daily at 7:01 AM Eastern Time',
     schedule: '7:01 AM Eastern Time daily',
   },

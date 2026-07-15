@@ -67,10 +67,10 @@ export const PreviewHero = () => {
           {/* Left Column - Title & Description */}
           <div className="space-y-6 text-center md:text-left">
             <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight drop-shadow-lg">
-              Chairlift Habits
+              Shelly & Thatch
             </h1>
             <p className="text-xl md:text-2xl text-white/90 leading-relaxed drop-shadow-md">
-              Helping toddlers grow one habit at a time. One story. One moment. One habit each day.
+              Daily personalized books for children. One story. One moment. One habit each day.
             </p>
             <p className="text-sm text-white/80 drop-shadow">
               Free forever. No credit card required.

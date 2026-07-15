@@ -43,7 +43,7 @@ const seoMetadata: SEOMetadata = {
   description: 'Random snowboard trick generator for playing Game of SNOW on the mountain. Get your next trick challenge with one tap!',
   type: 'website',
   url: SHARE_URL,
-  siteName: 'Chairlift Habits',
+  siteName: 'Shelly & Thatch',
   image: {
     url: 'https://chairlifthabits.com/og-snow.png',
     width: 1200,

@@ -138,7 +138,7 @@ function generatePrerenderedHTML(
 ): string {
   // Priority: SEO metadata > daily_published data
   const title = seoMetadata?.seo_title || dailyPublished.title;
-  const description = seoMetadata?.seo_description || dailyPublished.description || 'ChairLift';
+  const description = seoMetadata?.seo_description || dailyPublished.description || 'Shelly & Thatch';
   const imageUrl = seoMetadata?.og_image_url || '';
   const pageUrl = `https://dailyabcillustrations.com/library/${dailyId}/detail`;
 
@@ -159,7 +159,7 @@ function generatePrerenderedHTML(
   ${imageUrl ? `<meta property="og:image:secure_url" content="${imageUrl}">` : ''}
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:site_name" content="ChairLift">
+  <meta property="og:site_name" content="Shelly & Thatch">
   
   <!-- Twitter Card Tags -->
   <meta name="twitter:card" content="summary_large_image">

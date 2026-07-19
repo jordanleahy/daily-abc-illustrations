@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
+import { toast } from 'sonner';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { useSessionMessages, usePrefetchSession } from '@/hooks/useSessionMessages';
@@ -159,7 +160,7 @@ export default function GoogleChat() {
   // Word metadata hook for regenerating word carousel data
   const { generateMetadata } = useWordMetadata();
 
-  const { activeCity, resolvedCityFromConversation } = useResolvedCity(messages, selectedCity);
+  const { activeCity, resolvedCityFromConversation, cities: resolvedCitiesList, matchCityInText } = useResolvedCity(messages, selectedCity);
 
   useEffect(() => {
     if (!selectedCity && resolvedCityFromConversation) {
@@ -1144,12 +1145,28 @@ export default function GoogleChat() {
     // Handle book creation / title approval - block if city hasn't been selected
     const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
     if (isProceedAction) {
-      if (!activeCity) {
+      // Last-chance inference: maybe a city chip was tapped whose action didn't carry cityId,
+      // or the city was named in earlier chat text. Try to resolve before blocking.
+      let effectiveCity = activeCity;
+      if (!effectiveCity) {
+        const inferred =
+          matchCityInText(action.label ?? '', resolvedCitiesList, { allowReverseInclude: true, minMatchLen: 3 }) ||
+          matchCityInText(action.value ?? '', resolvedCitiesList, { allowReverseInclude: true, minMatchLen: 3 });
+        if (inferred) {
+          setSelectedCity(inferred);
+          effectiveCity = inferred;
+        }
+      }
+      if (!effectiveCity) {
         console.warn('[QuickReply] blocked: no activeCity resolved', { selectedCity, messageCount: messages.length });
-        setCityValidationError('Please select a city before proceeding to the next step.');
+        setCityValidationError('Please pick a city before creating your book.');
+        toast.error('Please pick a city before creating your book.');
+        setTimeout(() => {
+          document.getElementById('city-validation-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
         return;
       }
-      console.log('[QuickReply] proceeding to handleCreateBook with city:', activeCity);
+      console.log('[QuickReply] proceeding to handleCreateBook with city:', effectiveCity);
       handleCreateBook();
       return;
     }
@@ -1299,7 +1316,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
@@ -1973,7 +1990,10 @@ export default function GoogleChat() {
           {/* City validation error - inline message */}
           {cityValidationError && (
             <div className="mx-auto max-w-4xl px-4 pt-2">
-              <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div
+                id="city-validation-error"
+                className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
                 {cityValidationError}
               </div>
             </div>

@@ -1,28 +1,31 @@
-# Fill available vertical height in the image preview
+## Root cause
+Clicking "Create My Book!" hits `handleQuickReply` in `src/pages/GoogleChat.tsx`, which blocks when `activeCity` is null and only sets an inline banner. On mobile that banner is off-screen, so the tap looks dead. `activeCity` is null in your session because none of the three resolution paths caught the city you picked:
 
-## Problem
-In `BookEditorPanel` the current image sits inside `aspect-square`, so it renders as a 1:1 box regardless of how tall the drawer is. On a phone in landscape or on a tall drawer, large empty bands appear above/below the image (visible in the screenshot).
+- Chip taps only set `selectedCity` when the chip action carries `action.cityId`. If the offered chip omitted `cityId`, tapping it sends a canned reply and no city state is saved.
+- `useResolvedCity` only scans **user** messages, so a city grounded in the assistant's title/outline doesn't count.
+- The typed-city fuzzy match is strict (`===` or `includes(label)`), so replies like "let's do NYC" or "New York" (vs. "New York City") don't match.
 
-## Change
-Convert the image container from a fixed aspect ratio to a flex child that grows to fill the drawer's remaining height, while the title bar, action toolbar, and footer buttons stay pinned.
+## Fix — frontend only, three small changes
 
-### Files
-- `src/components/chat/BookEditorPanel.tsx`
+### 1. `src/hooks/useResolvedCity.ts` — smarter resolution
+- Add a second pass that scans **assistant** messages for any known city label; return the matching city id. Iterate cities longest-label-first so "New York City" wins over "York".
+- Loosen the user-message match: also match when the message text includes any city label, or the normalized label includes the message (min 3 chars) — same longest-first ordering.
+- Explicit `selectedCity` still wins over both passes.
 
-### Edits
-1. Make the scrollable content region a flex column (`flex flex-col` in place of the current `space-y-4` stack) so children can claim remaining height.
-2. Replace `aspect-square` on the image container (line 834) with `flex-1 min-h-[50vh]`:
-   - `flex-1` — grow to fill leftover vertical space in the drawer.
-   - `min-h-[50vh]` — guarantees a usable size on very short viewports (fallback so the image never collapses).
-   - Keep `overflow-hidden rounded-lg border-2 border-dashed border-primary/30 bg-muted/30`.
-3. Keep the inner `<BookImage className="w-full h-full object-contain" />` — `object-contain` already preserves the image's aspect ratio inside whatever box it's given, so the picture scales up to the taller container without cropping or stretching.
-4. Verify overlays (Westin loader, text overlay, action buttons) still position correctly since they use `absolute inset-0` / `bottom-0` inside the same wrapper — no changes needed there.
-5. Keep the rest of the panel (title, `Text/Color` chips, Back/Next footer) outside the growing region so they don't shrink.
+### 2. `src/pages/GoogleChat.tsx` — infer city from chip taps and never silently block
+- In `handleQuickReply`, before the `isProceedAction` gate, if `action.cityId` is missing, try to infer it from `action.label`/`action.value` against `cities[]` (using the same normalize helper) and call `setSelectedCity(...)` when a match is found. Covers chips the agent produced without a `cityId`.
+- If `!activeCity` when proceeding:
+  - Keep `setCityValidationError(...)`.
+  - Also `toast.error("Please pick a city before creating your book.")` via `sonner`.
+  - Scroll the banner into view: add `id="city-validation-error"` to the existing error element and call `document.getElementById('city-validation-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })` after a `setTimeout(..., 0)`.
 
-### Out of scope
-- No change to `PageImageSection.tsx` (different surface — reader view, not editor).
-- No change to image generation, prompts, or `BookImage`.
-- No layout changes to the outer sheet/drawer chrome.
+### 3. Tests — `src/hooks/useResolvedCity.test.ts`
+Add cases:
+- Assistant message mentions "New York City", no user city reply → returns `NEW_YORK_CITY`.
+- User typed "NYC" or "New York" → resolves to `NEW_YORK_CITY`.
+- Explicit `selectedCity = JERSEY_CITY` while assistant text mentions NYC → still `JERSEY_CITY`.
+- Longest-label-first: "New York" and "York" both present → `NEW_YORK_CITY`, not a shorter accidental match.
 
-## Technical notes
-`object-contain` letterboxes rather than crops, so an image that's square-ish will still show side padding when the box becomes tall + narrow — this is desired (no cropping of illustrations). If the user later wants the image to also expand horizontally by cropping, that's a separate `object-cover` decision.
+## Out of scope
+- No edge-function, agent-prompt, or DB changes.
+- No change to the "city is required" rule — resolution gets smarter, and the block becomes visible instead of silent.

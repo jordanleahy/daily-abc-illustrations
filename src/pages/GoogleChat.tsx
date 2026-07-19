@@ -47,6 +47,7 @@ import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
+import { resolveProceedCity } from '@/utils/resolveProceedCity';
 
 export default function GoogleChat() {
   const navigate = useNavigate();

@@ -1990,7 +1990,10 @@ export default function GoogleChat() {
           {/* City validation error - inline message */}
           {cityValidationError && (
             <div className="mx-auto max-w-4xl px-4 pt-2">
-              <div className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div
+                id="city-validation-error"
+                className="rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
                 {cityValidationError}
               </div>
             </div>

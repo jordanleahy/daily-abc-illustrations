@@ -159,7 +159,7 @@ export default function GoogleChat() {
   // Word metadata hook for regenerating word carousel data
   const { generateMetadata } = useWordMetadata();
 
-  const { activeCity, resolvedCityFromConversation } = useResolvedCity(messages, selectedCity);
+  const { activeCity, resolvedCityFromConversation, cities: resolvedCitiesList, matchCityInText } = useResolvedCity(messages, selectedCity);
 
   useEffect(() => {
     if (!selectedCity && resolvedCityFromConversation) {

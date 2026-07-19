@@ -133,5 +133,33 @@ describe('useResolvedCity', () => {
       expect(result.current.isCityId('SEASON_WINTER')).toBe(false);
       expect(result.current.isCityId('random')).toBe(false);
     });
+  describe('assistant-message fallback', () => {
+    it('resolves a city named in the assistant title/outline when no user reply matches', () => {
+      const messages = [
+        asstMsg('Pick a city.'),
+        userMsg('sure'),
+        asstMsg('Here is the outline: A story set in New York City with iconic landmarks.'),
+      ];
+      const { result } = renderHook(() => useResolvedCity(messages, null));
+      expect(result.current.activeCity).toBe('NEW_YORK_CITY');
+    });
+
+    it('prefers explicit selectedCity over an assistant mention of a different city', () => {
+      const messages = [
+        asstMsg('Outline for a book set in New York City.'),
+      ];
+      const { result } = renderHook(() =>
+        useResolvedCity(messages, 'JERSEY_CITY'),
+      );
+      expect(result.current.activeCity).toBe('JERSEY_CITY');
+    });
+
+    it('picks the longest matching label (New York City over York)', () => {
+      const messages = [
+        asstMsg('A story about New York City and its bridges.'),
+      ];
+      const { result } = renderHook(() => useResolvedCity(messages, null));
+      expect(result.current.activeCity).toBe('NEW_YORK_CITY');
+    });
   });
 });

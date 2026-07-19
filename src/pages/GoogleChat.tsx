@@ -1145,19 +1145,16 @@ export default function GoogleChat() {
     // Handle book creation / title approval - block if city hasn't been selected
     const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
     if (isProceedAction) {
-      // Last-chance inference: maybe a city chip was tapped whose action didn't carry cityId,
-      // or the city was named in earlier chat text. Try to resolve before blocking.
-      let effectiveCity = activeCity;
-      if (!effectiveCity) {
-        const inferred =
-          matchCityInText(action.label ?? '', resolvedCitiesList, { allowReverseInclude: true, minMatchLen: 3 }) ||
-          matchCityInText(action.value ?? '', resolvedCitiesList, { allowReverseInclude: true, minMatchLen: 3 });
-        if (inferred) {
-          setSelectedCity(inferred);
-          effectiveCity = inferred;
-        }
+      const gate = resolveProceedCity({
+        action,
+        activeCity,
+        cities: resolvedCitiesList,
+        matchCityInText,
+      });
+      if (gate.status === 'inferred') {
+        setSelectedCity(gate.city);
       }
-      if (!effectiveCity) {
+      if (gate.status === 'blocked') {
         console.warn('[QuickReply] blocked: no activeCity resolved', { selectedCity, messageCount: messages.length });
         setCityValidationError('Please pick a city before creating your book.');
         toast.error('Please pick a city before creating your book.');
@@ -1166,7 +1163,7 @@ export default function GoogleChat() {
         }, 0);
         return;
       }
-      console.log('[QuickReply] proceeding to handleCreateBook with city:', effectiveCity);
+      console.log('[QuickReply] proceeding to handleCreateBook with city:', gate.city);
       handleCreateBook();
       return;
     }

@@ -19,16 +19,64 @@ interface ChatMessageLike {
   content: unknown;
 }
 
+interface CityLike {
+  id: string;
+  label: string;
+}
+
+/**
+ * Try to match a piece of text against a list of cities.
+ * Iterates longest-label-first so "New York City" wins over "York".
+ * Returns the matching city id, or null.
+ *
+ * `minMatchLen` guards against tiny substrings matching accidentally
+ * (e.g. a 2-char user reply matching inside a long label).
+ */
+export function matchCityInText(
+  text: string,
+  cities: CityLike[],
+  opts: { allowReverseInclude?: boolean; minMatchLen?: number } = {},
+): CityId | null {
+  const normalizedText = normalizeCityText(text);
+  if (!normalizedText) return null;
+  const minLen = opts.minMatchLen ?? 3;
+
+  // Longest-label-first so "New York City" beats "York".
+  const sorted = [...cities].sort((a, b) => b.label.length - a.label.length);
+
+  for (const city of sorted) {
+    const normalizedId = normalizeCityText(city.id.replace(/_/g, ' '));
+    const normalizedLabel = normalizeCityText(city.label);
+    if (!normalizedLabel) continue;
+
+    if (
+      normalizedText === normalizedLabel ||
+      normalizedText === normalizedId
+    ) {
+      return city.id as CityId;
+    }
+    if (normalizedLabel.length >= minLen && normalizedText.includes(normalizedLabel)) {
+      return city.id as CityId;
+    }
+    if (
+      opts.allowReverseInclude &&
+      normalizedText.length >= minLen &&
+      normalizedLabel.includes(normalizedText)
+    ) {
+      return city.id as CityId;
+    }
+  }
+  return null;
+}
+
 /**
  * Single source of truth for resolving the "active" city in the chat flow.
  *
- * Combines:
- * - The user's explicit selection (`selectedCity`)
- * - A conversation-scan fallback (last user message that matches a known
- *   city ID/label, or an assistant-city-question followed by free-text)
- * - A prefix/DB-backed `isCityId` predicate used by suggestion chip parsing
- *
- * Returns `activeCity` for consumers plus helpers for chip parsing.
+ * Resolution order (first hit wins):
+ *   1. Explicit `selectedCity`
+ *   2. A user message that names or contains a known city label
+ *   3. An assistant message (title, outline, description) that names a known city
+ *   4. Free-text user reply to an assistant city question (CITY_CUSTOM fallback)
  */
 export function useResolvedCity(
   messages: ChatMessageLike[],
@@ -47,25 +95,35 @@ export function useResolvedCity(
   const resolvedCityFromConversation = useMemo<CityId | null>(() => {
     if (selectedCity) return selectedCity;
 
+    // Pass 1: most-recent user message that names a known city.
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg.role !== 'user' || typeof msg.content !== 'string') continue;
-
-      const rawContent = msg.content.trim();
-      const normalizedContent = normalizeCityText(rawContent);
-      if (!normalizedContent) continue;
-
-      const matchedCity = cities.find(city => {
-        const normalizedId = normalizeCityText(city.id.replace(/_/g, ' '));
-        const normalizedLabel = normalizeCityText(city.label);
-        return (
-          normalizedContent === normalizedId ||
-          normalizedContent === normalizedLabel ||
-          normalizedContent.includes(normalizedLabel)
-        );
+      const matched = matchCityInText(msg.content, cities, {
+        allowReverseInclude: true,
+        minMatchLen: 3,
       });
+      if (matched) return matched;
+    }
 
-      if (matchedCity) return matchedCity.id;
+    // Pass 2: most-recent assistant message that names a known city
+    // (covers agent-grounded titles/outlines/descriptions).
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'assistant' || typeof msg.content !== 'string') continue;
+      const matched = matchCityInText(msg.content, cities, {
+        allowReverseInclude: false,
+        minMatchLen: 4,
+      });
+      if (matched) return matched;
+    }
+
+    // Pass 3: free-text reply to an assistant city question → CITY_CUSTOM.
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'user' || typeof msg.content !== 'string') continue;
+      const rawContent = msg.content.trim();
+      if (!rawContent) continue;
 
       const previousAssistant = messages
         .slice(0, i)
@@ -97,5 +155,6 @@ export function useResolvedCity(
     resolvedCityFromConversation,
     isCityId,
     normalizeCityText,
+    matchCityInText,
   };
 }

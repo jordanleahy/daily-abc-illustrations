@@ -1,31 +1,45 @@
-## Root cause
-Clicking "Create My Book!" hits `handleQuickReply` in `src/pages/GoogleChat.tsx`, which blocks when `activeCity` is null and only sets an inline banner. On mobile that banner is off-screen, so the tap looks dead. `activeCity` is null in your session because none of the three resolution paths caught the city you picked:
+## Goal
+Lock down the "Create My Book!" flow so the regression we just fixed (chip tap → no city resolved → silent block) can't return. The click path involves too much of `GoogleChat.tsx` (2100+ lines, mutations, sessions) to mount end-to-end cheaply, so we test the exact gate that failed as a pure unit — the same way `useResolvedCity` is already covered.
 
-- Chip taps only set `selectedCity` when the chip action carries `action.cityId`. If the offered chip omitted `cityId`, tapping it sends a canned reply and no city state is saved.
-- `useResolvedCity` only scans **user** messages, so a city grounded in the assistant's title/outline doesn't count.
-- The typed-city fuzzy match is strict (`===` or `includes(label)`), so replies like "let's do NYC" or "New York" (vs. "New York City") don't match.
+## Changes
 
-## Fix — frontend only, three small changes
+### 1. Extract the proceed-gate into a pure helper
+New file `src/utils/resolveProceedCity.ts`. Move the "last-chance inference + block decision" block from `handleQuickReply` (currently `src/pages/GoogleChat.tsx` lines ~1147–1168) into:
 
-### 1. `src/hooks/useResolvedCity.ts` — smarter resolution
-- Add a second pass that scans **assistant** messages for any known city label; return the matching city id. Iterate cities longest-label-first so "New York City" wins over "York".
-- Loosen the user-message match: also match when the message text includes any city label, or the normalized label includes the message (min 3 chars) — same longest-first ordering.
-- Explicit `selectedCity` still wins over both passes.
+```ts
+resolveProceedCity({ action, activeCity, cities, matchCityInText })
+  → { status: 'ok', city } | { status: 'inferred', city } | { status: 'blocked' }
+```
 
-### 2. `src/pages/GoogleChat.tsx` — infer city from chip taps and never silently block
-- In `handleQuickReply`, before the `isProceedAction` gate, if `action.cityId` is missing, try to infer it from `action.label`/`action.value` against `cities[]` (using the same normalize helper) and call `setSelectedCity(...)` when a match is found. Covers chips the agent produced without a `cityId`.
-- If `!activeCity` when proceeding:
-  - Keep `setCityValidationError(...)`.
-  - Also `toast.error("Please pick a city before creating your book.")` via `sonner`.
-  - Scroll the banner into view: add `id="city-validation-error"` to the existing error element and call `document.getElementById('city-validation-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })` after a `setTimeout(..., 0)`.
+Rules (unchanged behavior):
+- If `activeCity` set → `ok`.
+- Else try `matchCityInText(action.label)` then `matchCityInText(action.value)` with `allowReverseInclude:true, minMatchLen:3` → `inferred`.
+- Else `blocked`.
 
-### 3. Tests — `src/hooks/useResolvedCity.test.ts`
-Add cases:
-- Assistant message mentions "New York City", no user city reply → returns `NEW_YORK_CITY`.
-- User typed "NYC" or "New York" → resolves to `NEW_YORK_CITY`.
-- Explicit `selectedCity = JERSEY_CITY` while assistant text mentions NYC → still `JERSEY_CITY`.
-- Longest-label-first: "New York" and "York" both present → `NEW_YORK_CITY`, not a shorter accidental match.
+Update `GoogleChat.tsx` `handleQuickReply` to call the helper and keep the existing side effects (setSelectedCity on `inferred`, toast + scroll on `blocked`, `handleCreateBook()` on `ok`/`inferred`). No behavior change.
+
+### 2. Regression tests
+New file `src/utils/resolveProceedCity.test.ts` covering the exact cases that broke:
+
+- Chip carries explicit `cityId` and `activeCity` already set → `ok`, no inference.
+- Chip has no `cityId` but its label is "New York City" → `inferred`, returns `NEW_YORK_CITY`.
+- Chip label is "NYC" / "New York" (looser typed forms) → `inferred`, returns `NEW_YORK_CITY`.
+- Chip label carries no city, `activeCity` null, no match in cities → `blocked`.
+- Longest-label-first: label "New York City bridges" resolves to `NEW_YORK_CITY`, not `YORK`.
+- Chip value (not label) contains the city → `inferred`.
+- `activeCity` set + irrelevant chip label → `ok`, does NOT overwrite with an inferred value.
+
+Uses the real `matchCityInText` from `useResolvedCity.ts` and a hand-rolled `cities` fixture (same shape as the existing hook test) so no network or React tree is needed.
+
+### 3. Light integration smoke test (optional, keep small)
+Also in `resolveProceedCity.test.ts`: verify the helper's contract matches what `GoogleChat.tsx` needs by constructing an action object shaped like `SuggestedAction` (`{ id, label, value, cityId? }`) so a future rename of those fields breaks the test.
 
 ## Out of scope
-- No edge-function, agent-prompt, or DB changes.
-- No change to the "city is required" rule — resolution gets smarter, and the block becomes visible instead of silent.
+- No changes to `useResolvedCity` or its tests.
+- No RTL mount of `GoogleChat.tsx` — too heavy and would need mocking Supabase, sessions, and mutations; the pure-helper test covers the exact failure mode.
+- No edge-function or DB changes.
+
+## Files touched
+- add `src/utils/resolveProceedCity.ts`
+- add `src/utils/resolveProceedCity.test.ts`
+- edit `src/pages/GoogleChat.tsx` (replace ~20 lines in `handleQuickReply` with a call to the helper)

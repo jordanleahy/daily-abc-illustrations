@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
+import { toast } from 'sonner';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { useSessionMessages, usePrefetchSession } from '@/hooks/useSessionMessages';

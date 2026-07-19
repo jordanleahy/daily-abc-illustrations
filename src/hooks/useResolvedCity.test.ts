@@ -8,6 +8,8 @@ vi.mock('@/hooks/useCities', () => ({
       { id: 'JERSEY_CITY', label: 'Jersey City' },
       { id: 'HOBOKEN', label: 'Hoboken' },
       { id: 'CITY_ASPEN', label: 'Aspen' },
+      { id: 'NEW_YORK_CITY', label: 'New York City' },
+      { id: 'CITY_YORK', label: 'York' },
     ],
   }),
 }));

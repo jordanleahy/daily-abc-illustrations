@@ -133,6 +133,8 @@ describe('useResolvedCity', () => {
       expect(result.current.isCityId('SEASON_WINTER')).toBe(false);
       expect(result.current.isCityId('random')).toBe(false);
     });
+  });
+
   describe('assistant-message fallback', () => {
     it('resolves a city named in the assistant title/outline when no user reply matches', () => {
       const messages = [

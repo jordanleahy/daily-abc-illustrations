@@ -53,6 +53,7 @@ import { useGA4 } from '@/hooks/useGA4';
 export default function GoogleChat() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const { trackEvent } = useGA4();
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);

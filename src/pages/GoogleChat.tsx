@@ -955,7 +955,17 @@ export default function GoogleChat() {
       });
       
       console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');
-      
+
+      trackEvent('create_book_success', {
+        source: 'handleCreateBook',
+        book_id: result.bookId,
+        book_type: selectedBookType || 'unknown',
+        city: activeCity || 'unset',
+        has_fast_path_outline: hasFastPathOutline,
+        page_count: outline?.totalPages ?? null,
+        duration_ms: Math.round(performance.now() - createStartedAt),
+      });
+
       // Set local book ID immediately for UI responsiveness
       setLocalCreatedBookId(result.bookId);
       
@@ -988,6 +998,18 @@ export default function GoogleChat() {
       // NOTE: editorPagePrompts intentionally NOT cleared to preserve original prompts
     } catch (error) {
       console.error('Book creation error:', error);
+      const err = error as { message?: string; code?: string | number; status?: number };
+      trackEvent('create_book_failure', {
+        source: 'handleCreateBook',
+        book_type: selectedBookType || 'unknown',
+        city: activeCity || 'unset',
+        has_fast_path_outline: hasFastPathOutline,
+        page_count: outline?.totalPages ?? null,
+        duration_ms: Math.round(performance.now() - createStartedAt),
+        error_message: err?.message?.slice(0, 300) || 'unknown',
+        error_code: err?.code ?? null,
+        error_status: err?.status ?? null,
+      });
       // Error toast is handled by the mutation
     }
   }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity]);

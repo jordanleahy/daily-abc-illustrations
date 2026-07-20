@@ -903,6 +903,21 @@ export default function GoogleChat() {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
         pageDetails: outline?.contentPages || undefined,
+        // Full outline shortcut: when present, the edge function skips its
+        // second AI call and adapts the outline deterministically. This is
+        // what fixes the silent "Create My Book" click.
+        bookOutline: outline && outline.coverPage
+          ? {
+              bookName: outline.coverPage.title,
+              bookDescription: outline.coverPage.description || '',
+              pages: Array.from(outline.allPages.values()).map(p => ({
+                pageNumber: p.pageNumber,
+                pageType: p.pageType,
+                title: p.title,
+                description: p.description,
+              })),
+            }
+          : undefined,
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
         characterTheme: characterFlow.themeId || undefined, // Pass validated theme from flow

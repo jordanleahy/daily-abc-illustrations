@@ -48,10 +48,12 @@ import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelec
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 import { resolveProceedCity } from '@/utils/resolveProceedCity';
+import { useGA4 } from '@/hooks/useGA4';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const { trackEvent } = useGA4();
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
@@ -899,6 +901,18 @@ export default function GoogleChat() {
 
     console.log('Creating book in background...');
 
+    const createStartedAt = performance.now();
+    const hasFastPathOutline = !!(outline && outline.coverPage);
+    trackEvent('create_book_start', {
+      source: 'handleCreateBook',
+      book_type: selectedBookType || 'unknown',
+      city: activeCity || 'unset',
+      has_fast_path_outline: hasFastPathOutline,
+      page_count: outline?.totalPages ?? null,
+      message_count: messages.length,
+      session_id: currentSessionId,
+    });
+
     try {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
@@ -941,7 +955,17 @@ export default function GoogleChat() {
       });
       
       console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');
-      
+
+      trackEvent('create_book_success', {
+        source: 'handleCreateBook',
+        book_id: result.bookId,
+        book_type: selectedBookType || 'unknown',
+        city: activeCity || 'unset',
+        has_fast_path_outline: hasFastPathOutline,
+        page_count: outline?.totalPages ?? null,
+        duration_ms: Math.round(performance.now() - createStartedAt),
+      });
+
       // Set local book ID immediately for UI responsiveness
       setLocalCreatedBookId(result.bookId);
       
@@ -974,9 +998,21 @@ export default function GoogleChat() {
       // NOTE: editorPagePrompts intentionally NOT cleared to preserve original prompts
     } catch (error) {
       console.error('Book creation error:', error);
+      const err = error as { message?: string; code?: string | number; status?: number };
+      trackEvent('create_book_failure', {
+        source: 'handleCreateBook',
+        book_type: selectedBookType || 'unknown',
+        city: activeCity || 'unset',
+        has_fast_path_outline: hasFastPathOutline,
+        page_count: outline?.totalPages ?? null,
+        duration_ms: Math.round(performance.now() - createStartedAt),
+        error_message: err?.message?.slice(0, 300) || 'unknown',
+        error_code: err?.code ?? null,
+        error_status: err?.status ?? null,
+      });
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, trackEvent]);
 
   // Create book and wait for result - returns book ID and pages for immediate image generation
   const handleCreateBookAndWait = useCallback(async (): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
@@ -1173,6 +1209,13 @@ export default function GoogleChat() {
     // Handle book creation / title approval - block if city hasn't been selected
     const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
     if (isProceedAction) {
+      trackEvent('create_book_click', {
+        action_id: action.id,
+        action_value: action.value,
+        active_city: activeCity || 'unset',
+        book_type: selectedBookType || 'unknown',
+        message_count: messages.length,
+      });
       const gate = resolveProceedCity({
         action,
         activeCity,
@@ -1184,6 +1227,13 @@ export default function GoogleChat() {
       }
       if (gate.status === 'blocked') {
         console.warn('[QuickReply] blocked: no activeCity resolved', { selectedCity, messageCount: messages.length });
+        trackEvent('create_book_blocked', {
+          reason: 'no_city',
+          action_id: action.id,
+          action_value: action.value,
+          book_type: selectedBookType || 'unknown',
+          message_count: messages.length,
+        });
         setCityValidationError('Please pick a city before creating your book.');
         toast.error('Please pick a city before creating your book.');
         setTimeout(() => {
@@ -1191,7 +1241,7 @@ export default function GoogleChat() {
         }, 0);
         return;
       }
-      console.log('[QuickReply] proceeding to handleCreateBook with city:', gate.city);
+      console.log('[QuickReply] proceeding to handleCreateBook with city:', gate.city, 'via', gate.status);
       handleCreateBook();
       return;
     }
@@ -1341,7 +1391,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 

@@ -15,6 +15,7 @@ import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, getCityGroundTruthPromptAsync, type ValidCity } from '../_shared/cities.ts';
 import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
+import { outlineToBook, type OutlinePageInput } from './outlineToBook.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -56,6 +57,19 @@ const requestSchema = z.object({
     learningType: z.string(),
     specificSkill: z.string(),
     imagePrompt: z.string()
+  }).optional(),
+  // NEW: full outline shortcut. When present, we skip the second LLM call and
+  // deterministically adapt the outline into BookDataSchema via outlineToBook.
+  bookOutline: z.object({
+    bookName: z.string().min(1),
+    bookDescription: z.string().optional(),
+    category: z.string().optional(),
+    pages: z.array(z.object({
+      pageNumber: z.number().int().positive().max(100),
+      pageType: z.enum(['cover', 'educational', 'content']).optional(),
+      title: z.string().min(1).max(200),
+      description: z.string().optional().default('')
+    })).min(1)
   }).optional()
 });
 
@@ -144,7 +158,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, gradeLevel: rawGradeLevel, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, gradeLevel: rawGradeLevel, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting, bookOutline } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
@@ -469,135 +483,150 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       { role: 'user', content: prompt }
     ];
 
-    console.log('Calling Lovable AI to generate book structure');
-
-    // Call Lovable AI Gateway using selected agent's model settings
-    // Ensure minimum tokens for book types with many pages (ABC needs ~12000 for 28 pages)
-    const minTokens = bookType === 'abc' ? 12000 : 8000;
-    const effectiveMaxTokens = Math.max(selectedAgent.max_completion_tokens || 8000, minTokens);
-    
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: selectedAgent.model || 'google/gemini-2.5-flash',
-        max_completion_tokens: effectiveMaxTokens,
-        top_p: selectedAgent.top_p || 0.95,
-        messages,
-        stream: false, // CRITICAL: Disable streaming for complete JSON response
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: 'Rate limit exceeded. Please try again later.' 
-          }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: 'Payment required. Please add credits to your Lovable AI workspace.' 
-          }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'AI service error', 
-          details: errorText 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const aiResponse = await response.json();
-    let content = aiResponse.choices?.[0]?.message?.content || '';
-    
-    console.log('Lovable AI response received, length:', content.length);
-    
-    // Handle empty AI response
-    if (!content || content.trim().length === 0) {
-      console.error('Empty AI response received. Full response:', JSON.stringify(aiResponse));
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'AI returned empty response. Please try again.',
-          details: 'The AI service returned no content. This may be a temporary issue.'
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Clean up response - remove any markdown code fences
-    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    
-    console.log('Cleaned content (first 200 chars):', content.substring(0, 200));
-    
-    // Check if response appears truncated (doesn't end with })
-    if (content.length > 0 && !content.trim().endsWith('}')) {
-      console.error('Response appears truncated - likely hit token limit', {
-        contentLength: content.length,
-        maxTokens: effectiveMaxTokens,
-        bookType: bookType,
-        lastChars: content.slice(-50)
-      });
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'AI response was incomplete. The book generation may require more processing capacity.',
-          details: 'Response was truncated mid-generation. Please try again.'
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Parse and validate with Zod
+    // ========================================================================
+    // FAST PATH: deterministic outline → BookDataSchema adapter.
+    // When the client sends a full `bookOutline`, we skip the second LLM
+    // call entirely. This removes schema-drift bugs ("title" vs "bookName",
+    // "page_number" vs "pageNumber") that used to make "Create My Book"
+    // fail silently, and it removes ~3–15s of latency from the hot path.
+    // Fallback (legacy): if no outline is provided, generate via AI.
+    // ========================================================================
     let bookData: z.infer<typeof BookDataSchema>;
-    
-    try {
-      const parsed = JSON.parse(content);
-      
-      // Normalize pageType values before validation (AI sometimes returns "education" instead of "educational")
-      if (parsed.pages && Array.isArray(parsed.pages)) {
-        parsed.pages = parsed.pages.map((page: any) => ({
-          ...page,
-          pageType: page.pageType === 'education' ? 'educational' : page.pageType
-        }));
-        console.log('[Normalization] Applied pageType normalization to', parsed.pages.length, 'pages');
+
+    if (bookOutline) {
+      console.log('[Adapter] bookOutline provided — bypassing AI, using outlineToBook');
+      try {
+        const adapted = outlineToBook({
+          bookName: bookOutline.bookName,
+          bookDescription: bookOutline.bookDescription,
+          category: bookOutline.category,
+          bookType: bookType,
+          pages: bookOutline.pages as OutlinePageInput[],
+        });
+        bookData = BookDataSchema.parse(adapted);
+        console.log(`[Adapter] ✓ Built bookData deterministically: ${bookData.bookName} (${bookData.pages.length} pages)`);
+      } catch (err) {
+        console.error('[Adapter] ✗ Failed to adapt outline:', err);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Book outline could not be converted into a book',
+            details: err instanceof Error ? err.message : String(err),
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-      
-      bookData = BookDataSchema.parse(parsed);
-      console.log('✅ JSON parsed and validated successfully');
-      console.log('Book:', bookData.bookName, 'Pages:', bookData.pages.length);
-    } catch (error) {
-      console.error('❌ JSON parse/validation failed');
-      console.error('Error:', error instanceof Error ? error.message : String(error));
-      console.error('Full AI response content:', content);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'AI returned invalid JSON format. Please try again.',
-          details: error instanceof Error ? error.message : 'JSON parse error'
+    } else {
+      console.log('Calling Lovable AI to generate book structure (legacy path)');
+
+      // Ensure minimum tokens for book types with many pages (ABC needs ~12000 for 28 pages)
+      const minTokens = bookType === 'abc' ? 12000 : 8000;
+      const effectiveMaxTokens = Math.max(selectedAgent.max_completion_tokens || 8000, minTokens);
+
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: selectedAgent.model || 'google/gemini-2.5-flash',
+          max_completion_tokens: effectiveMaxTokens,
+          top_p: selectedAgent.top_p || 0.95,
+          messages,
+          stream: false,
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Lovable AI error:', response.status, errorText);
+
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again later.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Payment required. Please add credits to your Lovable AI workspace.' }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: false, error: 'AI service error', details: errorText }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const aiResponse = await response.json();
+      let content = aiResponse.choices?.[0]?.message?.content || '';
+
+      console.log('Lovable AI response received, length:', content.length);
+
+      if (!content || content.trim().length === 0) {
+        console.error('Empty AI response received. Full response:', JSON.stringify(aiResponse));
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'AI returned empty response. Please try again.',
+            details: 'The AI service returned no content. This may be a temporary issue.',
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      console.log('Cleaned content (first 200 chars):', content.substring(0, 200));
+
+      if (content.length > 0 && !content.trim().endsWith('}')) {
+        console.error('Response appears truncated - likely hit token limit', {
+          contentLength: content.length,
+          maxTokens: effectiveMaxTokens,
+          bookType: bookType,
+          lastChars: content.slice(-50),
+        });
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'AI response was incomplete. The book generation may require more processing capacity.',
+            details: 'Response was truncated mid-generation. Please try again.',
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed.pages && Array.isArray(parsed.pages)) {
+          parsed.pages = parsed.pages.map((page: any) => ({
+            ...page,
+            pageType: page.pageType === 'education' ? 'educational' : page.pageType,
+          }));
+        }
+        bookData = BookDataSchema.parse(parsed);
+        console.log('✅ JSON parsed and validated successfully');
+        console.log('Book:', bookData.bookName, 'Pages:', bookData.pages.length);
+      } catch (error) {
+        console.error('❌ JSON parse/validation failed');
+        console.error('Error:', error instanceof Error ? error.message : String(error));
+        console.error('Full AI response content:', content);
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'AI returned invalid JSON format. Please try again.',
+            details: error instanceof Error ? error.message : 'JSON parse error',
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
+
+
 
     // HARDENING: ABC-specific validation
     if (bookType === 'abc' && bookData.pages) {

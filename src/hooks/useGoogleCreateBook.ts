@@ -15,9 +15,29 @@ interface PageDetail {
   description: string;
 }
 
+interface BookOutlinePage {
+  pageNumber: number;
+  pageType?: 'cover' | 'educational' | 'content';
+  title: string;
+  description?: string;
+}
+
+interface BookOutline {
+  bookName: string;
+  bookDescription?: string;
+  category?: string;
+  pages: BookOutlinePage[];
+}
+
 export interface CreateBookParams {
   conversationHistory: Message[];
   pageDetails?: PageDetail[];
+  /**
+   * Optional full outline. When present, the server skips the second AI call
+   * and deterministically adapts the outline into a book via `outlineToBook`.
+   * This is the preferred path — see supabase/functions/google-create-book/outlineToBook.ts.
+   */
+  bookOutline?: BookOutline;
   bookType?: string;
   characterTheme?: string;
   targetAge?: string; // Target age range (e.g., '2-4', '4-6') - LEGACY
@@ -98,6 +118,7 @@ export const useGoogleCreateBook = () => {
           conversationHistory: params.conversationHistory,
           // userId is now automatically extracted from JWT token on the server
           pageDetails: params.pageDetails || undefined,
+          bookOutline: params.bookOutline || undefined,
           qaImages: params.qaImages || undefined,
           bookType: params.bookType || undefined,
           characterTheme: params.characterTheme || undefined,

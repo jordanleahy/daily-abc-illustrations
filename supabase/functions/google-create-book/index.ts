@@ -15,6 +15,7 @@ import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, getCityGroundTruthPromptAsync, type ValidCity } from '../_shared/cities.ts';
 import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
+import { outlineToBook, type OutlinePageInput } from './outlineToBook.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -56,6 +57,19 @@ const requestSchema = z.object({
     learningType: z.string(),
     specificSkill: z.string(),
     imagePrompt: z.string()
+  }).optional(),
+  // NEW: full outline shortcut. When present, we skip the second LLM call and
+  // deterministically adapt the outline into BookDataSchema via outlineToBook.
+  bookOutline: z.object({
+    bookName: z.string().min(1),
+    bookDescription: z.string().optional(),
+    category: z.string().optional(),
+    pages: z.array(z.object({
+      pageNumber: z.number().int().positive().max(100),
+      pageType: z.enum(['cover', 'educational', 'content']).optional(),
+      title: z.string().min(1).max(200),
+      description: z.string().optional().default('')
+    })).min(1)
   }).optional()
 });
 

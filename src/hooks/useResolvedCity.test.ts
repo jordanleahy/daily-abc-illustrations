@@ -162,9 +162,11 @@ describe('useResolvedCity', () => {
       ];
       const { result } = renderHook(() => useResolvedCity(messages, null));
       expect(result.current.activeCity).toBe('NEW_YORK_CITY');
+    });
   });
 
   describe('Pass 4: assistant bolded location fallback (unknown-to-DB cities)', () => {
+
     it('promotes bolded location in "in **X**" to CITY_CUSTOM when city is not in DB', () => {
       const messages = [
         userMsg('A rhyming book please'),

@@ -901,6 +901,18 @@ export default function GoogleChat() {
 
     console.log('Creating book in background...');
 
+    const createStartedAt = performance.now();
+    const hasFastPathOutline = !!(outline && outline.coverPage);
+    trackEvent('create_book_start', {
+      source: 'handleCreateBook',
+      book_type: selectedBookType || 'unknown',
+      city: activeCity || 'unset',
+      has_fast_path_outline: hasFastPathOutline,
+      page_count: outline?.totalPages ?? null,
+      message_count: messages.length,
+      session_id: currentSessionId,
+    });
+
     try {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,

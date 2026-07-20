@@ -47,7 +47,7 @@ import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
-import { resolveProceedCity } from '@/utils/resolveProceedCity';
+
 import { useGA4 } from '@/hooks/useGA4';
 
 export default function GoogleChat() {
@@ -1216,16 +1216,9 @@ export default function GoogleChat() {
         book_type: selectedBookType || 'unknown',
         message_count: messages.length,
       });
-      const gate = resolveProceedCity({
-        action,
-        activeCity,
-        cities: resolvedCitiesList,
-        matchCityInText,
-      });
-      if (gate.status === 'inferred') {
-        setSelectedCity(gate.city);
-      }
-      if (gate.status === 'blocked') {
+      // Deterministic gate: activeCity is derived from useResolvedCity (single
+      // source of truth — chip cityId, typed name, or bolded assistant location).
+      if (!activeCity) {
         console.warn('[QuickReply] blocked: no activeCity resolved', { selectedCity, messageCount: messages.length });
         trackEvent('create_book_blocked', {
           reason: 'no_city',
@@ -1241,7 +1234,7 @@ export default function GoogleChat() {
         }, 0);
         return;
       }
-      console.log('[QuickReply] proceeding to handleCreateBook with city:', gate.city, 'via', gate.status);
+      console.log('[QuickReply] proceeding to handleCreateBook with city:', activeCity);
       handleCreateBook();
       return;
     }

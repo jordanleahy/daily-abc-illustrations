@@ -164,4 +164,39 @@ describe('useResolvedCity', () => {
       expect(result.current.activeCity).toBe('NEW_YORK_CITY');
     });
   });
+
+  describe('Pass 4: assistant bolded location fallback (unknown-to-DB cities)', () => {
+
+    it('promotes bolded location in "in **X**" to CITY_CUSTOM when city is not in DB', () => {
+      const messages = [
+        userMsg('A rhyming book please'),
+        asstMsg('How wonderful! A story set in the bright summer sun of **Paris**.'),
+      ];
+      const { result } = renderHook(() => useResolvedCity(messages, null));
+      expect(result.current.activeCity).toBe('CITY_CUSTOM:Paris');
+    });
+
+    it('handles "through **City Name**"', () => {
+      const messages = [
+        asstMsg('Join them on an adventure through **Tokyo Town**! Fun times.'),
+      ];
+      const { result } = renderHook(() => useResolvedCity(messages, null));
+      expect(result.current.activeCity).toBe('CITY_CUSTOM:Tokyo Town');
+    });
+
+    it('still prefers known DB city over Pass 4 fallback', () => {
+      const messages = [
+        asstMsg('A tale in **New York City** with pretzels in Central Park.'),
+      ];
+      const { result } = renderHook(() => useResolvedCity(messages, null));
+      expect(result.current.activeCity).toBe('NEW_YORK_CITY');
+    });
+
+    it('does not fire when there is no bolded location', () => {
+      const messages = [asstMsg('Just a plain sentence with no bold anywhere.')];
+      const { result } = renderHook(() => useResolvedCity(messages, null));
+      expect(result.current.activeCity).toBeNull();
+    });
+  });
 });
+

@@ -144,6 +144,23 @@ export function useResolvedCity(
       }
     }
 
+    // Pass 4: assistant bolded a location the agent grounded the story in
+    // (e.g. "in **New York City**" / "adventure through **Paris**").
+    // Covers cities the DB doesn't know about so CITY_CUSTOM is deterministic.
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'assistant' || typeof msg.content !== 'string') continue;
+      const boldMatch = msg.content.match(
+        /\b(?:in|through|around|across|from|to|of)\s+(?:the\s+)?(?:city\s+of\s+)?\*\*([A-Z][^*\n]{1,60})\*\*/,
+      );
+      if (boldMatch) {
+        const label = boldMatch[1].trim().replace(/[.,!?;:]+$/, '');
+        if (label.length >= 2) return `CITY_CUSTOM:${label}` as CityId;
+      }
+    }
+
+
+
     return null;
   }, [cities, messages, selectedCity]);
 

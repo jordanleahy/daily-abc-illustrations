@@ -158,7 +158,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, gradeLevel: rawGradeLevel, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, gradeLevel: rawGradeLevel, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting, bookOutline } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);

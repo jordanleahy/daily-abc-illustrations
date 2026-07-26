@@ -305,13 +305,13 @@ export function BookEditorPanel({
     base64: string,
     mode: 'color' | 'bw' | 'text'
   ) => {
-    const ensured = await ensureBook();
+    const ensured = await ensureBook(`upload:${mode}`);
     if (!ensured) return;
     onImageUpload(base64, mode);
   };
 
   const handleGenerateAllTextImagesWithBookCreation = async () => {
-    const ensured = await ensureBook();
+    const ensured = await ensureBook('text_all');
     if (!ensured) return;
     await generateAllTextImages();
   };
@@ -321,7 +321,7 @@ export function BookEditorPanel({
   // For content pages: uses text image (has text bar at bottom to preserve)
   // For cover/educational pages: can use color image (no text bar)
   const handleGenerateColoringImage = async () => {
-    const ensured = await ensureBook();
+    const ensured = await ensureBook('bw');
     if (!ensured) return;
 
     const currentPage = pages?.find(p => p.page_number === currentPageNumber);
@@ -405,7 +405,7 @@ export function BookEditorPanel({
 
     setIsGeneratingColorImage(true);
     try {
-      const ensured = await ensureBook();
+      const ensured = await ensureBook('color');
       if (!ensured) return;
 
       const currentPage = pages?.find(p => p.page_number === currentPageNumber);

@@ -325,306 +325,67 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       sessionId
     });
 
-    // Use the selected agent's instructions as system prompt (single source of truth)
-    let systemPrompt = selectedAgent.instructions;
-    
-    // Log orchestration details
+    // Log orchestration details. The agent is still resolved for provenance
+    // metadata (createdByAgentId/Type/Version), but its instructions are NOT
+    // re-sent to an LLM here: book structure now comes from the approved chat
+    // outline via `outlineToBook`, so no system prompt is composed on this path.
     logOrchestration({
       agentId: selectedAgent.id,
       agentName: selectedAgent.name,
       agentType: selectedAgent.type,
       version: selectedAgent.version,
       source: agentSource,
-      promptLength: systemPrompt.length,
-      promptSource: 'database'
+      promptLength: 0,
+      promptSource: 'deterministic-outline'
     });
 
-    // ============================================================================
-    // Prepare prompt for book creation
-    // ============================================================================
-    
-    if (pageDetails && pageDetails.length > 0) {
-      // User provided structured page details - append them to the agent's base instructions
-      console.log(`Using ${pageDetails.length} pre-defined page details from chat`);
-      
-      systemPrompt += `
-
-CRITICAL INSTRUCTIONS FOR THIS REQUEST:
-- The user has already designed specific pages in our conversation
-- You MUST use the exact page titles and descriptions provided below
-- You MUST include pageType field for EVERY page
-- Cover page is ALWAYS pageNumber: 1, pageType: "cover"
-- Educational focus (if present) is ALWAYS pageNumber: 2, pageType: "educational"
-- Content pages start at pageNumber: 3, pageType: "content"
-- Do NOT include aspect ratio specs in titles/descriptions
-- NEVER use quotes or apostrophes in titles (plain text only)
-- EXTRACT metadata from the conversation
-
-PROVIDED PAGE STRUCTURE:
-${pageDetails.map(p => `Page ${p.pageNumber}: ${p.title}\n${p.description}`).join('\n\n')}
-
-Return ONLY valid JSON with this structure:
-{
-  "bookName": "string",
-  "category": "string", 
-  "bookDescription": "string",
-  "metadata": {
-    "bookType": "${bookType}",
-    "pageCount": ${pageDetails.length},
-    "letterCase": "lowercase|uppercase|both (for ABC content)",
-    "numberRange": "1-10 (for Numbers content)",
-    "countingStyle": "simple|skip-counting (for Numbers content)",
-    "characterTheme": "${characterTheme || 'not-specified'}", 
-    "targetAge": "toddler|preschool|early-reader"
-  },
-  "pages": [
-     {
-       "pageNumber": 1,
-       "pageType": "cover",
-       "letter": "COVER",
-       "title": "Book Title",
-       "description": "Cover description with title-focused layout",
-       "content": {
-         "mainConcept": "Book title",
-         "funFact": "Book description",
-         "activity": ""
-       }
-     },
-     {
-       "pageNumber": 2,
-       "pageType": "educational",
-       "letter": "FOCUS",
-       "title": "Educational Focus",
-       "description": "Age and learning objectives",
-       "content": {
-         "mainConcept": "Target age",
-         "funFact": "Learning approach",
-         "activity": "Specific skills"
-       }
-     },
-     {
-       "pageNumber": 3,
-       "pageType": "content",
-       "letter": "a (or appropriate - WITHOUT parentheses in this field)",
-       "title": "EXACT TITLE FROM PROVIDED LIST - FOR ABC: use format '(a) is for apple'",
-       "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
-      "content": {
-        "mainConcept": "string",
-        "funFact": "string",
-        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string"' : ''}
-      }
-    }
-  ]
-}`;
-    }
-
-    // Add targetWords instructions if provided (from word learning recommendations)
-    if (targetWords && targetWords.length > 0) {
-      systemPrompt += `
-
-IMPORTANT - WORD LEARNING FOCUS:
-- This book is being created to help practice specific challenging words: ${targetWords.join(', ')}
-- Naturally incorporate these words throughout the appropriate pages
-- For ABC books: Use target words that start with each letter when possible
-- Make the book engaging and fun while focusing on vocabulary practice
-- Examples should highlight these words in meaningful contexts
-- Target words: [${targetWords.join(', ')}]
-`;
-      console.log(`Target words for vocabulary practice: ${targetWords.join(', ')}`);
-    }
-
-    // Add character constraints if characters were selected
-    if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
-      const characterConstraints = getSelectedCharacterConstraints(characterTheme, selectedCharacterIds);
-      if (characterConstraints) {
-        systemPrompt += `\n${characterConstraints}`;
-        console.log(`[Character Enforcement] Applied constraints for ${characterTheme}:`, selectedCharacterIds);
-      }
-    }
-
-    // Add location visual profile if a resort was selected
-    if (location && isValidLocation(location as ValidLocation)) {
-      const resortVisualPrompt = getResortVisualPrompt(location as ValidLocation);
-      if (resortVisualPrompt) {
-        systemPrompt += `\n${resortVisualPrompt}`;
-        console.log(`[Location Context] Applied visual profile for: ${location}`);
-      }
-    }
-
-    // Add city visual profile + ground-truth (canonical Google Place, nearby
-    // landmarks, Wikipedia summary) for any resolvable city — predetermined DB
-    // id OR freeform CITY_CUSTOM:label typed by the user.
-    if (city) {
-      try {
-        const cityGroundTruth = await getCityGroundTruthPromptAsync(city, supabase);
-        if (cityGroundTruth) {
-          systemPrompt += `\n${cityGroundTruth}`;
-          console.log(`[City Context] Applied ground-truth prompt for: ${city} → ${cityLabel}`);
-        } else if (isValidCity(city)) {
-          // Fallback to sync DB-only prompt if ground-truth returned nothing
-          const cityVisualPrompt = getCityVisualPromptSync(city);
-          if (cityVisualPrompt) systemPrompt += `\n${cityVisualPrompt}`;
-        }
-      } catch (err) {
-        console.warn('[City Context] Ground-truth enrichment failed, falling back to sync:', err);
-        const cityVisualPrompt = isValidCity(city) ? getCityVisualPromptSync(city) : null;
-        if (cityVisualPrompt) systemPrompt += `\n${cityVisualPrompt}`;
-      }
-    }
 
 
-    const prompt = `Based on this conversation, create a complete children's book:
-${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
-
-Return ONLY valid JSON, no other text, no markdown code blocks.`;
-
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt }
-    ];
 
     // ========================================================================
-    // FAST PATH: deterministic outline → BookDataSchema adapter.
-    // When the client sends a full `bookOutline`, we skip the second LLM
-    // call entirely. This removes schema-drift bugs ("title" vs "bookName",
-    // "page_number" vs "pageNumber") that used to make "Create My Book"
-    // fail silently, and it removes ~3–15s of latency from the hot path.
-    // Fallback (legacy): if no outline is provided, generate via AI.
+    // DETERMINISTIC ONLY: outline → BookDataSchema adapter.
+    // The client always sends the approved `bookOutline`, so there is no second
+    // LLM call here. This removes schema-drift bugs ("title" vs "bookName",
+    // "page_number" vs "pageNumber") that used to make "Create My Book" fail
+    // silently, and removes ~3–15s of latency from the hot path.
     // ========================================================================
+    if (!bookOutline) {
+      console.error('[Adapter] OUTLINE_REQUIRED — request arrived without bookOutline');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'OUTLINE_REQUIRED',
+          details: 'A book outline is required. Please regenerate the outline in chat and try again.',
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     let bookData: z.infer<typeof BookDataSchema>;
 
-    if (bookOutline) {
-      console.log('[Adapter] bookOutline provided — bypassing AI, using outlineToBook');
-      try {
-        const adapted = outlineToBook({
-          bookName: bookOutline.bookName,
-          bookDescription: bookOutline.bookDescription,
-          category: bookOutline.category,
-          bookType: bookType,
-          pages: bookOutline.pages as OutlinePageInput[],
-        });
-        bookData = BookDataSchema.parse(adapted);
-        console.log(`[Adapter] ✓ Built bookData deterministically: ${bookData.bookName} (${bookData.pages.length} pages)`);
-      } catch (err) {
-        console.error('[Adapter] ✗ Failed to adapt outline:', err);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Book outline could not be converted into a book',
-            details: err instanceof Error ? err.message : String(err),
-          }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else {
-      console.log('Calling Lovable AI to generate book structure (legacy path)');
-
-      // Ensure minimum tokens for book types with many pages (ABC needs ~12000 for 28 pages)
-      const minTokens = bookType === 'abc' ? 12000 : 8000;
-      const effectiveMaxTokens = Math.max(selectedAgent.max_completion_tokens || 8000, minTokens);
-
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: selectedAgent.model || 'google/gemini-2.5-flash',
-          max_completion_tokens: effectiveMaxTokens,
-          top_p: selectedAgent.top_p || 0.95,
-          messages,
-          stream: false,
-        }),
+    console.log('[Adapter] bookOutline provided — building book deterministically');
+    try {
+      const adapted = outlineToBook({
+        bookName: bookOutline.bookName,
+        bookDescription: bookOutline.bookDescription,
+        category: bookOutline.category,
+        bookType: bookType,
+        pages: bookOutline.pages as OutlinePageInput[],
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Lovable AI error:', response.status, errorText);
-
-        if (response.status === 429) {
-          return new Response(
-            JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again later.' }),
-            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        if (response.status === 402) {
-          return new Response(
-            JSON.stringify({ success: false, error: 'Payment required. Please add credits to your Lovable AI workspace.' }),
-            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        return new Response(
-          JSON.stringify({ success: false, error: 'AI service error', details: errorText }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const aiResponse = await response.json();
-      let content = aiResponse.choices?.[0]?.message?.content || '';
-
-      console.log('Lovable AI response received, length:', content.length);
-
-      if (!content || content.trim().length === 0) {
-        console.error('Empty AI response received. Full response:', JSON.stringify(aiResponse));
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'AI returned empty response. Please try again.',
-            details: 'The AI service returned no content. This may be a temporary issue.',
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      console.log('Cleaned content (first 200 chars):', content.substring(0, 200));
-
-      if (content.length > 0 && !content.trim().endsWith('}')) {
-        console.error('Response appears truncated - likely hit token limit', {
-          contentLength: content.length,
-          maxTokens: effectiveMaxTokens,
-          bookType: bookType,
-          lastChars: content.slice(-50),
-        });
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'AI response was incomplete. The book generation may require more processing capacity.',
-            details: 'Response was truncated mid-generation. Please try again.',
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      try {
-        const parsed = JSON.parse(content);
-        if (parsed.pages && Array.isArray(parsed.pages)) {
-          parsed.pages = parsed.pages.map((page: any) => ({
-            ...page,
-            pageType: page.pageType === 'education' ? 'educational' : page.pageType,
-          }));
-        }
-        bookData = BookDataSchema.parse(parsed);
-        console.log('✅ JSON parsed and validated successfully');
-        console.log('Book:', bookData.bookName, 'Pages:', bookData.pages.length);
-      } catch (error) {
-        console.error('❌ JSON parse/validation failed');
-        console.error('Error:', error instanceof Error ? error.message : String(error));
-        console.error('Full AI response content:', content);
-
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'AI returned invalid JSON format. Please try again.',
-            details: error instanceof Error ? error.message : 'JSON parse error',
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      bookData = BookDataSchema.parse(adapted);
+      console.log(`[Adapter] ✓ Built bookData deterministically: ${bookData.bookName} (${bookData.pages.length} pages)`);
+    } catch (err) {
+      console.error('[Adapter] ✗ Failed to adapt outline:', err);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Book outline could not be converted into a book',
+          details: err instanceof Error ? err.message : String(err),
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
 
 
 
@@ -656,61 +417,20 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     // HARDENING: Non-ABC book validation (12-page structure)
+    // Uses the shared unified validator instead of an inlined copy of the rules.
     if (bookType && bookType !== 'abc' && bookType !== 'other' && bookData.pages) {
       console.log(`[${bookType.toUpperCase()} Validation] Running 12-page structure validation...`);
-      
-      const errors: string[] = [];
-      const EXPECTED_PAGE_COUNT = 12;
-      
-      // Validate page count
-      if (bookData.pages.length !== EXPECTED_PAGE_COUNT) {
-        errors.push(`Expected exactly ${EXPECTED_PAGE_COUNT} pages, got ${bookData.pages.length}`);
+
+      const { validateBookStructure } = await import('../_shared/validation.ts');
+      const { valid, errors, warnings } = validateBookStructure(bookData.pages, bookType);
+
+      if (warnings.length > 0) {
+        console.warn(`[${bookType.toUpperCase()} Validation] Warnings:`, warnings);
       }
-      
-      // Validate page types and numbering (1-based)
-      const pageNumbers = bookData.pages.map((p: any) => p.pageNumber);
-      const pageTypes = bookData.pages.map((p: any) => ({ num: p.pageNumber, type: p.pageType }));
-      
-      // Check Page 1 is cover
-      const page1 = bookData.pages.find((p: any) => p.pageNumber === 1);
-      if (!page1) {
-        errors.push('Page 1 (cover) is missing');
-      } else if (page1.pageType !== 'cover') {
-        errors.push(`Page 1 must be type "cover", got "${page1.pageType}"`);
-      }
-      
-      // Check Page 2 is educational focus
-      const page2 = bookData.pages.find((p: any) => p.pageNumber === 2);
-      if (!page2) {
-        errors.push('Page 2 (educational focus) is missing');
-      } else if (page2.pageType !== 'educational') {
-        errors.push(`Page 2 must be type "educational", got "${page2.pageType}"`);
-      }
-      
-      // Check Pages 3-12 are content pages
-      for (let i = 3; i <= EXPECTED_PAGE_COUNT; i++) {
-        const page = bookData.pages.find((p: any) => p.pageNumber === i);
-        if (!page) {
-          errors.push(`Page ${i} (content) is missing`);
-        } else if (page.pageType !== 'content') {
-          errors.push(`Page ${i} must be type "content", got "${page.pageType}"`);
-        }
-      }
-      
-      // Check for duplicate page numbers
-      const uniquePageNumbers = new Set(pageNumbers);
-      if (uniquePageNumbers.size !== pageNumbers.length) {
-        errors.push('Duplicate page numbers detected');
-      }
-      
-      // Check for 0-based indexing (common mistake)
-      if (pageNumbers.includes(0)) {
-        errors.push('Pages use 0-based numbering. Must use 1-based (Page 1, Page 2, etc.)');
-      }
-      
-      if (errors.length > 0) {
+
+      if (!valid) {
         console.error(`[${bookType.toUpperCase()} Validation] Structure validation failed:`, errors);
-        
+
         return new Response(
           JSON.stringify({
             success: false,
@@ -720,6 +440,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
       
       console.log(`[${bookType.toUpperCase()} Validation] ✓ All validations passed - 12 pages, proper format (1 cover + 1 education + 10 content)`);
     }
@@ -1050,96 +771,104 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         let promptsSkipped = 0;
         let totalPromptLength = 0;
         const promptMetrics: any[] = [];
-        
+
         console.log(`[PROMPT PRESERVATION] Matching ${promptKeys.length} prompts to ${createdPages.length} pages`);
-        
+
+        // PERF: build all rows first, resolve version numbers in parallel, then
+        // do ONE batch insert. Previously this ran 2 sequential roundtrips per
+        // page (up to 56 for a 28-page ABC book) inside a request timeout.
+        const candidates: Array<{ pageNumber: number; pageId: string; pageTitle: string; content: string }> = [];
+
         for (const [pageNumStr, promptContent] of Object.entries(fullPrompts)) {
           const pageNumber = parseInt(pageNumStr, 10);
-          
-          // Validate page number
+
           if (isNaN(pageNumber)) {
             console.warn(`[PROMPT PRESERVATION] Invalid page number: "${pageNumStr}" - skipping`);
             promptsSkipped++;
             continue;
           }
-          
-          // Find matching page
+
           const page = createdPages.find((p: any) => p.page_number === pageNumber);
           if (!page) {
-            console.warn(`[PROMPT PRESERVATION] Page ${pageNumber} not found (title: ${promptContent.substring(0, 50)}...)`);
+            console.warn(`[PROMPT PRESERVATION] Page ${pageNumber} not found`);
             promptsSkipped++;
             continue;
           }
-          
-          // Validate prompt content
+
           if (!promptContent || typeof promptContent !== 'string') {
             console.warn(`[PROMPT PRESERVATION] Invalid prompt content for page ${pageNumber} - skipping`);
             promptsSkipped++;
             continue;
           }
-          
+
           const trimmedContent = promptContent.trim();
           if (trimmedContent.length === 0) {
             console.warn(`[PROMPT PRESERVATION] Empty prompt for page ${pageNumber} - skipping`);
             promptsSkipped++;
             continue;
           }
-          
-          // Log prompt metrics for monitoring
+
           totalPromptLength += trimmedContent.length;
-          promptMetrics.push({
-            page: pageNumber,
-            title: page.title,
-            length: trimmedContent.length
+          promptMetrics.push({ page: pageNumber, title: page.title, length: trimmedContent.length });
+          candidates.push({
+            pageNumber,
+            pageId: page.id,
+            pageTitle: page.title,
+            content: trimmedContent,
           });
-          
-          try {
-            // Get next version number for this page
-            const { data: versionData, error: versionError } = await supabase
-              .rpc('get_next_page_prompt_version_number', { p_page_id: page.id });
-            
-            if (versionError) {
-              console.error(`[PROMPT PRESERVATION ERROR] Failed to get version for page ${pageNumber}:`, versionError);
-              promptsSkipped++;
-              continue;
-            }
-            
-            const versionNumber = versionData || 1;
-            
-            // Insert the full prompt from chat - EXACTLY AS PROVIDED
+        }
+
+        if (candidates.length > 0) {
+          const versionResults = await Promise.all(
+            candidates.map(async (c) => {
+              const { data, error } = await supabase
+                .rpc('get_next_page_prompt_version_number', { p_page_id: c.pageId });
+              if (error) {
+                console.error(`[PROMPT PRESERVATION ERROR] Version lookup failed for page ${c.pageNumber}:`, error);
+                return null;
+              }
+              return { ...c, versionNumber: data || 1 };
+            })
+          );
+
+          const now = new Date().toISOString();
+          const rows = versionResults
+            .filter((r): r is NonNullable<typeof r> => r !== null)
+            .map((r) => ({
+              page_id: r.pageId,
+              book_id: book.id,
+              user_id: userId,
+              version_number: r.versionNumber,
+              content: r.content, // Store full prompt with no modifications
+              is_latest: true,
+              is_deployed: true,
+              deployed_at: now,
+              source_type: 'chat_generated',
+              prompt_status: 'complete',
+              generation_metadata: {
+                preservedFromChat: true,
+                originalLength: r.content.length,
+                timestamp: now,
+              },
+            }));
+
+          promptsSkipped += candidates.length - rows.length;
+
+          if (rows.length > 0) {
             const { error: insertError } = await supabase
               .from('page_system_prompts')
-              .insert({
-                page_id: page.id,
-                book_id: book.id,
-                user_id: userId,
-                version_number: versionNumber,
-                content: trimmedContent, // Store full prompt with no modifications
-                is_latest: true,
-                is_deployed: true,
-                deployed_at: new Date().toISOString(),
-                source_type: 'chat_generated', // Track that this came from chat
-                prompt_status: 'complete',
-                generation_metadata: {
-                  preservedFromChat: true,
-                  originalLength: trimmedContent.length,
-                  timestamp: new Date().toISOString()
-                }
-              });
-            
+              .insert(rows);
+
             if (insertError) {
-              console.error(`[PROMPT PRESERVATION ERROR] Failed to insert prompt for page ${pageNumber}:`, insertError);
-              promptsSkipped++;
+              console.error('[PROMPT PRESERVATION ERROR] Batch insert failed:', insertError);
+              promptsSkipped += rows.length;
             } else {
-              promptsCreated++;
-              console.log(`[PROMPT PRESERVATION] ✓ Page ${pageNumber} (${page.title}): ${trimmedContent.length} chars`);
+              promptsCreated = rows.length;
+              console.log(`[PROMPT PRESERVATION] ✓ Batch inserted ${rows.length} prompts`);
             }
-          } catch (error) {
-            console.error(`[PROMPT PRESERVATION ERROR] Exception processing page ${pageNumber}:`, error);
-            promptsSkipped++;
           }
         }
-        
+
         // Log comprehensive metrics
         const avgLength = promptsCreated > 0 ? Math.round(totalPromptLength / promptsCreated) : 0;
         console.log(`[PROMPT PRESERVATION COMPLETE]`);
@@ -1147,13 +876,14 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         console.log(`  ✗ Skipped: ${promptsSkipped}`);
         console.log(`  📏 Avg length: ${avgLength} chars`);
         console.log(`  📊 Total: ${totalPromptLength} chars`);
-        
+
         if (promptMetrics.length > 0) {
           const shortest = promptMetrics.reduce((min, p) => p.length < min.length ? p : min);
           const longest = promptMetrics.reduce((max, p) => p.length > max.length ? p : max);
           console.log(`  📉 Shortest: Page ${shortest.page} (${shortest.length} chars)`);
           console.log(`  📈 Longest: Page ${longest.page} (${longest.length} chars)`);
         }
+
         
         // If we didn't create any prompts, fall back to generation
         if (promptsCreated === 0) {

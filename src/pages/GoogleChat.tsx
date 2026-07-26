@@ -20,9 +20,15 @@ import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
-import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
-import { parseBookOutline, getPagePrompt, extractPromptsRecord } from '@/utils/pageHelpers';
-import { sanitizeImagePrompt } from '@/utils/promptSanitizer';
+import { parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
+import { parseBookOutline } from '@/utils/pageHelpers';
+import {
+  extractOutlinePrompts,
+  extractEditModePrompts,
+  readPagePrompt,
+  buildOutlinePayload,
+} from '@/utils/bookPrompts';
+
 import { BOOK_TYPES, BookType } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -349,61 +355,16 @@ export default function GoogleChat() {
     return pageCount;
   }, [isBookCreated, dbPages, pageCount]);
 
-  // Helper to get current page prompt - ALWAYS prioritizes stored prompts from qa_page_prompts
-  // Applies fallback sanitization for legacy unsanitized prompts
+  // Helper to get current page prompt - delegates to the shared prompt pipeline
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    // PRIORITY 1: Always check stored prompts from "View Outline" first
-    // Apply sanitization as fallback for legacy unsanitized prompts
-    if (editorPagePrompts[pageNum]) {
-      return sanitizeImagePrompt(editorPagePrompts[pageNum]);
-    }
-
-    // PRIORITY 2: If book is created, get from database
-    if (isBookCreated && dbPages && dbPages.length > 0) {
-      const page = dbPages.find(p => p.page_number === pageNum);
-      if (!page) return null;
-      
-      // Try to get full prompt from content.imagePrompt (stores unlimited text)
-      const fullPrompt = (page.content as any)?.imagePrompt;
-      if (fullPrompt) {
-        // Apply sanitization for legacy data
-        return sanitizeImagePrompt(fullPrompt);
-      }
-      
-      // Fallback to page description (may be truncated)
-      if (page.description) {
-        return sanitizeImagePrompt(page.description);
-      }
-      
-      return null;
-    }
-    
-    // PRIORITY 3: Pre-creation - use new structured outline with direct lookup
-    // Note: extractPromptsRecord already sanitizes at extraction time,
-    // but getPagePrompt returns raw description, so sanitize here too
-    const prompt = getPagePrompt(bookOutline, pageNum);
-    if (!prompt) return null;
-    
-    const sanitized = sanitizeImagePrompt(prompt);
-    
-    // Special handling for cover page - ensure centered title
-    if (pageNum === 1) {
-      let description = sanitized;
-      
-      // Replace "book cover" with "square card cover"
-      description = description.replace(/\bbook cover\b/gi, 'square card cover');
-      
-      // Ensure centered title instruction exists
-      if (!description.toLowerCase().includes('centered') && 
-          !description.toLowerCase().includes('center')) {
-        description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
-      }
-      
-      return description;
-    }
-    
-    return sanitized;
+    return readPagePrompt(pageNum, {
+      storedPrompts: editorPagePrompts,
+      dbPages,
+      outline: bookOutline,
+      isBookCreated,
+    });
   }, [isBookCreated, dbPages, editorPagePrompts, bookOutline]);
+
 
   // Helper to get current page title - mirrors getCurrentPagePrompt pattern
   const getCurrentPageTitle = useCallback((pageNum: number): string | null => {
@@ -610,42 +571,21 @@ export default function GoogleChat() {
       const hasPrompts = selectedSession.qa_page_prompts && Object.keys(selectedSession.qa_page_prompts).length > 0;
       
       if (!hasPrompts) {
-        // Extract prompts from conversation history
-        const fullPrompts: Record<number, string> = {};
-        const conversationText = messages
-          .filter(m => m.role === 'assistant')
-          .map(m => m.content)
-          .join('\n');
-        
-        // Extract prompts for each page (A-Z = pages 1-26)
-        for (let i = 1; i <= 26; i++) {
-          const letter = String.fromCharCode(64 + i);
-          const patterns = [
-            new RegExp(`<qa_page_${i}>([\\s\\S]*?)</qa_page_${i}>`, 'i'),
-            new RegExp(`Page ${i}[:\\s-]+${letter}[:\\s-]+([\\s\\S]*?)(?=Page ${i + 1}|$)`, 'i')
-          ];
-          
-          for (const pattern of patterns) {
-            const match = conversationText.match(pattern);
-            if (match) {
-              fullPrompts[i] = match[1].trim();
-              break;
-            }
-          }
-        }
-        
-        // Save extracted prompts to database
+        // Reconstruct prompts from legacy <qa_page_N> conversation blocks
+        const fullPrompts = extractEditModePrompts(messages);
+
         if (Object.keys(fullPrompts).length > 0) {
           console.log(`[Edit Mode] Extracted ${Object.keys(fullPrompts).length} prompts, saving...`);
-          updateQAPagePrompts({ 
-            sessionId: currentSessionId, 
-            qaPagePrompts: fullPrompts 
+          updateQAPagePrompts({
+            sessionId: currentSessionId,
+            qaPagePrompts: fullPrompts
           });
           setEditorPagePrompts(fullPrompts);
         }
       }
     }
   }, [showEditor, editBookId, selectedSession, messages, currentSessionId, updateQAPagePrompts]);
+
 
   const handleSend = async () => {
     const raw = input.trim();
@@ -784,264 +724,44 @@ export default function GoogleChat() {
     });
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId, selectedMannersSetting, activeCity]);
 
-  const handleCreateBook = useCallback(async () => {
+  /**
+   * Unified book creation. `wait: true` also resolves the created pages so the
+   * caller can kick off image generation immediately.
+   * Replaces the former handleCreateBook / handleCreateBookAndWait duplicate pair.
+   */
+  const createBook = useCallback(async (
+    options?: { wait?: boolean }
+  ): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
+    const wait = options?.wait === true;
+    const source = wait ? 'handleCreateBookAndWait' : 'handleCreateBook';
+
     // Guard 1: No active session
     if (!currentSessionId) {
       console.warn('No active session');
-      return;
+      return null;
     }
 
     // Guard 2: No messages
     if (messages.length === 0) {
       console.warn('Please have a conversation first');
-      return;
+      return null;
     }
 
     // Guard 3: Book already created for this session (prevents duplicates)
     if (createdBookId) {
       console.warn('[Book Creation] Book already exists for this session:', createdBookId);
-      return;
-    }
+      if (!wait) return null;
 
-    // Guard 4: Creation already in progress
-    if (createBookMutation.isPending) {
-      console.warn('[Book Creation] Book creation already in progress');
-      return;
-    }
-
-    const outline = parseBookOutline(messages);
-    
-    if (outline) {
-      console.log(`Extracted ${outline.totalPages} pages from conversation outline`);
-    }
-
-    // ✅ CRITICAL: Extract prompts BEFORE book creation if not already extracted
-    let promptsToStore = editorPagePrompts;
-    
-    if (Object.keys(promptsToStore).length === 0) {
-      console.log('[Book Creation] No prompts found, extracting from conversation...');
-      
-      const conversationText = messages
-        .filter(m => m.role === 'assistant')
-        .map(m => m.content)
-        .join('\n');
-      
-      // Extract cover prompt (page 1) - Handle both "**Cover:**" and "**Page 1: Cover**" formats
-      const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
-      
-      // Use new helper to extract all prompts with correct page numbers
-      const extractedPrompts: Record<number, string> = {};
-      
-      if (coverMatch) {
-        let coverPrompt = coverMatch[0];
-        
-        // Normalize: Ensure title positioning is explicit
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          const titleMatch = conversationText.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
-          const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '[TITLE]') : '[TITLE]';
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-        }
-        
-        extractedPrompts[1] = coverPrompt;
-      }
-      
-      // Extract educational focus prompt (page 2) - Handle both "**Educational Focus:**" and "**Page 2: Focus**" formats
-      const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        extractedPrompts[2] = eduMatch[0];
-      }
-      
-      // Extract all page prompts using the new helper
-      const allPrompts = extractPromptsRecord(outline);
-      Object.assign(extractedPrompts, allPrompts);
-      
-      if (Object.keys(extractedPrompts).length > 0) {
-        console.log(`[Book Creation] Extracted ${Object.keys(extractedPrompts).length} prompts, saving to session...`);
-        
-        // Save prompts to session database
-        await updateQAPagePrompts({ 
-          sessionId: currentSessionId, 
-          qaPagePrompts: extractedPrompts 
-        });
-        
-        // Update local state
-        setEditorPagePrompts(extractedPrompts);
-        promptsToStore = extractedPrompts;
-      } else {
-        console.warn('[Book Creation] No prompts extracted from conversation');
-      }
-    } else {
-      console.log(`[Book Creation] Using ${Object.keys(promptsToStore).length} existing prompts`);
-    }
-
-    // Extract text overlay and style reference
-    // Text overlay logic: 
-    // - Cover pages can have title text overlays
-    // - Content pages (A-Z) never have text overlays (enforced at AI prompt and book creation level)
-    const textOverlayPreference = 'without-text'; // Default for content pages
-    let referenceBookId: string | undefined;
-    
-    for (const msg of messages) {
-      if (msg.role === 'user' && typeof msg.content === 'string') {
-        const styleMatch = msg.content.match(/style-([a-f0-9-]{36})/i);
-        if (styleMatch) {
-          referenceBookId = styleMatch[1];
-        }
-      }
-    }
-
-    console.log('Text overlay:', textOverlayPreference, 'Style ref:', referenceBookId);
-
-    // Convert messages to simple text format for book creation
-    const textMessages = messages.map(msg => ({
-      role: msg.role,
-      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
-    }));
-
-    console.log('Creating book in background...');
-
-    const createStartedAt = performance.now();
-    const hasFastPathOutline = !!(outline && outline.coverPage);
-    trackEvent('create_book_start', {
-      source: 'handleCreateBook',
-      book_type: selectedBookType || 'unknown',
-      city: activeCity || 'unset',
-      has_fast_path_outline: hasFastPathOutline,
-      page_count: outline?.totalPages ?? null,
-      message_count: messages.length,
-      session_id: currentSessionId,
-    });
-
-    try {
-      const result = await createBookMutation.mutateAsync({
-        conversationHistory: textMessages,
-        pageDetails: outline?.contentPages || undefined,
-        // Full outline shortcut: when present, the edge function skips its
-        // second AI call and adapts the outline deterministically. This is
-        // what fixes the silent "Create My Book" click.
-        bookOutline: outline && outline.coverPage
-          ? {
-              bookName: outline.coverPage.title,
-              bookDescription: outline.coverPage.description || '',
-              pages: Array.from(outline.allPages.values()).map(p => ({
-                pageNumber: p.pageNumber,
-                pageType: p.pageType,
-                title: p.title,
-                description: p.description,
-              })),
-            }
-          : undefined,
-        qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
-        bookType: selectedBookType || undefined,
-        characterTheme: characterFlow.themeId || undefined, // Pass validated theme from flow
-        targetAge: selectedAgeRange || undefined, // Pass validated age range (legacy)
-        gradeLevel: selectedGradeLevel || undefined, // Pass validated grade level (preferred)
-        textOverlayPreference,
-        referenceBookId,
-        targetWords: targetWords.length > 0 ? targetWords : undefined,
-        sessionId: currentSessionId, // Include session ID for traceability
-        storedPrompts: Object.keys(promptsToStore).length > 0 ? promptsToStore : undefined, // Use extracted prompts
-        selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined, // Pass selected character IDs for enforcement
-        // Discovery attributes for marketing hashtags
-        season: selectedSeason || undefined,
-        environment: selectedEnvironment || undefined,
-        clothingBrand: selectedClothingBrand || undefined,
-        location: selectedLocation || undefined,
-        city: activeCity || undefined,
-        // Manners-specific discovery attributes
-        mannerType: selectedMannerType || undefined,
-        mannersSetting: selectedMannersSetting || undefined,
-      });
-      
-      console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');
-
-      trackEvent('create_book_success', {
-        source: 'handleCreateBook',
-        book_id: result.bookId,
-        book_type: selectedBookType || 'unknown',
-        city: activeCity || 'unset',
-        has_fast_path_outline: hasFastPathOutline,
-        page_count: outline?.totalPages ?? null,
-        duration_ms: Math.round(performance.now() - createStartedAt),
-      });
-
-      // Set local book ID immediately for UI responsiveness
-      setLocalCreatedBookId(result.bookId);
-      
-      // Link book to current session
-      await linkBookToSession({ 
-        sessionId: currentSessionId, 
-        bookId: result.bookId 
-      });
-      
-      // Fetch the book details to get the title and update session name
-      const { data: bookData, error: bookError } = await supabase
-        .from('books')
-        .select('book_name')
-        .eq('id', result.bookId)
-        .single();
-      
-      // Update session name with book title (silent to avoid duplicate toast)
-      if (bookData && !bookError) {
-        await updateSessionName({
-          sessionId: currentSessionId,
-          name: bookData.book_name,
-          silent: true
-        });
-      }
-      
-      
-      // Keep prompts available for copying after book creation
-      // Only clear images (prompts preserved from qa_page_prompts for traceability)
-      setEditorPageImages({});
-      // NOTE: editorPagePrompts intentionally NOT cleared to preserve original prompts
-    } catch (error) {
-      console.error('Book creation error:', error);
-      const err = error as { message?: string; code?: string | number; status?: number };
-      trackEvent('create_book_failure', {
-        source: 'handleCreateBook',
-        book_type: selectedBookType || 'unknown',
-        city: activeCity || 'unset',
-        has_fast_path_outline: hasFastPathOutline,
-        page_count: outline?.totalPages ?? null,
-        duration_ms: Math.round(performance.now() - createStartedAt),
-        error_message: err?.message?.slice(0, 300) || 'unknown',
-        error_code: err?.code ?? null,
-        error_status: err?.status ?? null,
-      });
-      // Error toast is handled by the mutation
-    }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, trackEvent]);
-
-  // Create book and wait for result - returns book ID and pages for immediate image generation
-  const handleCreateBookAndWait = useCallback(async (): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
-    // Guard 1: No active session
-    if (!currentSessionId) {
-      console.warn('No active session');
-      return null;
-    }
-
-    // Guard 2: No messages
-    if (messages.length === 0) {
-      console.warn('Please have a conversation first');
-      return null;
-    }
-
-    // Guard 3: Book already created for this session
-    if (createdBookId) {
-      // Book exists, fetch the pages and return
       const { data: existingPages, error } = await supabase
         .from('pages')
         .select('id, page_number')
         .eq('book_id', createdBookId)
         .order('page_number');
-      
+
       if (error || !existingPages) {
         console.error('Failed to fetch existing pages:', error);
         return null;
       }
-      
       return { bookId: createdBookId, pages: existingPages };
     }
 
@@ -1053,53 +773,29 @@ export default function GoogleChat() {
 
     const outline = parseBookOutline(messages);
 
-    // Extract prompts if not already extracted
+    // Prompts: reuse QA-stored prompts, otherwise extract once via the shared pipeline
     let promptsToStore = editorPagePrompts;
-    
+
     if (Object.keys(promptsToStore).length === 0) {
       console.log('[Book Creation] No prompts found, extracting from conversation...');
-      
-      const conversationText = messages
-        .filter(m => m.role === 'assistant')
-        .map(m => m.content)
-        .join('\n');
-      
-      const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
-      
-      const extractedPrompts: Record<number, string> = {};
-      
-      if (coverMatch) {
-        let coverPrompt = coverMatch[0];
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          const titleMatch = conversationText.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
-          const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '[TITLE]') : '[TITLE]';
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-        }
-        extractedPrompts[1] = coverPrompt;
-      }
-      
-      const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        extractedPrompts[2] = eduMatch[0];
-      }
-      
-      const allPrompts = extractPromptsRecord(outline);
-      Object.assign(extractedPrompts, allPrompts);
-      
+      const extractedPrompts = extractOutlinePrompts(messages, outline);
+
       if (Object.keys(extractedPrompts).length > 0) {
-        await updateQAPagePrompts({ 
-          sessionId: currentSessionId, 
-          qaPagePrompts: extractedPrompts 
+        await updateQAPagePrompts({
+          sessionId: currentSessionId,
+          qaPagePrompts: extractedPrompts,
         });
         setEditorPagePrompts(extractedPrompts);
         promptsToStore = extractedPrompts;
+      } else {
+        console.warn('[Book Creation] No prompts extracted from conversation');
       }
     }
 
+    // Content pages never carry text overlays; covers get their title via prompt directive
     const textOverlayPreference = 'without-text';
     let referenceBookId: string | undefined;
-    
+
     for (const msg of messages) {
       if (msg.role === 'user' && typeof msg.content === 'string') {
         const styleMatch = msg.content.match(/style-([a-f0-9-]{36})/i);
@@ -1114,27 +810,30 @@ export default function GoogleChat() {
       content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
     }));
 
+    const bookOutlinePayload = buildOutlinePayload(outline);
+    const createStartedAt = performance.now();
+    trackEvent('create_book_start', {
+      source,
+      book_type: selectedBookType || 'unknown',
+      city: activeCity || 'unset',
+      has_fast_path_outline: !!bookOutlinePayload,
+      page_count: outline?.totalPages ?? null,
+      message_count: messages.length,
+      session_id: currentSessionId,
+    });
+
     try {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
         pageDetails: outline?.contentPages || undefined,
-        bookOutline: outline && outline.coverPage
-          ? {
-              bookName: outline.coverPage.title,
-              bookDescription: outline.coverPage.description || '',
-              pages: Array.from(outline.allPages.values()).map(p => ({
-                pageNumber: p.pageNumber,
-                pageType: p.pageType,
-                title: p.title,
-                description: p.description,
-              })),
-            }
-          : undefined,
+        // Deterministic fast path: the edge function adapts this outline instead
+        // of making a second AI call (no schema drift, no extra latency).
+        bookOutline: bookOutlinePayload,
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
         characterTheme: characterFlow.themeId || undefined,
         targetAge: selectedAgeRange || undefined,
-        gradeLevel: selectedGradeLevel || undefined, // Pass validated grade level (preferred)
+        gradeLevel: selectedGradeLevel || undefined,
         textOverlayPreference,
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
@@ -1147,53 +846,87 @@ export default function GoogleChat() {
         clothingBrand: selectedClothingBrand || undefined,
         location: selectedLocation || undefined,
         city: activeCity || undefined,
+        mannerType: selectedMannerType || undefined,
+        mannersSetting: selectedMannersSetting || undefined,
       });
-      
-      // Set local book ID immediately
+
+      trackEvent('create_book_success', {
+        source,
+        book_id: result.bookId,
+        book_type: selectedBookType || 'unknown',
+        city: activeCity || 'unset',
+        has_fast_path_outline: !!bookOutlinePayload,
+        page_count: outline?.totalPages ?? null,
+        duration_ms: Math.round(performance.now() - createStartedAt),
+      });
+
+      // Set local book ID immediately for UI responsiveness
       setLocalCreatedBookId(result.bookId);
-      
-      // Link book to current session
-      await linkBookToSession({ 
-        sessionId: currentSessionId, 
-        bookId: result.bookId 
+
+      await linkBookToSession({
+        sessionId: currentSessionId,
+        bookId: result.bookId
       });
-      
-      // Fetch the book details to update session name
-      const { data: bookData } = await supabase
+
+      const { data: bookData, error: bookError } = await supabase
         .from('books')
         .select('book_name')
         .eq('id', result.bookId)
         .single();
-      
-      if (bookData) {
+
+      if (bookData && !bookError) {
         await updateSessionName({
           sessionId: currentSessionId,
           name: bookData.book_name,
           silent: true
         });
       }
-      
-      // Fetch the newly created pages
+
+      // Only clear images — prompts stay available for copying/traceability
+      setEditorPageImages({});
+
+      if (!wait) return null;
+
       const { data: newPages, error: pagesError } = await supabase
         .from('pages')
         .select('id, page_number')
         .eq('book_id', result.bookId)
         .order('page_number');
-      
+
       if (pagesError || !newPages) {
         console.error('Failed to fetch new pages:', pagesError);
         return null;
       }
-      
-      // Clear editor images but keep prompts
-      setEditorPageImages({});
-      
+
       return { bookId: result.bookId, pages: newPages };
     } catch (error) {
       console.error('Book creation error:', error);
+      const err = error as { message?: string; code?: string | number; status?: number };
+      trackEvent('create_book_failure', {
+        source,
+        book_type: selectedBookType || 'unknown',
+        city: activeCity || 'unset',
+        has_fast_path_outline: !!bookOutlinePayload,
+        page_count: outline?.totalPages ?? null,
+        duration_ms: Math.round(performance.now() - createStartedAt),
+        error_message: err?.message?.slice(0, 300) || 'unknown',
+        error_code: err?.code ?? null,
+        error_status: err?.status ?? null,
+      });
+      // Error toast is handled by the mutation
       return null;
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity]);
+  }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent]);
+
+  const handleCreateBook = useCallback(() => {
+    void createBook();
+  }, [createBook]);
+
+  const handleCreateBookAndWait = useCallback(
+    () => createBook({ wait: true }),
+    [createBook]
+  );
+
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     console.log('[QuickReply] action clicked:', { id: action.id, value: action.value, activeCity, selectedCity });
@@ -1444,23 +1177,10 @@ export default function GoogleChat() {
     // Extract and store prompts in qa_page_prompts on "View Outline" click
     if (!selectedSession?.qa_page_prompts || Object.keys(selectedSession.qa_page_prompts).length === 0) {
       console.log('[Prompt Storage] Extracting prompts on View Outline click');
-      
-      // Use new helper to extract prompts - direct page numbers, no offset
-      const outline = parseBookOutline(messages);
-      const fullPrompts = extractPromptsRecord(outline);
-      
-      // Add centered title instruction to cover prompt if needed
-      if (fullPrompts[1]) {
-        let coverPrompt = fullPrompts[1];
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
-          
-          const bookTitle = bookOutline?.coverPage?.title || '[TITLE]';
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-          fullPrompts[1] = coverPrompt;
-        }
-      }
+
+      // Single source of truth: sanitized once, cover directive applied once
+      const fullPrompts = extractOutlinePrompts(messages, parseBookOutline(messages));
+
       
       // Store prompts in session for later use
       if (currentSessionId && Object.keys(fullPrompts).length > 0) {

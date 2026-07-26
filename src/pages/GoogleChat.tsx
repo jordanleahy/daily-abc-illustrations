@@ -733,8 +733,10 @@ export default function GoogleChat() {
     options?: { wait?: boolean; trigger?: string }
   ): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
     const wait = options?.wait === true;
-    // Creation is now always driven by the first image generation/upload.
-    const source = `first_image:${options?.trigger ?? 'unknown'}`;
+    // Creation is either explicit (quick-reply button) or lazy (first image).
+    const trigger = options?.trigger ?? 'unknown';
+    const source = trigger === 'quick_reply' ? 'quick_reply' : `first_image:${trigger}`;
+
 
 
     // Guard 1: No active session
@@ -1006,9 +1008,9 @@ export default function GoogleChat() {
       handleViewCreatedBook();
       return;
     }
-    // "Create book"-style actions no longer create anything. The chat produces an
-    // OUTLINE; the book is created lazily when the first image is generated.
-    // These actions open the outline review panel instead.
+    // Explicit "Create book" action. Creates the book up front; the lazy
+    // first-image path in the editor panel remains as the fallback for users
+    // who skip this button.
     const label = typeof action.label === 'string' ? action.label.toLowerCase() : '';
     const isProceedAction =
       action.value === 'create_book' ||
@@ -1017,7 +1019,7 @@ export default function GoogleChat() {
       label.includes('create book') ||
       label.includes('create my book');
     if (isProceedAction) {
-      trackEvent('open_outline_click', {
+      trackEvent('create_book_click', {
         action_id: action.id,
         action_value: action.value,
         active_city: activeCity || 'unset',
@@ -1042,8 +1044,10 @@ export default function GoogleChat() {
         }, 0);
         return;
       }
+      void createBook({ wait: false, trigger: 'quick_reply' });
       handleOpenEditorPanel();
       return;
+
     }
 
 
@@ -1192,7 +1196,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
+  }, [createBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 

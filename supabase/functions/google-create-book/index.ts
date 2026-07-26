@@ -325,152 +325,21 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       sessionId
     });
 
-    // Use the selected agent's instructions as system prompt (single source of truth)
-    let systemPrompt = selectedAgent.instructions;
-    
-    // Log orchestration details
+    // Log orchestration details. The agent is still resolved for provenance
+    // metadata (createdByAgentId/Type/Version), but its instructions are NOT
+    // re-sent to an LLM here: book structure now comes from the approved chat
+    // outline via `outlineToBook`, so no system prompt is composed on this path.
     logOrchestration({
       agentId: selectedAgent.id,
       agentName: selectedAgent.name,
       agentType: selectedAgent.type,
       version: selectedAgent.version,
       source: agentSource,
-      promptLength: systemPrompt.length,
-      promptSource: 'database'
+      promptLength: 0,
+      promptSource: 'deterministic-outline'
     });
 
-    // ============================================================================
-    // Prepare prompt for book creation
-    // ============================================================================
-    
-    if (pageDetails && pageDetails.length > 0) {
-      // User provided structured page details - append them to the agent's base instructions
-      console.log(`Using ${pageDetails.length} pre-defined page details from chat`);
-      
-      systemPrompt += `
 
-CRITICAL INSTRUCTIONS FOR THIS REQUEST:
-- The user has already designed specific pages in our conversation
-- You MUST use the exact page titles and descriptions provided below
-- You MUST include pageType field for EVERY page
-- Cover page is ALWAYS pageNumber: 1, pageType: "cover"
-- Educational focus (if present) is ALWAYS pageNumber: 2, pageType: "educational"
-- Content pages start at pageNumber: 3, pageType: "content"
-- Do NOT include aspect ratio specs in titles/descriptions
-- NEVER use quotes or apostrophes in titles (plain text only)
-- EXTRACT metadata from the conversation
-
-PROVIDED PAGE STRUCTURE:
-${pageDetails.map(p => `Page ${p.pageNumber}: ${p.title}\n${p.description}`).join('\n\n')}
-
-Return ONLY valid JSON with this structure:
-{
-  "bookName": "string",
-  "category": "string", 
-  "bookDescription": "string",
-  "metadata": {
-    "bookType": "${bookType}",
-    "pageCount": ${pageDetails.length},
-    "letterCase": "lowercase|uppercase|both (for ABC content)",
-    "numberRange": "1-10 (for Numbers content)",
-    "countingStyle": "simple|skip-counting (for Numbers content)",
-    "characterTheme": "${characterTheme || 'not-specified'}", 
-    "targetAge": "toddler|preschool|early-reader"
-  },
-  "pages": [
-     {
-       "pageNumber": 1,
-       "pageType": "cover",
-       "letter": "COVER",
-       "title": "Book Title",
-       "description": "Cover description with title-focused layout",
-       "content": {
-         "mainConcept": "Book title",
-         "funFact": "Book description",
-         "activity": ""
-       }
-     },
-     {
-       "pageNumber": 2,
-       "pageType": "educational",
-       "letter": "FOCUS",
-       "title": "Educational Focus",
-       "description": "Age and learning objectives",
-       "content": {
-         "mainConcept": "Target age",
-         "funFact": "Learning approach",
-         "activity": "Specific skills"
-       }
-     },
-     {
-       "pageNumber": 3,
-       "pageType": "content",
-       "letter": "a (or appropriate - WITHOUT parentheses in this field)",
-       "title": "EXACT TITLE FROM PROVIDED LIST - FOR ABC: use format '(a) is for apple'",
-       "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
-      "content": {
-        "mainConcept": "string",
-        "funFact": "string",
-        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string"' : ''}
-      }
-    }
-  ]
-}`;
-    }
-
-    // Add targetWords instructions if provided (from word learning recommendations)
-    if (targetWords && targetWords.length > 0) {
-      systemPrompt += `
-
-IMPORTANT - WORD LEARNING FOCUS:
-- This book is being created to help practice specific challenging words: ${targetWords.join(', ')}
-- Naturally incorporate these words throughout the appropriate pages
-- For ABC books: Use target words that start with each letter when possible
-- Make the book engaging and fun while focusing on vocabulary practice
-- Examples should highlight these words in meaningful contexts
-- Target words: [${targetWords.join(', ')}]
-`;
-      console.log(`Target words for vocabulary practice: ${targetWords.join(', ')}`);
-    }
-
-    // Add character constraints if characters were selected
-    if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
-      const characterConstraints = getSelectedCharacterConstraints(characterTheme, selectedCharacterIds);
-      if (characterConstraints) {
-        systemPrompt += `\n${characterConstraints}`;
-        console.log(`[Character Enforcement] Applied constraints for ${characterTheme}:`, selectedCharacterIds);
-      }
-    }
-
-    // Add location visual profile if a resort was selected
-    if (location && isValidLocation(location as ValidLocation)) {
-      const resortVisualPrompt = getResortVisualPrompt(location as ValidLocation);
-      if (resortVisualPrompt) {
-        systemPrompt += `\n${resortVisualPrompt}`;
-        console.log(`[Location Context] Applied visual profile for: ${location}`);
-      }
-    }
-
-    // Add city visual profile + ground-truth (canonical Google Place, nearby
-    // landmarks, Wikipedia summary) for any resolvable city — predetermined DB
-    // id OR freeform CITY_CUSTOM:label typed by the user.
-    if (city) {
-      try {
-        const cityGroundTruth = await getCityGroundTruthPromptAsync(city, supabase);
-        if (cityGroundTruth) {
-          systemPrompt += `\n${cityGroundTruth}`;
-          console.log(`[City Context] Applied ground-truth prompt for: ${city} → ${cityLabel}`);
-        } else if (isValidCity(city)) {
-          // Fallback to sync DB-only prompt if ground-truth returned nothing
-          const cityVisualPrompt = getCityVisualPromptSync(city);
-          if (cityVisualPrompt) systemPrompt += `\n${cityVisualPrompt}`;
-        }
-      } catch (err) {
-        console.warn('[City Context] Ground-truth enrichment failed, falling back to sync:', err);
-        const cityVisualPrompt = isValidCity(city) ? getCityVisualPromptSync(city) : null;
-        if (cityVisualPrompt) systemPrompt += `\n${cityVisualPrompt}`;
-      }
-    }
 
 
     // ========================================================================

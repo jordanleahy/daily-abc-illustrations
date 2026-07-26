@@ -325,54 +325,9 @@ function getBookTypeDescription(bookType: string): string {
   return typeMap[bookType.toLowerCase()] || 'educational learning';
 }
 
-/**
- * Get learning details for educational focus card
- */
-function getLearningDetails(bookType: string): { learningType: string; specificSkill: string } {
-  const detailsMap: Record<string, { learningType: string; specificSkill: string }> = {
-    'abc': {
-      learningType: 'PHONICS | EARLY LITERACY',
-      specificSkill: 'FOCUS: LOWERCASE A-Z'
-    },
-    'alphabet': {
-      learningType: 'PHONICS | EARLY LITERACY',
-      specificSkill: 'FOCUS: LETTER RECOGNITION'
-    },
-    'numbers': {
-      learningType: 'MATH | COUNTING',
-      specificSkill: 'FOCUS: NUMBERS 1-10'
-    },
-    'shapes': {
-      learningType: 'GEOMETRY | VISUAL',
-      specificSkill: 'FOCUS: BASIC SHAPES'
-    },
-    'colors': {
-      learningType: 'VISUAL | RECOGNITION',
-      specificSkill: 'FOCUS: COLOR LEARNING'
-    },
-    'animals': {
-      learningType: 'NATURE | SCIENCE',
-      specificSkill: 'FOCUS: ANIMAL DISCOVERY'
-    },
-    'emotions': {
-      learningType: 'SOCIAL | EMOTIONAL',
-      specificSkill: 'FOCUS: FEELINGS'
-    },
-    'sight-words': {
-      learningType: 'READING | LITERACY',
-      specificSkill: 'FOCUS: SIGHT WORDS'
-    },
-    'story': {
-      learningType: 'READING | COMPREHENSION',
-      specificSkill: 'FOCUS: STORYTELLING'
-    }
-  };
-  
-  return detailsMap[bookType.toLowerCase()] || {
-    learningType: 'EARLY LEARNING',
-    specificSkill: 'FOCUS: EDUCATIONAL'
-  };
-}
+// getLearningDetails now lives in ./educationalFocus.ts (shared with the
+// deterministic page-2 text builder in google-create-book).
+
 
 /**
  * Generate template-based prompt for specific book types

@@ -642,7 +642,6 @@ export function UnifiedReadingView({
               imageUrl=""
               pageType={currentPage.page_type}
               bookCategory={(book as any)?.category}
-              bookCategory={(book as any)?.category}
               currentWordIndex={readingState.currentWordIndex}
               wordStatuses={readingState.wordStatuses}
               hiddenOverlayPages={readingState.hiddenOverlayPages}

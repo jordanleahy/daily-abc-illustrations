@@ -1,49 +1,39 @@
-## Goal
+## How it works today
 
-Make the flow explicitly two-step:
+- Allowed channels live in one shared `youtube_channels` table. Any signed-in user can add/remove rows; everyone sees all rows where `is_active = true` (verified in the table's access rules).
+- The kid-facing `/videos` page (`VideoGrid`) loads active channels, then pulls up to 6 recent videos per channel via the `youtube-video` edge function. No channels = no videos.
+- The only UI is the admin page `/admin/youtube-channels`, where you paste a URL / `@handle` / `UC…` ID.
+- Separately, `video_content` holds hand-picked individual videos (`VideoManagement`), and `ChannelBrowser.tsx` is dead code hardcoded to Google's channel.
 
-1. **Step 1 — Outline.** The chat produces a full page-by-page outline. Nothing is written to the database yet. The user reviews/refines the outline in the editor panel.
-2. **Step 2 — Book.** The book record (and its pages) is created automatically the first time the user generates or uploads an image for any page. No separate "Create My Book" action.
+## Confirmed bug in the add flow
 
-## Current state (verified)
+`useYouTubeChannels.extractChannelId` strips the `@` from handles and returns the handle text, and after the edge function resolves it, the code saves the **input string** as `channel_id` instead of the resolved `channelInfo.channelId`. `get-channel-videos` passes `channelId` straight to the YouTube API with no handle resolution — so any channel added by handle or custom URL saves a non-`UC…` ID and returns zero videos.
 
-- `src/pages/GoogleChat.tsx` already has a single `createBook({ wait })` path exposed as `handleCreateBook` (fire-and-forget) and `handleCreateBookAndWait`.
-- `src/components/chat/BookEditorPanel.tsx` already implements the desired behavior for **color-mode generation only**: `handleGenerateWithBookCreation` creates the book via `onCreateBookAndWait()` if `bookId` is missing, then generates the image.
-- The explicit create path still exists in two places: the quick-reply action handler in `GoogleChat.tsx` (`action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve'` → `handleCreateBook()`), and the `onCreateBook` prop plumbed into the editor panel.
-- B&W generation, text-image generation, "generate all text images", and plain image upload do **not** create the book first — they silently do nothing useful when no book exists.
+## Plan
 
-## Changes
+Keep the shared list and the admin-only page; make adding channels fast and correct.
 
-### 1. Single lazy-creation helper in the editor panel
-Extract the create-if-missing logic out of `handleGenerateWithBookCreation` into one helper (`ensureBookExists()`) that returns the book id + pages, is idempotent, and is safe to call concurrently (guarded by an in-flight ref so two fast clicks don't create two books).
+1. **Fix ID resolution** (`src/hooks/useYouTubeChannels.ts`)
+   - Preserve `@` for handles when extracting.
+   - Save `channelInfo.channelId` (the resolved `UC…` ID) as `channel_id`, never the raw input.
+   - Surface a clear error when the channel can't be resolved.
 
-Wire it as the first step of every image-producing action:
-- color generate (existing behavior, refactored)
-- B&W generate / regenerate
-- text-image generate and "generate all"
-- cover upload and manual image upload
+2. **Add search-and-add** (`src/pages/admin/YouTubeChannels.tsx`)
+   - The edge function already supports `action=search-channels`. Add a search box: type a channel name → debounced search → results grid with thumbnail, title, subscriber count, and an "Add" button per result.
+   - Keep the paste-a-URL input as a secondary option.
+   - Disable/mark results already in the list.
 
-Each shows the same "Setting up your book…" toast, then continues with the original action against the newly created page ids.
+3. **Bulk add**
+   - Textarea accepting one URL/handle/ID per line, resolving and inserting each with a per-line success/failure summary.
 
-### 2. Remove the explicit create action
-- In `GoogleChat.tsx`, the quick-reply branch for `create_book` / `confirm` / `approve` opens the outline editor panel instead of calling `handleCreateBook()`.
-- Drop the now-unused `onCreateBook` prop from `BookEditorPanel`, keeping `onCreateBookAndWait` as the only creation entry point.
-- Keep all existing guards inside `createBook` (session, messages, outline-required, already-created) — they now protect the lazy path.
+4. **Cleanup**
+   - Add a link to `/admin/youtube-channels` from the admin nav so it's reachable without typing the URL.
+   - Delete the unused `ChannelBrowser.tsx` (hardcoded Google channel).
 
-### 3. Labeling so the two steps read clearly
-- Outline-stage affordances say **Outline** / **Review outline** (the `InputArea` "Outline" button already does).
-- The image panel's generate buttons keep their labels; the pre-generation state for a not-yet-created book shows helper text: "Generating the first image creates your book."
-- Any assistant-suggested action label containing "Create Book" maps to the outline-review action, so an older agent prompt can't resurrect a direct create.
-
-### 4. Analytics
-Keep the existing `create_book_*` GA4 events and add `source: 'first_image'` plus the triggering mode (`color` / `bw` / `text` / `upload`) so we can see that creation is now driven by image generation.
-
-### 5. Tests
-- Unit test for `ensureBookExists`: no-op when `bookId` exists; single creation under two concurrent calls; surfaces creation failure without starting generation.
-- Extend `src/utils/bookPrompts.outlineGate.test.ts` coverage: creation is refused when no parsable outline exists, so the first-image path fails loudly rather than making an empty book.
+5. **Verify**
+   - Add a channel by `@handle`, confirm a `UC…` ID is stored, and confirm its videos appear on `/videos`.
 
 ## Technical notes
 
-- No database or edge-function changes. `google-create-book` already requires `bookOutline` and is deterministic.
-- Files touched: `src/components/chat/BookEditorPanel.tsx`, `src/pages/GoogleChat.tsx`, and the corresponding test files.
-- Books created this way still start as `draft`; publishing remains unchanged.
+- No schema or access-rule changes; the existing shared-list rules already allow signed-in users to manage rows, and the page stays wrapped in `AdminOnly`.
+- Search results are cached 7 days by the edge function, so repeated searches don't burn YouTube API quota.

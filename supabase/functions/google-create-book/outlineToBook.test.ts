@@ -99,3 +99,62 @@ Deno.test("outlineToBook — cover title is always bookName even if outline cove
   assertEquals(result.pages[0].title, "Real Book Title");
   assertEquals(result.pages[0].content.funFact, "A lovely book");
 });
+
+Deno.test("outlineToBook — educational page 2 gets age/learning/skill text", () => {
+  const result = outlineToBook({
+    bookName: "Rhyme Time in Jersey City",
+    bookType: "rhyming",
+    gradeLevel: "PRE_K",
+    pages: [
+      { pageNumber: 1, title: "Cover" },
+      { pageNumber: 2, title: "Educational Focus" },
+      ...Array.from({ length: 10 }, (_, i) => ({
+        pageNumber: i + 3,
+        title: `Page ${i + 3}`,
+      })),
+    ],
+  });
+  const focus = result.pages[1];
+  assertEquals(focus.pageType, "educational");
+  assertEquals(focus.letter, "FOCUS");
+  assertEquals(focus.content.mainConcept, "Pre-K (Ages 3-4)");
+  assertEquals(focus.content.funFact, "PHONOLOGICAL AWARENESS");
+  assertEquals(
+    focus.content.activity,
+    "FOCUS: RHYMING WORDS · 10 pages to explore together",
+  );
+});
+
+Deno.test("outlineToBook — educational page falls back to targetAge and generic skill", () => {
+  const result = outlineToBook({
+    bookName: "Mystery Book",
+    bookType: "unknown-type",
+    targetAge: "4-6",
+    pages: [
+      { pageNumber: 1, title: "Cover" },
+      { pageNumber: 2, pageType: "educational", title: "Educational Focus" },
+      { pageNumber: 3, title: "Page 3" },
+    ],
+  });
+  assertEquals(result.pages[1].content.mainConcept, "Ages 4-6");
+  assertEquals(result.pages[1].content.funFact, "EARLY LEARNING");
+  assertEquals(
+    result.pages[1].content.activity,
+    "FOCUS: EDUCATIONAL · 1 pages to explore together",
+  );
+});
+
+Deno.test("outlineToBook — content pages keep empty funFact/activity", () => {
+  const result = outlineToBook({
+    bookName: "Rhyme Time",
+    bookType: "rhyming",
+    pages: [
+      { pageNumber: 1, title: "Cover" },
+      { pageNumber: 2, title: "Educational Focus" },
+      ...Array.from({ length: 10 }, (_, i) => ({ pageNumber: i + 3, title: `Page ${i + 3}` })),
+    ],
+  });
+  assertEquals(result.pages[2].content.funFact, "");
+  assertEquals(result.pages[2].content.activity, "");
+  assertEquals(result.pages[2].content.mainConcept, "Page 3");
+});

@@ -15,6 +15,11 @@ import {
   generateCoverTitleInstruction,
   COVER_TITLE_INSTRUCTION 
 } from './coverPromptConstants.ts';
+import {
+  getGradeDisplayText,
+  getLearningDetails,
+} from './educationalFocus.ts';
+
 
 /**
  * Generate a style header line based on character theme
@@ -122,37 +127,10 @@ interface BookContext {
   };
 }
 
-/**
- * Get display text for grade level on Educational Focus image
- * Prefers gradeLevel if available, falls back to targetAge for backward compatibility
- */
-function getGradeDisplayText(gradeLevel?: string, targetAge?: string): string {
-  // Prefer gradeLevel if available
-  if (gradeLevel) {
-    const gradeLabels: Record<string, string> = {
-      'PRE_K': 'Pre-K (Ages 3-4)',
-      'K': 'Kindergarten (Ages 5-6)',
-      'GRADE_1': '1st Grade (Ages 6-7)',
-      'GRADE_2': '2nd Grade (Ages 7-8)',
-    };
-    return gradeLabels[gradeLevel] || gradeLevel;
-  }
-  
-  // Fallback to targetAge for backward compatibility
-  if (targetAge) {
-    // If it already has "Ages" prefix, return as-is
-    if (targetAge.toLowerCase().includes('age')) {
-      return targetAge;
-    }
-    // Format age ranges properly
-    if (targetAge.includes('-')) {
-      return `Ages ${targetAge}`;
-    }
-    return targetAge;
-  }
-  
-  return 'Ages 3-5'; // Default fallback
-}
+// getGradeDisplayText now lives in ./educationalFocus.ts so the image prompt
+// and the page-2 text layer always use the same wording.
+
+
 
 interface PageContext {
   pageNumber: number;
@@ -347,54 +325,9 @@ function getBookTypeDescription(bookType: string): string {
   return typeMap[bookType.toLowerCase()] || 'educational learning';
 }
 
-/**
- * Get learning details for educational focus card
- */
-function getLearningDetails(bookType: string): { learningType: string; specificSkill: string } {
-  const detailsMap: Record<string, { learningType: string; specificSkill: string }> = {
-    'abc': {
-      learningType: 'PHONICS | EARLY LITERACY',
-      specificSkill: 'FOCUS: LOWERCASE A-Z'
-    },
-    'alphabet': {
-      learningType: 'PHONICS | EARLY LITERACY',
-      specificSkill: 'FOCUS: LETTER RECOGNITION'
-    },
-    'numbers': {
-      learningType: 'MATH | COUNTING',
-      specificSkill: 'FOCUS: NUMBERS 1-10'
-    },
-    'shapes': {
-      learningType: 'GEOMETRY | VISUAL',
-      specificSkill: 'FOCUS: BASIC SHAPES'
-    },
-    'colors': {
-      learningType: 'VISUAL | RECOGNITION',
-      specificSkill: 'FOCUS: COLOR LEARNING'
-    },
-    'animals': {
-      learningType: 'NATURE | SCIENCE',
-      specificSkill: 'FOCUS: ANIMAL DISCOVERY'
-    },
-    'emotions': {
-      learningType: 'SOCIAL | EMOTIONAL',
-      specificSkill: 'FOCUS: FEELINGS'
-    },
-    'sight-words': {
-      learningType: 'READING | LITERACY',
-      specificSkill: 'FOCUS: SIGHT WORDS'
-    },
-    'story': {
-      learningType: 'READING | COMPREHENSION',
-      specificSkill: 'FOCUS: STORYTELLING'
-    }
-  };
-  
-  return detailsMap[bookType.toLowerCase()] || {
-    learningType: 'EARLY LEARNING',
-    specificSkill: 'FOCUS: EDUCATIONAL'
-  };
-}
+// getLearningDetails now lives in ./educationalFocus.ts (shared with the
+// deterministic page-2 text builder in google-create-book).
+
 
 /**
  * Generate template-based prompt for specific book types

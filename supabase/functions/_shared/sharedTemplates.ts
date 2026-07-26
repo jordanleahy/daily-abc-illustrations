@@ -82,6 +82,27 @@ When generating book outlines, you MUST use this EXACT format for each page:
 - Always include colon after page number
 - Title follows immediately after colon
 - Content uses bullet points below title
+
+## CRITICAL: CHARACTER NAMING RULES
+
+Every page description is read in isolation by the image generator. It has NO memory of the other pages, the title, or the conversation.
+
+- Name EVERY character explicitly, BY NAME, in EVERY page description — including the cover and the final page.
+- If the theme has two or more characters (e.g. Bluey and Bingo), ALL of their names must appear in EVERY page description.
+- ❌ FORBIDDEN generic references: "the pups", "the duo", "the characters", "the pair", "the friends", "the kids", "our heroes", "they", "them", "he", "she", "it" (when standing in for a character).
+- ✅ Instead write: "Bluey and Bingo watch a sailboat..." not "The pups watch a sailboat..."
+- Do not use a pronoun in the second half of a sentence either — repeat the name: "Bluey points at the sun while Bingo claps" (not "while she claps").
+
+## CRITICAL: DESCRIPTION QUALITY
+
+Each page description must be 1–2 complete sentences that are fully self-contained and include ALL of:
+1. The character name(s), performing a specific, visible action
+2. The named, concrete location (e.g. "Liberty State Park", "Exchange Place") — never just "the park" or "the city"
+3. The teaching concept for that page, stated plainly (the shape, letter, word, color, number, or manner)
+
+- ❌ BAD: "The pups watch a sailboat on the water with two large white triangle sails."
+- ✅ GOOD: "Bluey and Bingo sit on the grass at Liberty State Park watching a white sailboat glide down the Hudson River, its two big triangle sails pointing up at the sky."
+
 - One blank line between pages`,
 };
 

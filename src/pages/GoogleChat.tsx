@@ -955,10 +955,15 @@ export default function GoogleChat() {
         error_code: err?.code ?? null,
         error_status: err?.status ?? null,
       });
-      // Error toast is handled by the mutation
+      // Surface the real reason (code + message), not just a generic failure
+      const detail = [err?.code, err?.status].filter(Boolean).join(' ');
+      toast.error(
+        `Book creation failed${detail ? ` (${detail})` : ''}: ${err?.message || 'unknown error'}`
+      );
       return null;
     }
-  }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent]);
+  }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent, navigate, sendMessage]);
+
 
   const handleCreateBook = useCallback(() => {
     void createBook();

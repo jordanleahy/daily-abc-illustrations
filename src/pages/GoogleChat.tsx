@@ -1189,7 +1189,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
+  }, [sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 

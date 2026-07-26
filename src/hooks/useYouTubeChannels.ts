@@ -15,6 +15,33 @@ export interface YouTubeChannel {
   updated_at: string;
 }
 
+export interface YouTubeChannelSearchResult {
+  channelId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string | null;
+  subscriberCount?: number | null;
+  videoCount?: number | null;
+}
+
+const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-video`;
+
+async function callYouTubeFunction(query: string) {
+  const { data: session } = await supabase.auth.getSession();
+  const response = await fetch(`${FUNCTIONS_URL}?${query}`, {
+    headers: {
+      Authorization: `Bearer ${session.session?.access_token}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    },
+  });
+
+  const result = await response.json();
+  if (!result?.success) {
+    throw new Error(result?.error || 'YouTube request failed');
+  }
+  return result.data;
+}
+
 export function useYouTubeChannels() {
   return useQuery({
     queryKey: ['youtube-channels'],
@@ -46,63 +73,77 @@ export function useActiveYouTubeChannels() {
   });
 }
 
+/** Search YouTube channels by name (results cached 7 days by the edge function). */
+export function useSearchYouTubeChannels(searchTerm: string) {
+  const trimmed = searchTerm.trim();
+
+  return useQuery({
+    queryKey: ['youtube-channel-search', trimmed],
+    enabled: trimmed.length >= 2,
+    staleTime: 1000 * 60 * 30,
+    queryFn: async () => {
+      const data = await callYouTubeFunction(
+        `action=search-channels&query=${encodeURIComponent(trimmed)}`
+      );
+      return (data?.channels || []) as YouTubeChannelSearchResult[];
+    },
+  });
+}
+
+/** Resolves any URL / @handle / UC id into full channel info from YouTube. */
+export async function resolveChannel(input: string): Promise<YouTubeChannelSearchResult> {
+  const identifier = extractChannelId(input);
+  if (!identifier) {
+    throw new Error(`Invalid YouTube channel URL or ID: ${input}`);
+  }
+
+  const data = await callYouTubeFunction(
+    `action=get-channel-info&channelId=${encodeURIComponent(identifier)}`
+  );
+
+  if (!data?.channelId) {
+    throw new Error(`Could not resolve channel: ${input}`);
+  }
+
+  return data as YouTubeChannelSearchResult;
+}
+
+async function insertChannel(info: YouTubeChannelSearchResult) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('youtube_channels')
+    .insert({
+      parent_user_id: user.id,
+      // Always store the resolved UC… id, never the raw handle/URL input
+      channel_id: info.channelId,
+      channel_title: info.title || 'Unknown Channel',
+      channel_thumbnail_url: info.thumbnailUrl || null,
+      subscriber_count: info.subscriberCount ?? null,
+      video_count: info.videoCount ?? null,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('This channel has already been added');
+    }
+    throw error;
+  }
+
+  return data;
+}
+
 export function useAddYouTubeChannel() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (channelUrl: string) => {
-      // Extract channel ID from URL or use directly
-      const channelId = extractChannelId(channelUrl);
-      if (!channelId) {
-        throw new Error('Invalid YouTube channel URL or ID');
-      }
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Fetch channel info from YouTube API via edge function
-      const { data: session } = await supabase.auth.getSession();
-      const response = await fetch(
-        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=get-channel-info&channelId=${channelId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${session.session?.access_token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-          },
-        }
-      );
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch channel info');
-      }
-
-      const channelInfo = result.data;
-
-      // Insert into database
-      const { data, error } = await supabase
-        .from('youtube_channels')
-        .insert({
-          parent_user_id: user.id,
-          channel_id: channelId,
-          channel_title: channelInfo.title || 'Unknown Channel',
-          channel_thumbnail_url: channelInfo.thumbnailUrl || null,
-          subscriber_count: channelInfo.subscriberCount || null,
-          video_count: channelInfo.videoCount || null,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === '23505') {
-          throw new Error('This channel has already been added');
-        }
-        throw error;
-      }
-
-      return data;
+      const info = await resolveChannel(channelUrl);
+      return insertChannel(info);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['youtube-channels'] });
@@ -110,6 +151,69 @@ export function useAddYouTubeChannel() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to add channel');
+    },
+  });
+}
+
+/** Adds an already-resolved channel (from search results) directly. */
+export function useAddResolvedYouTubeChannel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (info: YouTubeChannelSearchResult) => insertChannel(info),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['youtube-channels'] });
+      toast.success('Channel added successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to add channel');
+    },
+  });
+}
+
+export interface BulkAddResult {
+  input: string;
+  ok: boolean;
+  title?: string;
+  error?: string;
+}
+
+export function useBulkAddYouTubeChannels() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (raw: string): Promise<BulkAddResult[]> => {
+      const lines = raw
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      const results: BulkAddResult[] = [];
+
+      for (const line of lines) {
+        try {
+          const info = await resolveChannel(line);
+          await insertChannel(info);
+          results.push({ input: line, ok: true, title: info.title });
+        } catch (error) {
+          results.push({
+            input: line,
+            ok: false,
+            error: error instanceof Error ? error.message : 'Failed',
+          });
+        }
+      }
+
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ['youtube-channels'] });
+      const added = results.filter((r) => r.ok).length;
+      const failed = results.length - added;
+      toast.success(`Added ${added} channel${added === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Bulk add failed');
     },
   });
 }
@@ -158,37 +262,37 @@ export function useToggleYouTubeChannel() {
   });
 }
 
-function extractChannelId(input: string): string | null {
-  // Handle direct channel ID
-  if (/^UC[\w-]{22}$/.test(input)) {
-    return input;
+/**
+ * Normalizes user input into something the edge function can resolve.
+ * Handles are returned WITH their leading "@" so the backend resolves them
+ * via search instead of treating them as raw channel IDs.
+ */
+export function extractChannelId(input: string): string | null {
+  const value = input.trim();
+  if (!value) return null;
+
+  // Direct channel ID
+  if (/^UC[\w-]{22}$/.test(value)) {
+    return value;
   }
 
-  // Handle various YouTube URL formats
-  const patterns = [
-    /youtube\.com\/channel\/(UC[\w-]{22})/,
-    /youtube\.com\/@([\w-]+)/,
-    /youtube\.com\/c\/([\w-]+)/,
-    /youtube\.com\/user\/([\w-]+)/,
-  ];
+  const channelUrl = value.match(/youtube\.com\/channel\/(UC[\w-]{22})/);
+  if (channelUrl) return channelUrl[1];
 
-  for (const pattern of patterns) {
-    const match = input.match(pattern);
-    if (match) {
-      // For @ handles and custom URLs, we return the handle
-      // The edge function will resolve it to the actual channel ID
-      return match[1];
-    }
+  const handleUrl = value.match(/youtube\.com\/@([\w.-]+)/);
+  if (handleUrl) return `@${handleUrl[1]}`;
+
+  const legacyUrl = value.match(/youtube\.com\/(?:c|user)\/([\w.-]+)/);
+  if (legacyUrl) return `@${legacyUrl[1]}`;
+
+  // Bare handle — keep the "@" so the backend knows to resolve it
+  if (value.startsWith('@')) {
+    return value;
   }
 
-  // If it's just a handle without URL
-  if (input.startsWith('@')) {
-    return input.substring(1);
-  }
-
-  // Return as-is if it looks like a potential channel identifier
-  if (/^[\w-]+$/.test(input)) {
-    return input;
+  // Plain channel name / custom slug
+  if (/^[\w.\- ]+$/.test(value)) {
+    return `@${value}`;
   }
 
   return null;

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book, MessageSquare, Snowflake } from 'lucide-react';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book, MessageSquare, Snowflake, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -456,6 +456,10 @@ export function Header({
                   <DropdownMenuItem onClick={() => navigate('/word-progress')}>
                     <Activity className="mr-2 h-4 w-4" />
                     Word Progress
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/youtube-channels')}>
+                    <Youtube className="mr-2 h-4 w-4" />
+                    YouTube Channels
                   </DropdownMenuItem>
                 </AdminOnly>
                 <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>

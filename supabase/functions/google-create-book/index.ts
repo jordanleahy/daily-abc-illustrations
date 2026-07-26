@@ -16,6 +16,8 @@ import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidL
 import { getCityVisualPromptSync, isValidCity, initCitiesCache, resolveCityToken, getCityGroundTruthPromptAsync, type ValidCity } from '../_shared/cities.ts';
 import { resolveSavedBookName, buildFlatCoverImagePrompt, enforceCoverPageTitle } from '../_shared/coverPromptConstants.ts';
 import { outlineToBook, type OutlinePageInput } from './outlineToBook.ts';
+import { buildEducationalFocusOverlayText } from '../_shared/educationalFocus.ts';
+
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),

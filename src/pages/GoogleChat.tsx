@@ -730,10 +730,12 @@ export default function GoogleChat() {
    * Replaces the former handleCreateBook / handleCreateBookAndWait duplicate pair.
    */
   const createBook = useCallback(async (
-    options?: { wait?: boolean }
+    options?: { wait?: boolean; trigger?: string }
   ): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
     const wait = options?.wait === true;
-    const source = wait ? 'handleCreateBookAndWait' : 'handleCreateBook';
+    // Creation is now always driven by the first image generation/upload.
+    const source = `first_image:${options?.trigger ?? 'unknown'}`;
+
 
     // Guard 1: No active session
     if (!currentSessionId) {
@@ -981,14 +983,16 @@ export default function GoogleChat() {
   }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent, navigate, sendMessage]);
 
 
-  const handleCreateBook = useCallback(() => {
-    void createBook();
-  }, [createBook]);
-
+  /**
+   * The only entry point into book creation. Called lazily by the editor panel
+   * when the user generates/uploads the first image.
+   */
   const handleCreateBookAndWait = useCallback(
-    () => createBook({ wait: true }),
+    (trigger?: string) => createBook({ wait: true, trigger }),
     [createBook]
   );
+
+
 
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
@@ -1002,10 +1006,18 @@ export default function GoogleChat() {
       handleViewCreatedBook();
       return;
     }
-    // Handle book creation / title approval - block if city hasn't been selected
-    const isProceedAction = action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve';
+    // "Create book"-style actions no longer create anything. The chat produces an
+    // OUTLINE; the book is created lazily when the first image is generated.
+    // These actions open the outline review panel instead.
+    const label = typeof action.label === 'string' ? action.label.toLowerCase() : '';
+    const isProceedAction =
+      action.value === 'create_book' ||
+      action.id === 'confirm' ||
+      action.id === 'approve' ||
+      label.includes('create book') ||
+      label.includes('create my book');
     if (isProceedAction) {
-      trackEvent('create_book_click', {
+      trackEvent('open_outline_click', {
         action_id: action.id,
         action_value: action.value,
         active_city: activeCity || 'unset',
@@ -1030,10 +1042,10 @@ export default function GoogleChat() {
         }, 0);
         return;
       }
-      console.log('[QuickReply] proceeding to handleCreateBook with city:', activeCity);
-      handleCreateBook();
+      handleOpenEditorPanel();
       return;
     }
+
 
     if (action.value === 'refine_outline') {
       // Focus the input to encourage user to continue chatting
@@ -1180,7 +1192,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
+  }, [sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, characterFlow, selectedCity, resolvedCitiesList, matchCityInText, trackEvent]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
@@ -1899,7 +1911,6 @@ export default function GoogleChat() {
                 onNavigate={handleEditorPageNavigation}
                 onImageUpload={handleEditorImageUpload}
                 onRemoveImage={handleRemoveEditorImage}
-                onCreateBook={handleCreateBook}
                 onCreateBookAndWait={handleCreateBookAndWait}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
@@ -1944,7 +1955,6 @@ export default function GoogleChat() {
               onNavigate={handleEditorPageNavigation}
               onImageUpload={handleEditorImageUpload}
               onRemoveImage={handleRemoveEditorImage}
-              onCreateBook={handleCreateBook}
               onCreateBookAndWait={handleCreateBookAndWait}
               coverPageId={coverPageId}
               bookId={createdBookId}

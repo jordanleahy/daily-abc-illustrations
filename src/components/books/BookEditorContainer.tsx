@@ -342,7 +342,6 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       onNavigate={handleEditorPageNavigation}
       onImageUpload={handleEditorImageUpload}
       onRemoveImage={handleRemoveEditorImage}
-      onCreateBook={() => {}}
       coverPageId={editorData.coverPage?.id || null}
       bookId={bookId}
       onCoverUpload={handleThumbnailUpload}

@@ -1,42 +1,49 @@
-## What is supposed to happen
+## Goal
 
-Clicking **Create My Book!** should:
-1. Track `create_book_click`, then check a city is resolved.
-2. Parse the approved outline out of the chat transcript (`parseBookOutline` → `buildOutlinePayload`).
-3. Call the `google-create-book` edge function with that outline, which deterministically writes the book + all pages.
-4. Link the book to the chat session, rename the session to the book title, and switch the UI into "book created" state.
+Make the flow explicitly two-step:
 
-Right now the click produces no visible change at all.
+1. **Step 1 — Outline.** The chat produces a full page-by-page outline. Nothing is written to the database yet. The user reviews/refines the outline in the editor panel.
+2. **Step 2 — Book.** The book record (and its pages) is created automatically the first time the user generates or uploads an image for any page. No separate "Create My Book" action.
 
-## Three likely reasons (in order of probability)
+## Current state (verified)
 
-**1. No page-by-page outline in the transcript (most likely).**
-In the screenshot the assistant only produced a **Title** and **Description** — never the numbered page outline. `buildOutlinePayload` returns `undefined` when there is no parsed cover/outline, and `google-create-book` now hard-rejects requests without `bookOutline` (`OUTLINE_REQUIRED`, non-2xx). So the request either never carries an outline or the function 400s, and the user sees nothing.
+- `src/pages/GoogleChat.tsx` already has a single `createBook({ wait })` path exposed as `handleCreateBook` (fire-and-forget) and `handleCreateBookAndWait`.
+- `src/components/chat/BookEditorPanel.tsx` already implements the desired behavior for **color-mode generation only**: `handleGenerateWithBookCreation` creates the book via `onCreateBookAndWait()` if `bookId` is missing, then generates the image.
+- The explicit create path still exists in two places: the quick-reply action handler in `GoogleChat.tsx` (`action.value === 'create_book' || action.id === 'confirm' || action.id === 'approve'` → `handleCreateBook()`), and the `onCreateBook` prop plumbed into the editor panel.
+- B&W generation, text-image generation, "generate all text images", and plain image upload do **not** create the book first — they silently do nothing useful when no book exists.
 
-**2. The pre-flight guards return silently.**
-`createBook` bails with only `console.warn` for: no active session, no messages, book already created for this session, and creation already in progress. Guard 3 in particular ("Book already exists for this session") is a common no-op path after a retry — zero UI feedback.
+## Changes
 
-**3. The city gate / error path is invisible.**
-If `activeCity` doesn't resolve, the handler shows a toast and scrolls to `#city-validation-error`; if that element isn't mounted or the toast is clipped, it also looks like "nothing happened". Similarly, edge-function failures are only surfaced by the mutation's toast — which is easy to miss.
+### 1. Single lazy-creation helper in the editor panel
+Extract the create-if-missing logic out of `handleGenerateWithBookCreation` into one helper (`ensureBookExists()`) that returns the book id + pages, is idempotent, and is safe to call concurrently (guarded by an in-flight ref so two fast clicks don't create two books).
 
-## Plan
+Wire it as the first step of every image-producing action:
+- color generate (existing behavior, refactored)
+- B&W generate / regenerate
+- text-image generate and "generate all"
+- cover upload and manual image upload
 
-**A. Make every exit path visible (frontend)**
-- In `src/pages/GoogleChat.tsx` `createBook`, replace each silent `console.warn` guard with a toast that states the actual reason ("Book already created for this chat — opening it", "Creation already in progress", "Start a conversation first").
-- For guard 3, navigate/scroll to the existing book instead of dead-ending.
-- Add a `create_book_blocked` analytics event with a `reason` for each guard so the failure is measurable.
+Each shows the same "Setting up your book…" toast, then continues with the original action against the newly created page ids.
 
-**B. Handle the missing-outline case explicitly**
-- Before calling the mutation, if `buildOutlinePayload(outline)` is `undefined`, do not fire the request. Instead show a clear message ("I still need the page-by-page outline — asking the assistant to generate it") and auto-send a chat turn requesting the outline in the strict format the parser expects.
-- Track `create_book_blocked` with `reason: 'no_outline'`.
+### 2. Remove the explicit create action
+- In `GoogleChat.tsx`, the quick-reply branch for `create_book` / `confirm` / `approve` opens the outline editor panel instead of calling `handleCreateBook()`.
+- Drop the now-unused `onCreateBook` prop from `BookEditorPanel`, keeping `onCreateBookAndWait` as the only creation entry point.
+- Keep all existing guards inside `createBook` (session, messages, outline-required, already-created) — they now protect the lazy path.
 
-**C. Surface the real edge-function error**
-- In the `catch` block, show the mapped error message + code (reuse the existing `ErrorDetailsPanel` / `lovableAiErrors` details) rather than relying solely on the mutation's generic toast.
+### 3. Labeling so the two steps read clearly
+- Outline-stage affordances say **Outline** / **Review outline** (the `InputArea` "Outline" button already does).
+- The image panel's generate buttons keep their labels; the pre-generation state for a not-yet-created book shows helper text: "Generating the first image creates your book."
+- Any assistant-suggested action label containing "Create Book" maps to the outline-review action, so an older agent prompt can't resurrect a direct create.
 
-**D. Verify**
-- Add unit tests around the guard/outline decision so a click with no outline produces the "request outline" path, and a click with an outline produces the mutation call.
-- Check `google-create-book` logs after a live click to confirm whether requests are arriving at all and whether `OUTLINE_REQUIRED` is being hit — this confirms reason #1 vs #2 for this specific session.
+### 4. Analytics
+Keep the existing `create_book_*` GA4 events and add `source: 'first_image'` plus the triggering mode (`color` / `bw` / `text` / `upload`) so we can see that creation is now driven by image generation.
 
-### Technical notes
-- Files: `src/pages/GoogleChat.tsx` (guards + outline pre-check), `src/utils/bookPrompts.ts` (no change expected, but confirm `parseBookOutline` tolerance for the "Title/Description only" transcript shape), edge function `supabase/functions/google-create-book/index.ts` (unchanged — it should keep rejecting outline-less requests).
-- No database or schema changes.
+### 5. Tests
+- Unit test for `ensureBookExists`: no-op when `bookId` exists; single creation under two concurrent calls; surfaces creation failure without starting generation.
+- Extend `src/utils/bookPrompts.outlineGate.test.ts` coverage: creation is refused when no parsable outline exists, so the first-image path fails loudly rather than making an empty book.
+
+## Technical notes
+
+- No database or edge-function changes. `google-create-book` already requires `bookOutline` and is deterministic.
+- Files touched: `src/components/chat/BookEditorPanel.tsx`, `src/pages/GoogleChat.tsx`, and the corresponding test files.
+- Books created this way still start as `draft`; publishing remains unchanged.

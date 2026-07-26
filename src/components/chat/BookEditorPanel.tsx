@@ -1,4 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import {
+  ensureBookExists,
+  createEnsureBookState,
+  derivePageType,
+  type EnsuredBook,
+} from '@/utils/ensureBookExists';
+
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,8 +63,7 @@ interface BookEditorPanelProps {
   onNavigate: (direction: 'prev' | 'next') => void;
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onRemoveImage: (pageNumber: number) => void;
-  onCreateBook: () => void;
-  onCreateBookAndWait?: () => Promise<CreateBookResult | null>;
+  onCreateBookAndWait?: (trigger?: string) => Promise<CreateBookResult | null>;
   coverPageId?: string | null;
   bookId?: string | null;
   onCoverUpload?: (file: File) => void;
@@ -97,7 +103,6 @@ export function BookEditorPanel({
   onNavigate,
   onImageUpload,
   onRemoveImage,
-  onCreateBook,
   onCreateBookAndWait,
   coverPageId,
   bookId,
@@ -223,8 +228,35 @@ export function BookEditorPanel({
     setIsEditingOverlayText(false);
   };
 
+  /**
+   * Lazy book creation: the chat only produces an outline. The book row is
+   * created the first time the user generates or uploads an image.
+   */
+  const ensureStateRef = useRef(createEnsureBookState());
+  const ensureBook = useCallback(async (trigger: string): Promise<EnsuredBook | null> => {
+    return ensureBookExists(ensureStateRef.current, {
+      bookId,
+      getExistingPages: async () =>
+        (pages || []).map((p) => ({ id: p.id, page_number: p.page_number })),
+      createBookAndWait: onCreateBookAndWait
+        ? async () => await onCreateBookAndWait(trigger)
+        : undefined,
+      onCreateStart: () =>
+        toast({
+          title: 'Setting up your book…',
+          description: 'Creating the book from your outline',
+        }),
+      onError: (message) =>
+        toast({ title: 'Book creation failed', description: message, variant: 'destructive' }),
+    });
+  }, [bookId, pages, onCreateBookAndWait, toast]);
+
   // Handle generating text image from color image
   const handleGenerateTextImage = async () => {
+    const ensured = await ensureBook('text');
+    if (!ensured) return;
+
+
     // Get the color image URL
     const colorImageUrl = currentPageNumber === 1 
       ? (thumbnailUrl || displayImages[1]) 
@@ -268,14 +300,37 @@ export function BookEditorPanel({
     }
   };
 
+  // Any upload also materializes the book first
+  const handleImageUploadWithBookCreation = async (
+    base64: string,
+    mode: 'color' | 'bw' | 'text'
+  ) => {
+    const ensured = await ensureBook(`upload:${mode}`);
+    if (!ensured) return;
+    onImageUpload(base64, mode);
+  };
+
+  const handleGenerateAllTextImagesWithBookCreation = async () => {
+    const ensured = await ensureBook('text_all');
+    if (!ensured) return;
+    await generateAllTextImages();
+  };
+
+
   // Handle generating coloring book image from text image or color image using AI
   // For content pages: uses text image (has text bar at bottom to preserve)
   // For cover/educational pages: can use color image (no text bar)
   const handleGenerateColoringImage = async () => {
+    const ensured = await ensureBook('bw');
+    if (!ensured) return;
+
     const currentPage = pages?.find(p => p.page_number === currentPageNumber);
-    const pageType = currentPage?.page_type;
-    const pageId = currentPage?.id;
-    
+    const pageType = currentPage?.page_type ?? derivePageType(currentPageNumber);
+    const pageId =
+      currentPage?.id ??
+      ensured.pages.find(p => p.page_number === currentPageNumber)?.id;
+    const effectiveBookId = bookId ?? ensured.bookId;
+
     // Determine if this is a special page type (cover/educational)
     const isSpecialPage = ['cover', 'educational'].includes(pageType || '');
     
@@ -296,7 +351,7 @@ export function BookEditorPanel({
       return;
     }
 
-    if (!pageId || !bookId) {
+    if (!pageId || !effectiveBookId) {
       toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
       return;
     }
@@ -304,8 +359,9 @@ export function BookEditorPanel({
     setIsGeneratingColoringImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-coloring-image', {
-        body: { pageId, bookId, sourceImageUrl, sourceType }
+        body: { pageId, bookId: effectiveBookId, sourceImageUrl, sourceType }
       });
+
 
       if (error) {
         reportGenError('generate-coloring-image', error, data);
@@ -336,28 +392,36 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle generating color image using AI
-  const handleGenerateColorImage = async () => {
+  /**
+   * Generate the color image. Creates the book from the outline first if it
+   * does not exist yet — this is the moment the book becomes real.
+   */
+  const handleGenerateWithBookCreation = async () => {
     const prompt = getCurrentPagePrompt(currentPageNumber);
-    
     if (!prompt) {
       toast({ title: "No prompt available", description: "Copy or generate a prompt first", variant: "destructive" });
       return;
     }
 
-    // Get the current page ID and type
-    const currentPage = pages?.find(p => p.page_number === currentPageNumber);
-    const pageId = currentPage?.id;
-    const pageType = currentPage?.page_type;
-    if (!pageId || !bookId) {
-      toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
-      return;
-    }
-
     setIsGeneratingColorImage(true);
     try {
+      const ensured = await ensureBook('color');
+      if (!ensured) return;
+
+      const currentPage = pages?.find(p => p.page_number === currentPageNumber);
+      const pageId =
+        currentPage?.id ??
+        ensured.pages.find(p => p.page_number === currentPageNumber)?.id;
+      const effectiveBookId = bookId ?? ensured.bookId;
+      const pageType = currentPage?.page_type ?? derivePageType(currentPageNumber);
+
+      if (!pageId || !effectiveBookId) {
+        toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId, bookId, prompt, pageType, bookTitle }
+        body: { pageId, bookId: effectiveBookId, prompt, pageType, bookTitle }
       });
 
       if (error) {
@@ -368,11 +432,11 @@ export function BookEditorPanel({
         reportGenError('generate-color-image', null, data);
         return;
       }
-      
+
       // Invalidate all relevant queries to refresh and show the new image
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] }),
-        queryClient.invalidateQueries({ queryKey: ['book-page-images', bookId] }),
+        queryClient.invalidateQueries({ queryKey: ['book-editor-data', effectiveBookId] }),
+        queryClient.invalidateQueries({ queryKey: ['book-page-images', effectiveBookId] }),
       ]);
     } catch (error: any) {
       console.error('Error generating color image:', error);
@@ -382,74 +446,8 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle generating color image with automatic book creation if needed
-  const handleGenerateWithBookCreation = async () => {
-    // If book already exists, just generate the image
-    if (bookId) {
-      await handleGenerateColorImage();
-      return;
-    }
+  
 
-    // No book yet - need to create it first
-    if (!onCreateBookAndWait) {
-      toast({ title: "Cannot create book", description: "Book creation not available", variant: "destructive" });
-      return;
-    }
-
-    setIsGeneratingColorImage(true);
-    try {
-      toast({ title: "Creating book...", description: "Please wait while we set up your book" });
-      
-      const result = await onCreateBookAndWait();
-      
-      if (!result) {
-        toast({ title: "Book creation failed", description: "Could not create book", variant: "destructive" });
-        return;
-      }
-
-      // Find the page ID for the current page number
-      const pageData = result.pages.find(p => p.page_number === currentPageNumber);
-      if (!pageData) {
-        toast({ title: "Page not found", description: "Could not find page after book creation", variant: "destructive" });
-        return;
-      }
-
-      // Derive page type from page number for newly created books
-      const derivedPageType = currentPageNumber === 1 ? 'cover' : currentPageNumber === 2 ? 'educational' : 'content';
-
-      // Get the prompt
-      const prompt = getCurrentPagePrompt(currentPageNumber);
-      if (!prompt) {
-        toast({ title: "No prompt available", description: "Copy or generate a prompt first", variant: "destructive" });
-        return;
-      }
-
-      // Now generate the image with the new book and page IDs
-      const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId: pageData.id, bookId: result.bookId, prompt, pageType: derivedPageType, bookTitle }
-      });
-
-      if (error) {
-        reportGenError('generate-color-image', error, data);
-        return;
-      }
-      if (!data?.success) {
-        reportGenError('generate-color-image', null, data);
-        return;
-      }
-      
-      // Invalidate all relevant queries to refresh the new book data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] }),
-        queryClient.invalidateQueries({ queryKey: ['book-page-images', result.bookId] }),
-      ]);
-    } catch (error: any) {
-      console.error('Error generating color image with book creation:', error);
-      reportGenError('generate-color-image', error);
-    } finally {
-      setIsGeneratingColorImage(false);
-    }
-  };
 
 // Character to Westin breed mapping - simple breed replacements
   // Note: Bernese Mountain Dogs have FLOPPY droopy ears, Samoyeds have pointed ears
@@ -1001,7 +999,7 @@ CRITICAL REQUIREMENTS:
             ) : isReplacing ? (
               imageMode === 'color' ? (
                 <ColorModeUploadSection
-                  onImageUpload={onImageUpload}
+                  onImageUpload={handleImageUploadWithBookCreation}
                   onGenerate={handleGenerateWithBookCreation}
                   isGenerating={isGeneratingColorImage}
                   disabled={createBookMutation.isPending}
@@ -1009,7 +1007,7 @@ CRITICAL REQUIREMENTS:
                 />
               ) : imageMode === 'bw' ? (
                 <BWModeUploadSection
-                  onImageUpload={onImageUpload}
+                  onImageUpload={handleImageUploadWithBookCreation}
                   onGenerate={handleGenerateColoringImage}
                   hasTextImage={hasTextImage}
                   hasColorImage={hasColorImage}
@@ -1023,7 +1021,7 @@ CRITICAL REQUIREMENTS:
                   <TextModeUploadSection
                     hasColorImage={hasColorImage}
                     onGenerate={handleGenerateTextImage}
-                    onGenerateAll={generateAllTextImages}
+                    onGenerateAll={handleGenerateAllTextImagesWithBookCreation}
                     isGenerating={isGeneratingTextImage}
                     isGeneratingAll={isGeneratingAllTextImages}
                   />
@@ -1049,14 +1047,14 @@ CRITICAL REQUIREMENTS:
                 <TextModeUploadSection
                   hasColorImage={hasColorImage}
                   onGenerate={handleGenerateTextImage}
-                  onGenerateAll={generateAllTextImages}
+                  onGenerateAll={handleGenerateAllTextImagesWithBookCreation}
                   isGenerating={isGeneratingTextImage}
                   isGeneratingAll={isGeneratingAllTextImages}
                 />
               )
             ) : imageMode === 'bw' ? (
               <BWModeUploadSection
-                onImageUpload={onImageUpload}
+                onImageUpload={handleImageUploadWithBookCreation}
                 onGenerate={handleGenerateColoringImage}
                 hasTextImage={hasTextImage}
                 hasColorImage={hasColorImage}
@@ -1065,19 +1063,27 @@ CRITICAL REQUIREMENTS:
                 disabled={createBookMutation.isPending}
               />
             ) : imageMode === 'color' ? (
-              <ColorModeUploadSection
-                onImageUpload={onImageUpload}
-                onGenerate={handleGenerateWithBookCreation}
-                isGenerating={isGeneratingColorImage}
-                disabled={createBookMutation.isPending}
-              />
+              <div className="flex h-full flex-col">
+                <ColorModeUploadSection
+                  onImageUpload={handleImageUploadWithBookCreation}
+                  onGenerate={handleGenerateWithBookCreation}
+                  isGenerating={isGeneratingColorImage}
+                  disabled={createBookMutation.isPending}
+                />
+                {!bookId && (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Generating the first image creates your book.
+                  </p>
+                )}
+              </div>
             ) : (
               <ImageUpload 
                 onImageSelect={(file) => {
                   const reader = new FileReader();
                   reader.onloadend = () => {
-                    onImageUpload(reader.result as string, imageMode);
+                    void handleImageUploadWithBookCreation(reader.result as string, imageMode);
                   };
+
                   reader.readAsDataURL(file);
                 }}
                 disabled={createBookMutation.isPending}

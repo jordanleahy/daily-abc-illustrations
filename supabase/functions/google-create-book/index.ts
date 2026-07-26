@@ -370,8 +370,11 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
         bookDescription: bookOutline.bookDescription,
         category: bookOutline.category,
         bookType: bookType,
+        gradeLevel: gradeLevel,
+        targetAge: targetAge,
         pages: bookOutline.pages as OutlinePageInput[],
       });
+
       bookData = BookDataSchema.parse(adapted);
       console.log(`[Adapter] ✓ Built bookData deterministically: ${bookData.bookName} (${bookData.pages.length} pages)`);
     } catch (err) {

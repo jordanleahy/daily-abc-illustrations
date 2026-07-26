@@ -457,6 +457,10 @@ export function Header({
                     <Activity className="mr-2 h-4 w-4" />
                     Word Progress
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/admin/youtube-channels')}>
+                    <Youtube className="mr-2 h-4 w-4" />
+                    YouTube Channels
+                  </DropdownMenuItem>
                 </AdminOnly>
                 <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>
                   <User className="mr-2 h-4 w-4" />

@@ -393,28 +393,36 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle generating color image using AI
-  const handleGenerateColorImage = async () => {
+  /**
+   * Generate the color image. Creates the book from the outline first if it
+   * does not exist yet — this is the moment the book becomes real.
+   */
+  const handleGenerateWithBookCreation = async () => {
     const prompt = getCurrentPagePrompt(currentPageNumber);
-    
     if (!prompt) {
       toast({ title: "No prompt available", description: "Copy or generate a prompt first", variant: "destructive" });
       return;
     }
 
-    // Get the current page ID and type
-    const currentPage = pages?.find(p => p.page_number === currentPageNumber);
-    const pageId = currentPage?.id;
-    const pageType = currentPage?.page_type;
-    if (!pageId || !bookId) {
-      toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
-      return;
-    }
-
     setIsGeneratingColorImage(true);
     try {
+      const ensured = await ensureBook();
+      if (!ensured) return;
+
+      const currentPage = pages?.find(p => p.page_number === currentPageNumber);
+      const pageId =
+        currentPage?.id ??
+        ensured.pages.find(p => p.page_number === currentPageNumber)?.id;
+      const effectiveBookId = bookId ?? ensured.bookId;
+      const pageType = currentPage?.page_type ?? derivePageType(currentPageNumber);
+
+      if (!pageId || !effectiveBookId) {
+        toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId, bookId, prompt, pageType, bookTitle }
+        body: { pageId, bookId: effectiveBookId, prompt, pageType, bookTitle }
       });
 
       if (error) {
@@ -425,11 +433,11 @@ export function BookEditorPanel({
         reportGenError('generate-color-image', null, data);
         return;
       }
-      
+
       // Invalidate all relevant queries to refresh and show the new image
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] }),
-        queryClient.invalidateQueries({ queryKey: ['book-page-images', bookId] }),
+        queryClient.invalidateQueries({ queryKey: ['book-editor-data', effectiveBookId] }),
+        queryClient.invalidateQueries({ queryKey: ['book-page-images', effectiveBookId] }),
       ]);
     } catch (error: any) {
       console.error('Error generating color image:', error);
@@ -439,74 +447,8 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle generating color image with automatic book creation if needed
-  const handleGenerateWithBookCreation = async () => {
-    // If book already exists, just generate the image
-    if (bookId) {
-      await handleGenerateColorImage();
-      return;
-    }
+  const handleGenerateColorImage = handleGenerateWithBookCreation;
 
-    // No book yet - need to create it first
-    if (!onCreateBookAndWait) {
-      toast({ title: "Cannot create book", description: "Book creation not available", variant: "destructive" });
-      return;
-    }
-
-    setIsGeneratingColorImage(true);
-    try {
-      toast({ title: "Creating book...", description: "Please wait while we set up your book" });
-      
-      const result = await onCreateBookAndWait();
-      
-      if (!result) {
-        toast({ title: "Book creation failed", description: "Could not create book", variant: "destructive" });
-        return;
-      }
-
-      // Find the page ID for the current page number
-      const pageData = result.pages.find(p => p.page_number === currentPageNumber);
-      if (!pageData) {
-        toast({ title: "Page not found", description: "Could not find page after book creation", variant: "destructive" });
-        return;
-      }
-
-      // Derive page type from page number for newly created books
-      const derivedPageType = currentPageNumber === 1 ? 'cover' : currentPageNumber === 2 ? 'educational' : 'content';
-
-      // Get the prompt
-      const prompt = getCurrentPagePrompt(currentPageNumber);
-      if (!prompt) {
-        toast({ title: "No prompt available", description: "Copy or generate a prompt first", variant: "destructive" });
-        return;
-      }
-
-      // Now generate the image with the new book and page IDs
-      const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId: pageData.id, bookId: result.bookId, prompt, pageType: derivedPageType, bookTitle }
-      });
-
-      if (error) {
-        reportGenError('generate-color-image', error, data);
-        return;
-      }
-      if (!data?.success) {
-        reportGenError('generate-color-image', null, data);
-        return;
-      }
-      
-      // Invalidate all relevant queries to refresh the new book data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] }),
-        queryClient.invalidateQueries({ queryKey: ['book-page-images', result.bookId] }),
-      ]);
-    } catch (error: any) {
-      console.error('Error generating color image with book creation:', error);
-      reportGenError('generate-color-image', error);
-    } finally {
-      setIsGeneratingColorImage(false);
-    }
-  };
 
 // Character to Westin breed mapping - simple breed replacements
   // Note: Bernese Mountain Dogs have FLOPPY droopy ears, Samoyeds have pointed ears

@@ -828,7 +828,32 @@ export default function GoogleChat() {
     }));
 
     const bookOutlinePayload = buildOutlinePayload(outline);
+
+    // Guard 5: the edge function is deterministic-only and rejects requests
+    // without an outline (OUTLINE_REQUIRED). Ask the agent for one instead of
+    // firing a request we know will fail.
+    if (!bookOutlinePayload) {
+      console.warn('[Book Creation] blocked: no parsable page outline in transcript');
+      trackEvent('create_book_blocked', {
+        reason: 'no_outline',
+        source,
+        book_type: selectedBookType || 'unknown',
+        message_count: messages.length,
+      });
+      const expectedPages = selectedBookType === 'abc' ? 28 : 12;
+      toast.error("I still need the page-by-page outline — asking the assistant to generate it now.");
+      void sendMessage(
+        `Before we create the book, please output the complete page-by-page outline now. ` +
+        `Use exactly ${expectedPages} pages and this strict format, one page per line:\n` +
+        `**Page 1: <cover title>** <one-sentence description>\n` +
+        `**Page 2: <educational focus title>** <one-sentence description>\n` +
+        `...through Page ${expectedPages}. Do not skip any page numbers.`
+      );
+      return null;
+    }
+
     const createStartedAt = performance.now();
+
     trackEvent('create_book_start', {
       source,
       book_type: selectedBookType || 'unknown',

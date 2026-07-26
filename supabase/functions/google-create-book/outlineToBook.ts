@@ -12,6 +12,11 @@
  * exists.
  */
 
+import {
+  buildEducationalFocusContent,
+  type EducationalFocusContext,
+} from '../_shared/educationalFocus.ts';
+
 export interface OutlinePageInput {
   pageNumber: number;
   pageType?: 'cover' | 'educational' | 'content';
@@ -24,8 +29,13 @@ export interface OutlineToBookInput {
   bookDescription?: string;
   category?: string;
   bookType?: string;
+  /** Target grade level (e.g. 'PRE_K'); used for the Educational Focus page. */
+  gradeLevel?: string | null;
+  /** Legacy target age range; fallback when gradeLevel is absent. */
+  targetAge?: string | null;
   pages: OutlinePageInput[];
 }
+
 
 export interface AdaptedPage {
   pageNumber: number;

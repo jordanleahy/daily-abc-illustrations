@@ -223,8 +223,34 @@ export function BookEditorPanel({
     setIsEditingOverlayText(false);
   };
 
+  /**
+   * Lazy book creation: the chat only produces an outline. The book row is
+   * created the first time the user generates or uploads an image.
+   */
+  const ensureStateRef = useRef(createEnsureBookState());
+  const ensureBook = useCallback(async (): Promise<EnsuredBook | null> => {
+    return ensureBookExists(ensureStateRef.current, {
+      bookId,
+      getExistingPages: async () =>
+        (pages || []).map((p) => ({ id: p.id, page_number: p.page_number })),
+      createBookAndWait: onCreateBookAndWait
+        ? async () => await onCreateBookAndWait()
+        : undefined,
+      onCreateStart: () =>
+        toast({
+          title: 'Setting up your book…',
+          description: 'Creating the book from your outline',
+        }),
+      onError: (message) =>
+        toast({ title: 'Book creation failed', description: message, variant: 'destructive' }),
+    });
+  }, [bookId, pages, onCreateBookAndWait, toast]);
+
   // Handle generating text image from color image
   const handleGenerateTextImage = async () => {
+    const ensured = await ensureBook();
+    if (!ensured) return;
+
     // Get the color image URL
     const colorImageUrl = currentPageNumber === 1 
       ? (thumbnailUrl || displayImages[1]) 
@@ -267,6 +293,23 @@ export function BookEditorPanel({
       setIsGeneratingTextImage(false);
     }
   };
+
+  // Any upload also materializes the book first
+  const handleImageUploadWithBookCreation = async (
+    base64: string,
+    mode: 'color' | 'bw' | 'text'
+  ) => {
+    const ensured = await ensureBook();
+    if (!ensured) return;
+    onImageUpload(base64, mode);
+  };
+
+  const handleGenerateAllTextImagesWithBookCreation = async () => {
+    const ensured = await ensureBook();
+    if (!ensured) return;
+    await generateAllTextImages();
+  };
+
 
   // Handle generating coloring book image from text image or color image using AI
   // For content pages: uses text image (has text bar at bottom to preserve)

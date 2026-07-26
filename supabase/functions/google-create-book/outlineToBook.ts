@@ -106,6 +106,22 @@ export const outlineToBook = (input: OutlineToBookInput): AdaptedBookData => {
   const seen = new Set<number>();
   const adapted: AdaptedPage[] = [];
 
+  // Content pages = everything that is not the cover or the educational focus
+  // page. Used for the "N pages to explore together" line on page 2.
+  const contentPageCount = pages.filter(
+    (p) =>
+      p &&
+      inferPageType(p.pageNumber, p.pageType, input.bookType, pages.length) === 'content',
+  ).length;
+
+  const focusCtx: EducationalFocusContext = {
+    bookType: input.bookType,
+    category: input.category,
+    gradeLevel: input.gradeLevel,
+    targetAge: input.targetAge,
+    contentPageCount,
+  };
+
   for (const p of pages) {
     if (!p || typeof p.pageNumber !== 'number' || p.pageNumber < 1) {
       throw new Error(`outlineToBook: invalid pageNumber on page ${JSON.stringify(p)}`);
@@ -126,19 +142,31 @@ export const outlineToBook = (input: OutlineToBookInput): AdaptedBookData => {
         ? 'FOCUS'
         : extractLetter(title);
 
+    let content: AdaptedPage['content'];
+    if (pageType === 'cover') {
+      content = {
+        mainConcept: bookName,
+        funFact: input.bookDescription || '',
+        activity: '',
+      };
+    } else if (pageType === 'educational') {
+      // Age / learning-type / skill lines, composed deterministically so the
+      // focus page never ships with an empty text layer.
+      content = buildEducationalFocusContent(focusCtx);
+    } else {
+      content = { mainConcept: title, funFact: '', activity: '' };
+    }
+
     adapted.push({
       pageNumber: p.pageNumber,
       pageType,
       letter,
       title: pageType === 'cover' ? bookName : title,
       description,
-      content: {
-        mainConcept: pageType === 'cover' ? bookName : title,
-        funFact: pageType === 'cover' ? (input.bookDescription || '') : '',
-        activity: '',
-      },
+      content,
     });
   }
+
 
   adapted.sort((a, b) => a.pageNumber - b.pageNumber);
 

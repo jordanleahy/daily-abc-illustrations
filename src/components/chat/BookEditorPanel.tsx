@@ -1064,19 +1064,27 @@ CRITICAL REQUIREMENTS:
                 disabled={createBookMutation.isPending}
               />
             ) : imageMode === 'color' ? (
-              <ColorModeUploadSection
-                onImageUpload={handleImageUploadWithBookCreation}
-                onGenerate={handleGenerateWithBookCreation}
-                isGenerating={isGeneratingColorImage}
-                disabled={createBookMutation.isPending}
-              />
+              <div className="flex h-full flex-col">
+                <ColorModeUploadSection
+                  onImageUpload={handleImageUploadWithBookCreation}
+                  onGenerate={handleGenerateWithBookCreation}
+                  isGenerating={isGeneratingColorImage}
+                  disabled={createBookMutation.isPending}
+                />
+                {!bookId && (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Generating the first image creates your book.
+                  </p>
+                )}
+              </div>
             ) : (
               <ImageUpload 
                 onImageSelect={(file) => {
                   const reader = new FileReader();
                   reader.onloadend = () => {
-                    onImageUpload(reader.result as string, imageMode);
+                    void handleImageUploadWithBookCreation(reader.result as string, imageMode);
                   };
+
                   reader.readAsDataURL(file);
                 }}
                 disabled={createBookMutation.isPending}

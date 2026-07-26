@@ -988,9 +988,10 @@ export default function GoogleChat() {
    * when the user generates/uploads the first image.
    */
   const handleCreateBookAndWait = useCallback(
-    () => createBook({ wait: true }),
+    (trigger?: string) => createBook({ wait: true, trigger }),
     [createBook]
   );
+
 
 
 

@@ -19,9 +19,11 @@ interface PageImageSectionProps {
   enableMobileSave?: boolean;
   preloadedImageUrl?: string;
   priority?: boolean;
+  /** Book category — opposites books keep letterboxing instead of filling */
+  bookCategory?: string | null;
 }
 
-export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false, preloadedImageUrl, priority = false }: PageImageSectionProps) {
+export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false, preloadedImageUrl, priority = false, bookCategory }: PageImageSectionProps) {
   const { user } = useAuthContext();
   const { toast } = useToast();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);

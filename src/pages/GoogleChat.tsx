@@ -758,9 +758,12 @@ export default function GoogleChat() {
 
       if (!wait) {
         toast.info('This chat already has a book — opening it.');
-        handleViewCreatedBook();
+        navigate(`/books/${createdBookId}/read`, {
+          state: { from: 'google-chat', sessionId: currentSessionId },
+        });
         return null;
       }
+
 
       const { data: existingPages, error } = await supabase
         .from('pages')

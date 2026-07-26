@@ -5,6 +5,7 @@
  */
 
 import type { AgentConfig } from './types.ts';
+import { callGateway } from './aiGateway.ts';
 
 /**
  * Lovable AI Gateway endpoint (OpenAI-compatible)

@@ -64,3 +64,20 @@ describe('isCaptionOnlyPage', () => {
     expect(isCaptionOnlyPage(undefined)).toBe(false);
   });
 });
+
+describe('getPageDisplayText — legacy books', () => {
+  it('ignores overlay text that just repeats the internal label', () => {
+    expect(
+      getPageDisplayText(
+        page({
+          title: 'Educational Focus',
+          content: {
+            textOverlay: { text: 'Educational Focus' },
+            mainConcept: 'Toddlers',
+            funFact: 'Rhyming | Phonemic Awareness',
+          },
+        }),
+      ),
+    ).toBe('Toddlers · Rhyming | Phonemic Awareness');
+  });
+});

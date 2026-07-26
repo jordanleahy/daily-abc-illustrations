@@ -46,7 +46,9 @@ vi.mock('@/hooks/useReadingPreferences', () => ({
 vi.mock('@/hooks/useWordLearningProgress', () => ({
   useWordLearningProgress: () => ({ wordStatuses: {}, markWord: vi.fn(), isLoading: false }),
 }));
-vi.mock('@/hooks/useWordMetadata', () => ({ useWordMetadata: () => ({ data: undefined }) }));
+vi.mock('@/hooks/useWordMetadata', () => ({
+  useWordMetadata: () => ({ generateMetadata: vi.fn().mockResolvedValue(undefined), isGenerating: false }),
+}));
 vi.mock('@/hooks/useBookPages', () => ({ useBookPages: () => ({ updatePage: vi.fn() }) }));
 vi.mock('@/components/common', () => ({ MetaHead: () => null }));
 vi.mock('@/components/layout/ReadingHeader', () => ({ ReadingHeader: () => null }));

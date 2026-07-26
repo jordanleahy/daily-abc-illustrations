@@ -1006,9 +1006,9 @@ export default function GoogleChat() {
       handleViewCreatedBook();
       return;
     }
-    // "Create book"-style actions no longer create anything. The chat produces an
-    // OUTLINE; the book is created lazily when the first image is generated.
-    // These actions open the outline review panel instead.
+    // Explicit "Create book" action. Creates the book up front; the lazy
+    // first-image path in the editor panel remains as the fallback for users
+    // who skip this button.
     const label = typeof action.label === 'string' ? action.label.toLowerCase() : '';
     const isProceedAction =
       action.value === 'create_book' ||
@@ -1017,7 +1017,7 @@ export default function GoogleChat() {
       label.includes('create book') ||
       label.includes('create my book');
     if (isProceedAction) {
-      trackEvent('open_outline_click', {
+      trackEvent('create_book_click', {
         action_id: action.id,
         action_value: action.value,
         active_city: activeCity || 'unset',
@@ -1042,8 +1042,10 @@ export default function GoogleChat() {
         }, 0);
         return;
       }
+      void createBook({ wait: false, trigger: 'quick_reply' });
       handleOpenEditorPanel();
       return;
+
     }
 
 

@@ -771,96 +771,104 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
         let promptsSkipped = 0;
         let totalPromptLength = 0;
         const promptMetrics: any[] = [];
-        
+
         console.log(`[PROMPT PRESERVATION] Matching ${promptKeys.length} prompts to ${createdPages.length} pages`);
-        
+
+        // PERF: build all rows first, resolve version numbers in parallel, then
+        // do ONE batch insert. Previously this ran 2 sequential roundtrips per
+        // page (up to 56 for a 28-page ABC book) inside a request timeout.
+        const candidates: Array<{ pageNumber: number; pageId: string; pageTitle: string; content: string }> = [];
+
         for (const [pageNumStr, promptContent] of Object.entries(fullPrompts)) {
           const pageNumber = parseInt(pageNumStr, 10);
-          
-          // Validate page number
+
           if (isNaN(pageNumber)) {
             console.warn(`[PROMPT PRESERVATION] Invalid page number: "${pageNumStr}" - skipping`);
             promptsSkipped++;
             continue;
           }
-          
-          // Find matching page
+
           const page = createdPages.find((p: any) => p.page_number === pageNumber);
           if (!page) {
-            console.warn(`[PROMPT PRESERVATION] Page ${pageNumber} not found (title: ${promptContent.substring(0, 50)}...)`);
+            console.warn(`[PROMPT PRESERVATION] Page ${pageNumber} not found`);
             promptsSkipped++;
             continue;
           }
-          
-          // Validate prompt content
+
           if (!promptContent || typeof promptContent !== 'string') {
             console.warn(`[PROMPT PRESERVATION] Invalid prompt content for page ${pageNumber} - skipping`);
             promptsSkipped++;
             continue;
           }
-          
+
           const trimmedContent = promptContent.trim();
           if (trimmedContent.length === 0) {
             console.warn(`[PROMPT PRESERVATION] Empty prompt for page ${pageNumber} - skipping`);
             promptsSkipped++;
             continue;
           }
-          
-          // Log prompt metrics for monitoring
+
           totalPromptLength += trimmedContent.length;
-          promptMetrics.push({
-            page: pageNumber,
-            title: page.title,
-            length: trimmedContent.length
+          promptMetrics.push({ page: pageNumber, title: page.title, length: trimmedContent.length });
+          candidates.push({
+            pageNumber,
+            pageId: page.id,
+            pageTitle: page.title,
+            content: trimmedContent,
           });
-          
-          try {
-            // Get next version number for this page
-            const { data: versionData, error: versionError } = await supabase
-              .rpc('get_next_page_prompt_version_number', { p_page_id: page.id });
-            
-            if (versionError) {
-              console.error(`[PROMPT PRESERVATION ERROR] Failed to get version for page ${pageNumber}:`, versionError);
-              promptsSkipped++;
-              continue;
-            }
-            
-            const versionNumber = versionData || 1;
-            
-            // Insert the full prompt from chat - EXACTLY AS PROVIDED
+        }
+
+        if (candidates.length > 0) {
+          const versionResults = await Promise.all(
+            candidates.map(async (c) => {
+              const { data, error } = await supabase
+                .rpc('get_next_page_prompt_version_number', { p_page_id: c.pageId });
+              if (error) {
+                console.error(`[PROMPT PRESERVATION ERROR] Version lookup failed for page ${c.pageNumber}:`, error);
+                return null;
+              }
+              return { ...c, versionNumber: data || 1 };
+            })
+          );
+
+          const now = new Date().toISOString();
+          const rows = versionResults
+            .filter((r): r is NonNullable<typeof r> => r !== null)
+            .map((r) => ({
+              page_id: r.pageId,
+              book_id: book.id,
+              user_id: userId,
+              version_number: r.versionNumber,
+              content: r.content, // Store full prompt with no modifications
+              is_latest: true,
+              is_deployed: true,
+              deployed_at: now,
+              source_type: 'chat_generated',
+              prompt_status: 'complete',
+              generation_metadata: {
+                preservedFromChat: true,
+                originalLength: r.content.length,
+                timestamp: now,
+              },
+            }));
+
+          promptsSkipped += candidates.length - rows.length;
+
+          if (rows.length > 0) {
             const { error: insertError } = await supabase
               .from('page_system_prompts')
-              .insert({
-                page_id: page.id,
-                book_id: book.id,
-                user_id: userId,
-                version_number: versionNumber,
-                content: trimmedContent, // Store full prompt with no modifications
-                is_latest: true,
-                is_deployed: true,
-                deployed_at: new Date().toISOString(),
-                source_type: 'chat_generated', // Track that this came from chat
-                prompt_status: 'complete',
-                generation_metadata: {
-                  preservedFromChat: true,
-                  originalLength: trimmedContent.length,
-                  timestamp: new Date().toISOString()
-                }
-              });
-            
+              .insert(rows);
+
             if (insertError) {
-              console.error(`[PROMPT PRESERVATION ERROR] Failed to insert prompt for page ${pageNumber}:`, insertError);
-              promptsSkipped++;
+              console.error('[PROMPT PRESERVATION ERROR] Batch insert failed:', insertError);
+              promptsSkipped += rows.length;
             } else {
-              promptsCreated++;
-              console.log(`[PROMPT PRESERVATION] ✓ Page ${pageNumber} (${page.title}): ${trimmedContent.length} chars`);
+              promptsCreated = rows.length;
+              console.log(`[PROMPT PRESERVATION] ✓ Batch inserted ${rows.length} prompts`);
             }
-          } catch (error) {
-            console.error(`[PROMPT PRESERVATION ERROR] Exception processing page ${pageNumber}:`, error);
-            promptsSkipped++;
           }
         }
-        
+
         // Log comprehensive metrics
         const avgLength = promptsCreated > 0 ? Math.round(totalPromptLength / promptsCreated) : 0;
         console.log(`[PROMPT PRESERVATION COMPLETE]`);
@@ -868,13 +876,14 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
         console.log(`  ✗ Skipped: ${promptsSkipped}`);
         console.log(`  📏 Avg length: ${avgLength} chars`);
         console.log(`  📊 Total: ${totalPromptLength} chars`);
-        
+
         if (promptMetrics.length > 0) {
           const shortest = promptMetrics.reduce((min, p) => p.length < min.length ? p : min);
           const longest = promptMetrics.reduce((max, p) => p.length > max.length ? p : max);
           console.log(`  📉 Shortest: Page ${shortest.page} (${shortest.length} chars)`);
           console.log(`  📈 Longest: Page ${longest.page} (${longest.length} chars)`);
         }
+
         
         // If we didn't create any prompts, fall back to generation
         if (promptsCreated === 0) {

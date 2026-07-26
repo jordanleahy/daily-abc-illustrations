@@ -21,6 +21,7 @@ import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
 import { ErrorDetailsPanel, type ErrorDetails } from './ErrorDetailsPanel';
+import { getImageFitClass } from '@/utils/imageFit';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';

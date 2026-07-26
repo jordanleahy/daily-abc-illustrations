@@ -610,41 +610,9 @@ export default function GoogleChat() {
       const hasPrompts = selectedSession.qa_page_prompts && Object.keys(selectedSession.qa_page_prompts).length > 0;
       
       if (!hasPrompts) {
-        // Extract prompts from conversation history
-        const fullPrompts: Record<number, string> = {};
-        const conversationText = messages
-          .filter(m => m.role === 'assistant')
-          .map(m => m.content)
-          .join('\n');
-        
-        // Extract prompts for each page (A-Z = pages 1-26)
-        for (let i = 1; i <= 26; i++) {
-          const letter = String.fromCharCode(64 + i);
-          const patterns = [
-            new RegExp(`<qa_page_${i}>([\\s\\S]*?)</qa_page_${i}>`, 'i'),
-            new RegExp(`Page ${i}[:\\s-]+${letter}[:\\s-]+([\\s\\S]*?)(?=Page ${i + 1}|$)`, 'i')
-          ];
-          
-          for (const pattern of patterns) {
-            const match = conversationText.match(pattern);
-            if (match) {
-              fullPrompts[i] = match[1].trim();
-              break;
-            }
-          }
-        }
-        
-        // Save extracted prompts to database
-        if (Object.keys(fullPrompts).length > 0) {
-          console.log(`[Edit Mode] Extracted ${Object.keys(fullPrompts).length} prompts, saving...`);
-          updateQAPagePrompts({ 
-            sessionId: currentSessionId, 
-            qaPagePrompts: fullPrompts 
-          });
-          setEditorPagePrompts(fullPrompts);
-        }
-      }
-    }
+        // Reconstruct prompts from legacy <qa_page_N> conversation blocks
+        const fullPrompts = extractEditModePrompts(messages);
+
   }, [showEditor, editBookId, selectedSession, messages, currentSessionId, updateQAPagePrompts]);
 
   const handleSend = async () => {

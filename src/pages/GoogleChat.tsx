@@ -1444,23 +1444,10 @@ export default function GoogleChat() {
     // Extract and store prompts in qa_page_prompts on "View Outline" click
     if (!selectedSession?.qa_page_prompts || Object.keys(selectedSession.qa_page_prompts).length === 0) {
       console.log('[Prompt Storage] Extracting prompts on View Outline click');
-      
-      // Use new helper to extract prompts - direct page numbers, no offset
-      const outline = parseBookOutline(messages);
-      const fullPrompts = extractPromptsRecord(outline);
-      
-      // Add centered title instruction to cover prompt if needed
-      if (fullPrompts[1]) {
-        let coverPrompt = fullPrompts[1];
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
-          
-          const bookTitle = bookOutline?.coverPage?.title || '[TITLE]';
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-          fullPrompts[1] = coverPrompt;
-        }
-      }
+
+      // Single source of truth: sanitized once, cover directive applied once
+      const fullPrompts = extractOutlinePrompts(messages, parseBookOutline(messages));
+
       
       // Store prompts in session for later use
       if (currentSessionId && Object.keys(fullPrompts).length > 0) {

@@ -730,10 +730,12 @@ export default function GoogleChat() {
    * Replaces the former handleCreateBook / handleCreateBookAndWait duplicate pair.
    */
   const createBook = useCallback(async (
-    options?: { wait?: boolean }
+    options?: { wait?: boolean; trigger?: string }
   ): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
     const wait = options?.wait === true;
-    const source = wait ? 'handleCreateBookAndWait' : 'handleCreateBook';
+    // Creation is now always driven by the first image generation/upload.
+    const source = `first_image:${options?.trigger ?? 'unknown'}`;
+
 
     // Guard 1: No active session
     if (!currentSessionId) {

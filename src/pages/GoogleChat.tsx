@@ -738,19 +738,29 @@ export default function GoogleChat() {
     // Guard 1: No active session
     if (!currentSessionId) {
       console.warn('No active session');
+      toast.error('No active chat session — start a new chat first.');
+      trackEvent('create_book_blocked', { reason: 'no_session', source });
       return null;
     }
 
     // Guard 2: No messages
     if (messages.length === 0) {
       console.warn('Please have a conversation first');
+      toast.error('Start a conversation before creating your book.');
+      trackEvent('create_book_blocked', { reason: 'no_messages', source });
       return null;
     }
 
     // Guard 3: Book already created for this session (prevents duplicates)
     if (createdBookId) {
       console.warn('[Book Creation] Book already exists for this session:', createdBookId);
-      if (!wait) return null;
+      trackEvent('create_book_blocked', { reason: 'already_created', source, book_id: createdBookId });
+
+      if (!wait) {
+        toast.info('This chat already has a book — opening it.');
+        handleViewCreatedBook();
+        return null;
+      }
 
       const { data: existingPages, error } = await supabase
         .from('pages')
@@ -760,6 +770,7 @@ export default function GoogleChat() {
 
       if (error || !existingPages) {
         console.error('Failed to fetch existing pages:', error);
+        toast.error(`Couldn't load the existing book's pages: ${error?.message ?? 'unknown error'}`);
         return null;
       }
       return { bookId: createdBookId, pages: existingPages };
@@ -768,8 +779,11 @@ export default function GoogleChat() {
     // Guard 4: Creation already in progress
     if (createBookMutation.isPending) {
       console.warn('[Book Creation] Book creation already in progress');
+      toast.info('Your book is already being created — hang tight.');
+      trackEvent('create_book_blocked', { reason: 'in_progress', source });
       return null;
     }
+
 
     const outline = parseBookOutline(messages);
 

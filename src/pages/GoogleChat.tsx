@@ -349,61 +349,16 @@ export default function GoogleChat() {
     return pageCount;
   }, [isBookCreated, dbPages, pageCount]);
 
-  // Helper to get current page prompt - ALWAYS prioritizes stored prompts from qa_page_prompts
-  // Applies fallback sanitization for legacy unsanitized prompts
+  // Helper to get current page prompt - delegates to the shared prompt pipeline
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    // PRIORITY 1: Always check stored prompts from "View Outline" first
-    // Apply sanitization as fallback for legacy unsanitized prompts
-    if (editorPagePrompts[pageNum]) {
-      return sanitizeImagePrompt(editorPagePrompts[pageNum]);
-    }
-
-    // PRIORITY 2: If book is created, get from database
-    if (isBookCreated && dbPages && dbPages.length > 0) {
-      const page = dbPages.find(p => p.page_number === pageNum);
-      if (!page) return null;
-      
-      // Try to get full prompt from content.imagePrompt (stores unlimited text)
-      const fullPrompt = (page.content as any)?.imagePrompt;
-      if (fullPrompt) {
-        // Apply sanitization for legacy data
-        return sanitizeImagePrompt(fullPrompt);
-      }
-      
-      // Fallback to page description (may be truncated)
-      if (page.description) {
-        return sanitizeImagePrompt(page.description);
-      }
-      
-      return null;
-    }
-    
-    // PRIORITY 3: Pre-creation - use new structured outline with direct lookup
-    // Note: extractPromptsRecord already sanitizes at extraction time,
-    // but getPagePrompt returns raw description, so sanitize here too
-    const prompt = getPagePrompt(bookOutline, pageNum);
-    if (!prompt) return null;
-    
-    const sanitized = sanitizeImagePrompt(prompt);
-    
-    // Special handling for cover page - ensure centered title
-    if (pageNum === 1) {
-      let description = sanitized;
-      
-      // Replace "book cover" with "square card cover"
-      description = description.replace(/\bbook cover\b/gi, 'square card cover');
-      
-      // Ensure centered title instruction exists
-      if (!description.toLowerCase().includes('centered') && 
-          !description.toLowerCase().includes('center')) {
-        description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
-      }
-      
-      return description;
-    }
-    
-    return sanitized;
+    return readPagePrompt(pageNum, {
+      storedPrompts: editorPagePrompts,
+      dbPages,
+      outline: bookOutline,
+      isBookCreated,
+    });
   }, [isBookCreated, dbPages, editorPagePrompts, bookOutline]);
+
 
   // Helper to get current page title - mirrors getCurrentPagePrompt pattern
   const getCurrentPageTitle = useCallback((pageNum: number): string | null => {

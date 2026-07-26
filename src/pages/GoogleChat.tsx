@@ -847,8 +847,24 @@ export default function GoogleChat() {
         `Use exactly ${expectedPages} pages and this strict format, one page per line:\n` +
         `**Page 1: <cover title>** <one-sentence description>\n` +
         `**Page 2: <educational focus title>** <one-sentence description>\n` +
-        `...through Page ${expectedPages}. Do not skip any page numbers.`
+        `...through Page ${expectedPages}. Do not skip any page numbers.`,
+        '📋 Generate the full page outline',
+        messages,
+        {
+          bookType: selectedBookType,
+          characterTheme: characterFlow.themeId,
+          gradeLevel: selectedGradeLevel,
+          season: selectedSeason,
+          environment: selectedEnvironment,
+          clothingBrand: selectedClothingBrand,
+          location: selectedLocation,
+          city: activeCity,
+          mannerType: selectedMannerType,
+          mannersSetting: selectedMannersSetting,
+          selectedCharacterIds: characterFlow.selectedCharacterIds,
+        }
       );
+
       return null;
     }
 

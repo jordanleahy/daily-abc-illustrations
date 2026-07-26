@@ -65,10 +65,11 @@ describe('extractOutlinePrompts', () => {
     expect(prompts[1]).not.toMatch(/\bbook cover\b/i);
   });
 
-  it('ignores user messages when extracting', () => {
-    const prompts = extractOutlinePrompts([{ role: 'user', content: outlineMessage }]);
-    expect(Object.keys(prompts)).toHaveLength(0);
+  it('sanitizes extracted prompts (no markdown heading residue)', () => {
+    const prompts = extractOutlinePrompts(messages);
+    expect(prompts[3]).not.toContain('**');
   });
+
 
   it('falls back to legacy **Cover:** / **Educational Focus:** headings', () => {
     const legacy = [

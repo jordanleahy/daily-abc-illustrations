@@ -33,7 +33,7 @@ export const useKidProfiles = () => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('kid-profiles-changes')
+      .channel(`kid-profiles-changes-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {

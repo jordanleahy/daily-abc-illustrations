@@ -1,4 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import {
+  ensureBookExists,
+  createEnsureBookState,
+  derivePageType,
+  type EnsuredBook,
+} from '@/utils/ensureBookExists';
+
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

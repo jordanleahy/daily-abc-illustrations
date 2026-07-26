@@ -626,6 +626,17 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
     // AI returns 1-based page numbering: pageNumber 1=cover, 2=educational (optional), 3+=content
     // We store using page.pageNumber directly (already 1-based)
     
+    const contentPageCount = sanitizedPages.filter(
+      (p: any) => (p.pageType || 'content') === 'content'
+    ).length;
+    const focusOverlayText = buildEducationalFocusOverlayText({
+      bookType,
+      category: bookData.category,
+      gradeLevel,
+      targetAge,
+      contentPageCount,
+    });
+
     const pages = sanitizedPages.map((page: any) => {
       const pageType = page.pageType || 'content'; // Default to content if not specified
       const actualPageNumber = page.pageNumber; // Use AI-provided 1-based page number directly
@@ -647,6 +658,10 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       const rawPrompt = fullPrompts?.[actualPageNumber] || '';
       const imagePrompt = isCover ? buildFlatCoverImagePrompt(rawPrompt) : rawPrompt;
 
+      // The Educational Focus page shows the age/learning line, not its title —
+      // the illustration only carries empty badge shapes.
+      const overlayText = pageType === 'educational' ? focusOverlayText : page.title;
+
       const row = {
         book_id: book.id,
         page_type: pageType,
@@ -662,12 +677,13 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
           imagePrompt,
           textOverlay: {
             enabled: textOverlayEnabled,
-            text: sanitizeText(page.title, 100),
+            text: sanitizeText(overlayText, 100),
             position: 'bottom-center' as const,
             createdAt: new Date().toISOString()
           }
         }
       };
+
 
       // Cover row keeps the resolved book title on `title` for accessibility /
       // admin listings, but `textOverlay.enabled` stays false (enforced inside).

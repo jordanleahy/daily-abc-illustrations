@@ -18,6 +18,9 @@ import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCac
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
 import { fetchSharedTemplates, interpolateTemplate } from '../_shared/sharedTemplates.ts';
 import { COVER_TITLE_INSTRUCTION } from '../_shared/coverPromptConstants.ts';
+import { composePrompt, logPromptBudget } from '../_shared/promptBudget.ts';
+import { callGateway, gatewayErrorResponse } from '../_shared/aiGateway.ts';
+
 
 // Dynamic question injection system - fetches enabled questions and injects [SUGGEST] blocks
 // Constants for input validation
@@ -1012,16 +1015,41 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
     // Multi-language support - respond in user's language while maintaining safety
     const languageContext = `\n\n🌍 LANGUAGE INSTRUCTION: Detect the language the user is writing in and respond in that SAME language throughout the entire conversation. This applies to all responses including discovery questions, suggestions, title/description proposals, and the complete book outline. Maintain all content safety guidelines and age-appropriateness regardless of language. Do NOT translate internal instruction tags like [SUGGEST] or markdown formatting.`;
 
-    // Combine base prompt with contextual additions
-    // STRICT_COMPLIANCE_HEADER is prepended to enforce mandatory question/option usage
-    // Dynamic discovery block is injected to present the next unanswered question from agent_questions
-    const systemMessage: Message = {
-      role: 'system',
-      content: STRICT_COMPLIANCE_HEADER + systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + discoveryContextInjection + dynamicDiscoveryBlock + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
-    };
+    // Combine base prompt with contextual additions via the shared prompt budget.
+    // STRICT_COMPLIANCE_HEADER + base instructions are required; contextual
+    // blocks are optional and dropped lowest-priority-first if we exceed budget.
+    const budget = composePrompt(
+      [
+        { label: 'strictCompliance', content: STRICT_COMPLIANCE_HEADER, required: true },
+        { label: 'systemPrompt', content: systemPromptContent, required: true },
+        { label: 'language', content: languageContext, required: true },
+        { label: 'dynamicDiscovery', content: dynamicDiscoveryBlock, required: true },
+        { label: 'proceedToTitle', content: proceedToTitleContext, required: true },
+        { label: 'titleConfirmation', content: titleConfirmationContext, required: true },
+        { label: 'conversationStage', content: conversationStageContext, required: true },
+        { label: 'grade', content: gradeContext, priority: 90 },
+        { label: 'city', content: cityContext, priority: 88 },
+        { label: 'characterConstraints', content: characterConstraintsContext, priority: 86 },
+        { label: 'characterTheme', content: characterThemeContext, priority: 84 },
+        { label: 'theme', content: themeContext, priority: 82 },
+        { label: 'discoveryContext', content: discoveryContextInjection, priority: 80 },
+        { label: 'mannerType', content: mannerTypeContext, priority: 70 },
+        { label: 'mannersSetting', content: mannersSettingContext, priority: 68 },
+        { label: 'location', content: locationContext, priority: 66 },
+        { label: 'environment', content: environmentContext, priority: 64 },
+        { label: 'season', content: seasonContext, priority: 62 },
+        { label: 'clothingBrand', content: clothingBrandContext, priority: 60 },
+        { label: 'digraphWords', content: digraphWordsContext, priority: 50 },
+        { label: 'sightWords', content: sightWordsContext, priority: 50 },
+        { label: 'curatedItems', content: curatedItemsContext, priority: 40 },
+      ],
+      { maxTokens: 100_000 }
+    );
+
+    const systemMessage: Message = { role: 'system', content: budget.content };
 
     console.log(`🤖 Agent source: ${agentSource}`);
-    console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
+    logPromptBudget(budget, 'google-chat');
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`📚 Grade level: ${gradeLevel || 'None'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
@@ -1046,44 +1074,21 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
     
     console.log(`🧠 Model config: ${modelSettings.model}, max_tokens: ${modelSettings.maxCompletionTokens}, top_p: ${modelSettings.topP}`);
 
-    // Call Lovable AI Gateway with streaming
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelSettings.model,
-        messages: allMessages,
-        max_completion_tokens: modelSettings.maxCompletionTokens,
-        top_p: modelSettings.topP,
-        stream: true,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Payment required. Please add credits to your Lovable AI workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ error: 'AI service error', details: errorText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    // Standardized Lovable AI Gateway streaming call (shared error mapping)
+    let response: Response;
+    try {
+      response = await callGateway(
+        {
+          model: modelSettings.model,
+          messages: allMessages as unknown as Array<Record<string, unknown>>,
+          max_completion_tokens: modelSettings.maxCompletionTokens,
+          top_p: modelSettings.topP,
+          stream: true,
+        },
+        'google-chat'
       );
+    } catch (gatewayError) {
+      return gatewayErrorResponse(gatewayError, corsHeaders);
     }
 
     console.log('Lovable AI streaming response started');
@@ -1097,6 +1102,7 @@ This is the FINAL step before generating the outline. DO NOT ask anything else.`
         'Connection': 'keep-alive',
       }
     });
+
 
   } catch (error) {
     console.error('Error in google-chat function:', error);

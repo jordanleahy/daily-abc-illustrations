@@ -5,6 +5,7 @@
  */
 
 import type { AgentConfig } from './types.ts';
+import { callGateway } from './aiGateway.ts';
 
 /**
  * Lovable AI Gateway endpoint (OpenAI-compatible)
@@ -50,7 +51,8 @@ export function buildRequestBody(
 
 /**
  * Make an AI API call via Lovable AI Gateway
- * The gateway automatically routes to the appropriate provider based on model name
+ * Delegates to the shared gateway layer so auth, error mapping and logging
+ * are identical across every edge function.
  */
 export async function callAIProvider(
   agent: AgentConfig,
@@ -60,41 +62,10 @@ export async function callAIProvider(
     temperature?: number;
   } = {}
 ): Promise<Response> {
-  const apiKey = getLovableApiKey();
-  
-  if (!apiKey) {
-    throw new Error('LOVABLE_API_KEY is not configured');
-  }
-
   const body = buildRequestBody(agent, messages, options);
-  console.log(`Calling Lovable AI Gateway with model: ${agent.model}`);
-
-  const response = await fetch(LOVABLE_AI_GATEWAY_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Lovable AI Gateway Error:`, response.status, errorText);
-    
-    // Handle specific error codes
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later.');
-    }
-    if (response.status === 402) {
-      throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
-    }
-    
-    throw new Error(`Lovable AI Gateway error: ${response.status} - ${errorText}`);
-  }
-
-  return response;
+  return await callGateway(body as Parameters<typeof callGateway>[0], 'aiProviders');
 }
+
 
 /**
  * Parse AI response content (OpenAI-compatible format from gateway)

@@ -656,61 +656,20 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     // HARDENING: Non-ABC book validation (12-page structure)
+    // Uses the shared unified validator instead of an inlined copy of the rules.
     if (bookType && bookType !== 'abc' && bookType !== 'other' && bookData.pages) {
       console.log(`[${bookType.toUpperCase()} Validation] Running 12-page structure validation...`);
-      
-      const errors: string[] = [];
-      const EXPECTED_PAGE_COUNT = 12;
-      
-      // Validate page count
-      if (bookData.pages.length !== EXPECTED_PAGE_COUNT) {
-        errors.push(`Expected exactly ${EXPECTED_PAGE_COUNT} pages, got ${bookData.pages.length}`);
+
+      const { validateBookStructure } = await import('../_shared/validation.ts');
+      const { valid, errors, warnings } = validateBookStructure(bookData.pages, bookType);
+
+      if (warnings.length > 0) {
+        console.warn(`[${bookType.toUpperCase()} Validation] Warnings:`, warnings);
       }
-      
-      // Validate page types and numbering (1-based)
-      const pageNumbers = bookData.pages.map((p: any) => p.pageNumber);
-      const pageTypes = bookData.pages.map((p: any) => ({ num: p.pageNumber, type: p.pageType }));
-      
-      // Check Page 1 is cover
-      const page1 = bookData.pages.find((p: any) => p.pageNumber === 1);
-      if (!page1) {
-        errors.push('Page 1 (cover) is missing');
-      } else if (page1.pageType !== 'cover') {
-        errors.push(`Page 1 must be type "cover", got "${page1.pageType}"`);
-      }
-      
-      // Check Page 2 is educational focus
-      const page2 = bookData.pages.find((p: any) => p.pageNumber === 2);
-      if (!page2) {
-        errors.push('Page 2 (educational focus) is missing');
-      } else if (page2.pageType !== 'educational') {
-        errors.push(`Page 2 must be type "educational", got "${page2.pageType}"`);
-      }
-      
-      // Check Pages 3-12 are content pages
-      for (let i = 3; i <= EXPECTED_PAGE_COUNT; i++) {
-        const page = bookData.pages.find((p: any) => p.pageNumber === i);
-        if (!page) {
-          errors.push(`Page ${i} (content) is missing`);
-        } else if (page.pageType !== 'content') {
-          errors.push(`Page ${i} must be type "content", got "${page.pageType}"`);
-        }
-      }
-      
-      // Check for duplicate page numbers
-      const uniquePageNumbers = new Set(pageNumbers);
-      if (uniquePageNumbers.size !== pageNumbers.length) {
-        errors.push('Duplicate page numbers detected');
-      }
-      
-      // Check for 0-based indexing (common mistake)
-      if (pageNumbers.includes(0)) {
-        errors.push('Pages use 0-based numbering. Must use 1-based (Page 1, Page 2, etc.)');
-      }
-      
-      if (errors.length > 0) {
+
+      if (!valid) {
         console.error(`[${bookType.toUpperCase()} Validation] Structure validation failed:`, errors);
-        
+
         return new Response(
           JSON.stringify({
             success: false,
@@ -720,6 +679,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
       
       console.log(`[${bookType.toUpperCase()} Validation] ✓ All validations passed - 12 pages, proper format (1 cover + 1 education + 10 content)`);
     }

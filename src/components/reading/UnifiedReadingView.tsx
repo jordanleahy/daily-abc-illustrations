@@ -81,6 +81,8 @@ import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 import { optimizeImageUrl } from '@/utils/imageOptimization';
+import { getPageDisplayText, isCaptionOnlyPage } from '@/utils/pageDisplayText';
+
 
 /** Aspect ratio options for video export */
 export type VideoAspectRatio = 'portrait' | 'landscape' | 'square';
@@ -636,7 +638,7 @@ export function UnifiedReadingView({
               pageId={currentPage.id}
               bookId={book.book_id || book.id}
               pageNumber={currentPage.page_number}
-              pageText={currentPage.title || ''}
+              pageText={getPageDisplayText(currentPage)}
               imageUrl=""
               pageType={currentPage.page_type}
               currentWordIndex={readingState.currentWordIndex}
@@ -669,8 +671,9 @@ export function UnifiedReadingView({
           onNextPage={handleNext}
           disablePreviousPage={currentPageIndex === 0}
           disableNextPage={isAddingPoints}
-          overlayText={currentPage.title || ''}
-          overlayWords={currentPageWords}
+          overlayText={getPageDisplayText(currentPage)}
+          overlayWords={isCaptionOnlyPage(currentPage.page_type) ? [] : currentPageWords}
+
           overlayCurrentWordIndex={readingState.currentWordIndex}
           overlayWordStatuses={readingState.wordStatuses}
           showOverlay={!readingState.hiddenOverlayPages?.has(currentPage.id)}

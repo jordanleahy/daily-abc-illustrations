@@ -70,6 +70,10 @@ const LEARNING_DETAILS: Record<string, { learningType: string; specificSkill: st
   manners: { learningType: 'SOCIAL | EMOTIONAL', specificSkill: 'FOCUS: EVERYDAY MANNERS' },
   bedtime: { learningType: 'ROUTINES | CALM', specificSkill: 'FOCUS: BEDTIME WIND-DOWN' },
   'dr-seuss': { learningType: 'READING | PLAYFUL RHYME', specificSkill: 'FOCUS: WORD PLAY' },
+  song: { learningType: 'MUSIC | LANGUAGE', specificSkill: 'FOCUS: SONGS & VERSES' },
+  general: { learningType: 'EARLY LEARNING | DISCOVERY', specificSkill: 'FOCUS: EVERYDAY LEARNING' },
+  'parent-education': { learningType: 'FOR GROWN-UPS | GUIDANCE', specificSkill: 'FOCUS: READING TOGETHER' },
+
 };
 
 export function getLearningDetails(bookType?: string | null): { learningType: string; specificSkill: string } {

@@ -233,13 +233,13 @@ export function BookEditorPanel({
    * created the first time the user generates or uploads an image.
    */
   const ensureStateRef = useRef(createEnsureBookState());
-  const ensureBook = useCallback(async (): Promise<EnsuredBook | null> => {
+  const ensureBook = useCallback(async (trigger: string): Promise<EnsuredBook | null> => {
     return ensureBookExists(ensureStateRef.current, {
       bookId,
       getExistingPages: async () =>
         (pages || []).map((p) => ({ id: p.id, page_number: p.page_number })),
       createBookAndWait: onCreateBookAndWait
-        ? async () => await onCreateBookAndWait()
+        ? async () => await onCreateBookAndWait(trigger)
         : undefined,
       onCreateStart: () =>
         toast({
@@ -253,8 +253,9 @@ export function BookEditorPanel({
 
   // Handle generating text image from color image
   const handleGenerateTextImage = async () => {
-    const ensured = await ensureBook();
+    const ensured = await ensureBook('text');
     if (!ensured) return;
+
 
     // Get the color image URL
     const colorImageUrl = currentPageNumber === 1 

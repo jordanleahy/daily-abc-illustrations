@@ -1000,7 +1000,7 @@ CRITICAL REQUIREMENTS:
             ) : isReplacing ? (
               imageMode === 'color' ? (
                 <ColorModeUploadSection
-                  onImageUpload={onImageUpload}
+                  onImageUpload={handleImageUploadWithBookCreation}
                   onGenerate={handleGenerateWithBookCreation}
                   isGenerating={isGeneratingColorImage}
                   disabled={createBookMutation.isPending}
@@ -1008,7 +1008,7 @@ CRITICAL REQUIREMENTS:
                 />
               ) : imageMode === 'bw' ? (
                 <BWModeUploadSection
-                  onImageUpload={onImageUpload}
+                  onImageUpload={handleImageUploadWithBookCreation}
                   onGenerate={handleGenerateColoringImage}
                   hasTextImage={hasTextImage}
                   hasColorImage={hasColorImage}
@@ -1022,7 +1022,7 @@ CRITICAL REQUIREMENTS:
                   <TextModeUploadSection
                     hasColorImage={hasColorImage}
                     onGenerate={handleGenerateTextImage}
-                    onGenerateAll={generateAllTextImages}
+                    onGenerateAll={handleGenerateAllTextImagesWithBookCreation}
                     isGenerating={isGeneratingTextImage}
                     isGeneratingAll={isGeneratingAllTextImages}
                   />
@@ -1048,14 +1048,14 @@ CRITICAL REQUIREMENTS:
                 <TextModeUploadSection
                   hasColorImage={hasColorImage}
                   onGenerate={handleGenerateTextImage}
-                  onGenerateAll={generateAllTextImages}
+                  onGenerateAll={handleGenerateAllTextImagesWithBookCreation}
                   isGenerating={isGeneratingTextImage}
                   isGeneratingAll={isGeneratingAllTextImages}
                 />
               )
             ) : imageMode === 'bw' ? (
               <BWModeUploadSection
-                onImageUpload={onImageUpload}
+                onImageUpload={handleImageUploadWithBookCreation}
                 onGenerate={handleGenerateColoringImage}
                 hasTextImage={hasTextImage}
                 hasColorImage={hasColorImage}
@@ -1065,7 +1065,7 @@ CRITICAL REQUIREMENTS:
               />
             ) : imageMode === 'color' ? (
               <ColorModeUploadSection
-                onImageUpload={onImageUpload}
+                onImageUpload={handleImageUploadWithBookCreation}
                 onGenerate={handleGenerateWithBookCreation}
                 isGenerating={isGeneratingColorImage}
                 disabled={createBookMutation.isPending}

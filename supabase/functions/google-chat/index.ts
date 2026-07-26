@@ -969,15 +969,21 @@ serve(async (req) => {
     
     const badTitleExamples = `"Magical Snowy Adventure at Killington", "Amazing ${categoryWord} Journey Through the Mountains"`;
     
-    // Proceed to title context with category requirement - MUST be forceful to prevent AI from inventing questions
+    // Single-response contract: title + description + the FULL page-by-page
+    // outline all arrive in ONE assistant message (no title-approval round trip).
+    const expectedPageCount = normalizedType === 'abc' ? 28 : 12;
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
       ? `\n\n🚨🚨🚨 CRITICAL: DISCOVERY PHASE COMPLETE - STOP ASKING QUESTIONS 🚨🚨🚨
 
 ❌ DO NOT ask any more discovery questions
 ❌ DO NOT invent questions like "Activity?", "Style?", "Setting?" or ANY other question
 ❌ DO NOT ask for more information - you have EVERYTHING you need
+❌ DO NOT ask the user to approve the title before writing the outline
 
-✅ YOU MUST NOW: Present a creative book title and short description for user approval.
+✅ YOU MUST NOW produce ONE single response containing ALL THREE of the following, in this order:
+1. The complete page-by-page outline — EXACTLY ${expectedPageCount} pages, using the **Page N: Title** format
+2. **Title: [Book Title]**
+3. **Description:** [2-3 sentence description]
 
 📛 TITLE FORMAT (Priority Order):
 1. With Resort Location: "[Resort] ${titleWord}" (e.g., "Killington ${titleWord}")
@@ -989,20 +995,24 @@ serve(async (req) => {
 
 ⚠️ KEEP TITLES SHORT: Maximum 5-6 words. Include "${titleWord}" in the title.
 
-🔴 MANDATORY: After presenting title and description, include this EXACT [SUGGEST] block:
+⚠️ The outline is NOT optional and must NOT be deferred to a later message. A response
+with only a title and description is INVALID. Emit all ${expectedPageCount} pages now.
+
+🔴 MANDATORY: After the outline, title and description, include this EXACT [SUGGEST] block:
 
 [SUGGEST]
 approve: ✅ Create My Book!
 revise: ✏️ Suggest Changes
 [/SUGGEST]
 
-This is the FINAL step before generating the outline. DO NOT ask anything else.`
+DO NOT ask anything else.`
       : '';
 
-    // Title confirmation is the FINAL step - when title is approved, generate outline immediately
+    // Legacy approval path: if a title was approved without an outline, emit it now.
     const titleConfirmationContext = titleWasJustApproved
-      ? `\n\n✅ TITLE CONFIRMED - GENERATE OUTLINE NOW: The user has approved the title. All discovery and optional questions are complete. Generate the complete book outline immediately with all pages, titles, and image prompts.`
+      ? `\n\n✅ TITLE CONFIRMED - GENERATE OUTLINE NOW: The user has approved the title. All discovery and optional questions are complete. Generate the complete ${expectedPageCount}-page book outline immediately with all pages, titles, and image prompts, followed by **Title:** and **Description:**.`
       : '';
+
 
     const conversationStageContext = outlineReady
       ? '\n\n✅ OUTLINE COMPLETE: The book outline has been created and approved. Focus conversation on next steps: reviewing pages, creating the book, or making adjustments.'

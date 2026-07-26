@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { parseEducationalFocus } from '@/utils/chatHelpers';
-import { sanitizeImagePrompt } from '@/utils/promptSanitizer';
+import { extractOutlinePrompts } from '@/utils/bookPrompts';
+
 
 interface Message {
   role: 'user' | 'assistant' | 'system';

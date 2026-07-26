@@ -322,10 +322,16 @@ export function BookEditorPanel({
   // For content pages: uses text image (has text bar at bottom to preserve)
   // For cover/educational pages: can use color image (no text bar)
   const handleGenerateColoringImage = async () => {
+    const ensured = await ensureBook();
+    if (!ensured) return;
+
     const currentPage = pages?.find(p => p.page_number === currentPageNumber);
-    const pageType = currentPage?.page_type;
-    const pageId = currentPage?.id;
-    
+    const pageType = currentPage?.page_type ?? derivePageType(currentPageNumber);
+    const pageId =
+      currentPage?.id ??
+      ensured.pages.find(p => p.page_number === currentPageNumber)?.id;
+    const effectiveBookId = bookId ?? ensured.bookId;
+
     // Determine if this is a special page type (cover/educational)
     const isSpecialPage = ['cover', 'educational'].includes(pageType || '');
     
@@ -346,7 +352,7 @@ export function BookEditorPanel({
       return;
     }
 
-    if (!pageId || !bookId) {
+    if (!pageId || !effectiveBookId) {
       toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
       return;
     }
@@ -354,8 +360,9 @@ export function BookEditorPanel({
     setIsGeneratingColoringImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-coloring-image', {
-        body: { pageId, bookId, sourceImageUrl, sourceType }
+        body: { pageId, bookId: effectiveBookId, sourceImageUrl, sourceType }
       });
+
 
       if (error) {
         reportGenError('generate-coloring-image', error, data);

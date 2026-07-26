@@ -733,8 +733,10 @@ export default function GoogleChat() {
     options?: { wait?: boolean; trigger?: string }
   ): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
     const wait = options?.wait === true;
-    // Creation is now always driven by the first image generation/upload.
-    const source = `first_image:${options?.trigger ?? 'unknown'}`;
+    // Creation is either explicit (quick-reply button) or lazy (first image).
+    const trigger = options?.trigger ?? 'unknown';
+    const source = trigger === 'quick_reply' ? 'quick_reply' : `first_image:${trigger}`;
+
 
 
     // Guard 1: No active session

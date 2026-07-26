@@ -224,12 +224,13 @@ export function validateBookStructure(
   }
 
   // === Educational Focus Page Validation (Page 2) ===
-  const eduPage = pages.find(p => p.pageNumber === 2 || p.pageNumber === 1);
+  const eduPage = pages.find(p => p.pageNumber === 2);
   if (!eduPage) {
     errors.push('Missing educational focus page (page 2)');
   } else if (eduPage.pageType !== 'educational') {
     errors.push(`Page 2 must be pageType "educational", got "${eduPage.pageType}"`);
   }
+
 
   // === Content Pages Validation ===
   const contentPages = pages.filter(p => p.pageType === 'content');

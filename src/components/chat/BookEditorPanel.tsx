@@ -21,6 +21,7 @@ import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
 import { ErrorDetailsPanel, type ErrorDetails } from './ErrorDetailsPanel';
+import { getImageFitClass } from '@/utils/imageFit';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -829,7 +830,7 @@ CRITICAL REQUIREMENTS:
         )}
         {/* Image Upload/Display Area */}
         <div className="flex flex-col gap-2" key={`page-${currentPageNumber}-${imageMode}`}>
-          <div className="relative w-full h-[60vh] md:h-[70vh] min-h-[320px] rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
+          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
 
 
 
@@ -838,7 +839,7 @@ CRITICAL REQUIREMENTS:
                 <BookImage
                   src={currentPageImage} 
                   alt={`Page ${currentPageNumber} preview`}
-                  className="w-full h-full object-contain"
+                  className={`w-full h-full ${getImageFitClass(bookCategory)}`}
                   priority={true}
                   enableMobileSave={true}
                   disableHoverEffects={true}

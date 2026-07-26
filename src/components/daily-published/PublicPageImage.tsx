@@ -4,6 +4,7 @@ import { BookImage } from '@/components/ui/book-image';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 import { getImageAspect } from '@/config/imageAspects';
+import { getImageFitClass } from '@/utils/imageFit';
 import type { WordMetadata } from '@/utils/wordParser';
 
 interface PublicPageImageProps {
@@ -34,6 +35,8 @@ interface PublicPageImageProps {
   isVideoExporting?: boolean;
   /** Whether book video export is in progress */
   isBookVideoExporting?: boolean;
+  /** Book category — opposites books keep letterboxing instead of filling */
+  bookCategory?: string | null;
 }
 
 export function PublicPageImage({ 
@@ -52,6 +55,7 @@ export function PublicPageImage({
   isAudioPlaying,
   isVideoExporting,
   isBookVideoExporting,
+  bookCategory,
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -79,7 +83,7 @@ export function PublicPageImage({
           src={imageData?.image_url}
           alt="Page illustration"
           priority={isFirstImage}
-          className={`w-full h-full object-contain ${className}`}
+          className={`w-full h-full ${getImageFitClass(bookCategory)} ${className}`}
           onLoad={() => setImageLoaded(true)}
           disableHoverEffects={disableHoverEffects}
           enableVisibilityToggle={enableVisibilityToggle}

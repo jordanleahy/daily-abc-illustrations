@@ -23,6 +23,7 @@ import { useAccessResolver } from '@/hooks/useAccessResolver';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
+import { getImageFitClass } from '@/utils/imageFit';
 import { UnifiedReadingView } from '@/components/reading';
 import type { ImageComponentControlsProps } from '@/components/reading';
 import { RoleDebugger } from '@/components/RoleDebugger';
@@ -142,7 +143,7 @@ export default function LibraryBookView() {
           src={imageMap[page.page_number]}
           alt={`Letter ${page.letter} - ${page.title}`}
           priority={true}
-          className="rounded-lg w-full h-full object-contain"
+          className={`rounded-lg w-full h-full ${getImageFitClass((book as any)?.category)}`}
           disableHoverEffects={true}
           enableVisibilityToggle={true}
           currentWordData={currentWordData}

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Pencil, X } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
 import type { PageType, Page } from '@/types/book';
+import { getImageFitClass } from '@/utils/imageFit';
 
 interface ReadingPageDisplayProps {
   pages?: Page[]; // Optional: if provided, avoids refetching pages
@@ -28,6 +29,8 @@ interface ReadingPageDisplayProps {
   isPreferencesLoading?: boolean;
   showDismissButton?: boolean;
   hideBottomOverlay?: boolean; // Phase 3: Disable old overlay
+  /** Book category — opposites books keep letterboxing instead of filling */
+  bookCategory?: string | null;
 }
 
 export function ReadingPageDisplay({
@@ -49,6 +52,7 @@ export function ReadingPageDisplay({
   isPreferencesLoading = false,
   showDismissButton = true,
   hideBottomOverlay = false,
+  bookCategory,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
   // Only fetch pages if not provided as prop (backwards compatibility)
@@ -110,7 +114,7 @@ export function ReadingPageDisplay({
           <img 
             src={imageUrl}
             alt={`Page ${pageNumber}`}
-            className="w-full h-full object-contain"
+            className={`w-full h-full ${getImageFitClass(bookCategory)}`}
           />
         )}
         

@@ -63,7 +63,7 @@ interface BookEditorPanelProps {
   onNavigate: (direction: 'prev' | 'next') => void;
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onRemoveImage: (pageNumber: number) => void;
-  onCreateBookAndWait?: () => Promise<CreateBookResult | null>;
+  onCreateBookAndWait?: (trigger?: string) => Promise<CreateBookResult | null>;
   coverPageId?: string | null;
   bookId?: string | null;
   onCoverUpload?: (file: File) => void;

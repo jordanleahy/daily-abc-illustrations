@@ -613,7 +613,18 @@ export default function GoogleChat() {
         // Reconstruct prompts from legacy <qa_page_N> conversation blocks
         const fullPrompts = extractEditModePrompts(messages);
 
+        if (Object.keys(fullPrompts).length > 0) {
+          console.log(`[Edit Mode] Extracted ${Object.keys(fullPrompts).length} prompts, saving...`);
+          updateQAPagePrompts({
+            sessionId: currentSessionId,
+            qaPagePrompts: fullPrompts
+          });
+          setEditorPagePrompts(fullPrompts);
+        }
+      }
+    }
   }, [showEditor, editBookId, selectedSession, messages, currentSessionId, updateQAPagePrompts]);
+
 
   const handleSend = async () => {
     const raw = input.trim();

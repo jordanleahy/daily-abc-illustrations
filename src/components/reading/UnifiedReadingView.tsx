@@ -669,8 +669,9 @@ export function UnifiedReadingView({
           onNextPage={handleNext}
           disablePreviousPage={currentPageIndex === 0}
           disableNextPage={isAddingPoints}
-          overlayText={currentPage.title || ''}
-          overlayWords={currentPageWords}
+          overlayText={getPageDisplayText(currentPage)}
+          overlayWords={isCaptionOnlyPage(currentPage.page_type) ? [] : currentPageWords}
+
           overlayCurrentWordIndex={readingState.currentWordIndex}
           overlayWordStatuses={readingState.wordStatuses}
           showOverlay={!readingState.hiddenOverlayPages?.has(currentPage.id)}

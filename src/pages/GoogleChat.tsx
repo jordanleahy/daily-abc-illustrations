@@ -981,14 +981,15 @@ export default function GoogleChat() {
   }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent, navigate, sendMessage]);
 
 
-  const handleCreateBook = useCallback(() => {
-    void createBook();
-  }, [createBook]);
-
+  /**
+   * The only entry point into book creation. Called lazily by the editor panel
+   * when the user generates/uploads the first image.
+   */
   const handleCreateBookAndWait = useCallback(
     () => createBook({ wait: true }),
     [createBook]
   );
+
 
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {

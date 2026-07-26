@@ -351,7 +351,15 @@ function validateStandardContentPages(
     // Validate description/image prompt exists
     if (!page.description || page.description.trim() === '') {
       errors.push(`Content page ${index + 1} (Page ${expectedPageNum}): Missing description/image prompt`);
+    } else {
+      // Same image-prompt quality rules ABC pages get, surfaced as warnings so
+      // existing non-ABC books keep creating while issues stay visible in logs.
+      const promptValidation = validateImagePrompt(page.description);
+      if (!promptValidation.valid) {
+        warnings.push(`Page ${page.pageNumber || expectedPageNum}: ${promptValidation.error}`);
+      }
     }
+
   });
 
   // Book-type specific validations

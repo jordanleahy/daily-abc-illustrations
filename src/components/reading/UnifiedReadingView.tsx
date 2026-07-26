@@ -638,7 +638,7 @@ export function UnifiedReadingView({
               pageId={currentPage.id}
               bookId={book.book_id || book.id}
               pageNumber={currentPage.page_number}
-              pageText={currentPage.title || ''}
+              pageText={getPageDisplayText(currentPage)}
               imageUrl=""
               pageType={currentPage.page_type}
               currentWordIndex={readingState.currentWordIndex}

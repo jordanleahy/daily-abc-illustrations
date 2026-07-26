@@ -81,6 +81,8 @@ import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 import { optimizeImageUrl } from '@/utils/imageOptimization';
+import { getPageDisplayText, isCaptionOnlyPage } from '@/utils/pageDisplayText';
+
 
 /** Aspect ratio options for video export */
 export type VideoAspectRatio = 'portrait' | 'landscape' | 'square';

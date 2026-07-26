@@ -20,9 +20,15 @@ import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
-import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
-import { parseBookOutline, getPagePrompt, extractPromptsRecord } from '@/utils/pageHelpers';
-import { sanitizeImagePrompt } from '@/utils/promptSanitizer';
+import { parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
+import { parseBookOutline } from '@/utils/pageHelpers';
+import {
+  extractOutlinePrompts,
+  extractEditModePrompts,
+  readPagePrompt,
+  buildOutlinePayload,
+} from '@/utils/bookPrompts';
+
 import { BOOK_TYPES, BookType } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';

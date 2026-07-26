@@ -15,6 +15,11 @@ import {
   generateCoverTitleInstruction,
   COVER_TITLE_INSTRUCTION 
 } from './coverPromptConstants.ts';
+import {
+  getGradeDisplayText,
+  getLearningDetails,
+} from './educationalFocus.ts';
+
 
 /**
  * Generate a style header line based on character theme

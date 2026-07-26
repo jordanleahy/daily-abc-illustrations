@@ -16,9 +16,13 @@ export function getPageDisplayText(page: Pick<Page, 'title' | 'page_type' | 'con
 
   if (page.page_type !== 'educational') return title;
 
+  // Legacy books stored the internal label ("Educational Focus") as the
+  // overlay text — that reads as a blank page, so ignore it and compose
+  // from the content lines instead.
   const overlay = content.textOverlay as { text?: unknown } | undefined;
   const overlayText = typeof overlay?.text === 'string' ? overlay.text.trim() : '';
-  if (overlayText) return overlayText;
+  if (overlayText && overlayText !== title) return overlayText;
+
 
   const lines = ['mainConcept', 'funFact', 'activity']
     .map((key) => (typeof content[key] === 'string' ? (content[key] as string).trim() : ''))

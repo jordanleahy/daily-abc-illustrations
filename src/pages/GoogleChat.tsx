@@ -1907,7 +1907,6 @@ export default function GoogleChat() {
                 onNavigate={handleEditorPageNavigation}
                 onImageUpload={handleEditorImageUpload}
                 onRemoveImage={handleRemoveEditorImage}
-                onCreateBook={handleCreateBook}
                 onCreateBookAndWait={handleCreateBookAndWait}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
@@ -1952,7 +1951,6 @@ export default function GoogleChat() {
               onNavigate={handleEditorPageNavigation}
               onImageUpload={handleEditorImageUpload}
               onRemoveImage={handleRemoveEditorImage}
-              onCreateBook={handleCreateBook}
               onCreateBookAndWait={handleCreateBookAndWait}
               coverPageId={coverPageId}
               bookId={createdBookId}

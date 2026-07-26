@@ -1,56 +1,42 @@
-## What's happening
+## What is supposed to happen
 
-Page 2 of every 12-page book is the "Educational Focus" page (age range, learning type, skill focus). Today it is created with no real text — only the words "Educational Focus".
+Clicking **Create My Book!** should:
+1. Track `create_book_click`, then check a city is resolved.
+2. Parse the approved outline out of the chat transcript (`parseBookOutline` → `buildOutlinePayload`).
+3. Call the `google-create-book` edge function with that outline, which deterministically writes the book + all pages.
+4. Link the book to the chat session, rename the session to the book title, and switch the UI into "book created" state.
 
-Verified against the most recent book (`SEASON_SUMMER Opposites Book in New York City`, page 2, identifier `FOCUS`):
+Right now the click produces no visible change at all.
 
-- `content.mainConcept` = "Educational Focus"
-- `content.funFact` = "" and `content.activity` = ""
-- `content.textOverlay.text` = "Educational Focus"
-- Its image prompt asks for three badges ("Age Range", "Opposites & Contrasts", "10 Opposite Pairs") but ends with "No text overlays. Clean illustration only." — so the badges render as empty colored shapes.
+## Three likely reasons (in order of probability)
 
-## Root cause (three places, all confirmed)
+**1. No page-by-page outline in the transcript (most likely).**
+In the screenshot the assistant only produced a **Title** and **Description** — never the numbered page outline. `buildOutlinePayload` returns `undefined` when there is no parsed cover/outline, and `google-create-book` now hard-rejects requests without `bookOutline` (`OUTLINE_REQUIRED`, non-2xx). So the request either never carries an outline or the function 400s, and the user sees nothing.
 
-1. `src/utils/pageHelpers.ts:44-64` — the chat outline parser only captures a page's **title** and **image description**. The outline markdown has no age/learning body text for page 2, so nothing is available downstream.
-2. `supabase/functions/google-create-book/outlineToBook.ts:118-127` — the deterministic adapter hardcodes `mainConcept: title`, `funFact: ''`, `activity: ''` for every non-cover page. The educational page gets no special treatment even though it already knows `pageType === 'educational'` and sets letter `FOCUS`.
-3. `supabase/functions/_shared/promptTemplates.ts:209-232` — the badge text (age, learning type, skill focus) exists only inside the *image* prompt, and the "no text in image" mode strips it. There is no text-side equivalent, so the data never lands in the page record.
+**2. The pre-flight guards return silently.**
+`createBook` bails with only `console.warn` for: no active session, no messages, book already created for this session, and creation already in progress. Guard 3 in particular ("Book already exists for this session") is a common no-op path after a retry — zero UI feedback.
 
-Display is not the bug: `src/components/reading/ReadingPageDisplay.tsx:129` deliberately skips the word carousel for `cover`/`educational` pages and falls back to a plain bottom overlay that renders whatever `pageText` holds — it will show real text as soon as the record has it.
+**3. The city gate / error path is invisible.**
+If `activeCity` doesn't resolve, the handler shows a toast and scrolls to `#city-validation-error`; if that element isn't mounted or the toast is clipped, it also looks like "nothing happened". Similarly, edge-function failures are only surfaced by the mutation's toast — which is easy to miss.
 
-## The fix
+## Plan
 
-**1. Build the focus text deterministically in the adapter**
+**A. Make every exit path visible (frontend)**
+- In `src/pages/GoogleChat.tsx` `createBook`, replace each silent `console.warn` guard with a toast that states the actual reason ("Book already created for this chat — opening it", "Creation already in progress", "Start a conversation first").
+- For guard 3, navigate/scroll to the existing book instead of dead-ending.
+- Add a `create_book_blocked` analytics event with a `reason` for each guard so the failure is measurable.
 
-Extend `outlineToBook.ts` with a small pure helper `buildEducationalFocusContent()` that composes the page-2 text from data the create-book request already carries (`gradeLevel` / `targetAge`, `bookType` / `category`, page count, and the outline's own description):
+**B. Handle the missing-outline case explicitly**
+- Before calling the mutation, if `buildOutlinePayload(outline)` is `undefined`, do not fire the request. Instead show a clear message ("I still need the page-by-page outline — asking the assistant to generate it") and auto-send a chat turn requesting the outline in the strict format the parser expects.
+- Track `create_book_blocked` with `reason: 'no_outline'`.
 
-- `title`: "Educational Focus" (unchanged)
-- `mainConcept`: age/grade line, e.g. `Ages 3-5 (Pre-K)`
-- `funFact`: learning type line, e.g. `Opposites & Contrasts`
-- `activity`: skill/scope line, e.g. `10 opposite pairs to explore together`
+**C. Surface the real edge-function error**
+- In the `catch` block, show the mapped error message + code (reuse the existing `ErrorDetailsPanel` / `lovableAiErrors` details) rather than relying solely on the mutation's generic toast.
 
-Reuse the existing learning-type/skill mapping in `promptTemplates.ts` (`getLearningDetails`, `getGradeDisplayText`) by extracting it into a shared module so the text and image prompts stay in sync instead of drifting.
+**D. Verify**
+- Add unit tests around the guard/outline decision so a click with no outline produces the "request outline" path, and a click with an outline produces the mutation call.
+- Check `google-create-book` logs after a live click to confirm whether requests are arriving at all and whether `OUTLINE_REQUIRED` is being hit — this confirms reason #1 vs #2 for this specific session.
 
-**2. Pass the needed context into the adapter**
-
-`supabase/functions/google-create-book/index.ts` already validates `gradeLevel`, `targetAge`, `bookType`, `category`, and `characterTheme`; thread them into the `outlineToBook` input so the helper can use them. Adapter stays pure — no network, no AI.
-
-**3. Set the text overlay for page 2**
-
-Where `textOverlay` is written during page insertion, set the focus page's overlay text to the composed age/learning line (currently it copies the title) and enable it, so the age line is visible over the badge illustration.
-
-**4. Keep the image prompt honest**
-
-The focus-page image prompt should keep rendering the badges as colored shapes and stop promising badge text when overlays are off — the age/learning wording now comes from the page text layer.
-
-**5. Tests**
-
-Add cases to `supabase/functions/google-create-book/outlineToBook.test.ts`:
-- educational page gets non-empty `mainConcept`, `funFact`, `activity`
-- age line reflects the supplied grade level, with a sensible fallback when it's absent
-- content pages and the cover are unchanged (no regressions)
-- ABC (28-page) books still have no page-2 educational page
-
-## Technical notes
-
-- Only the deterministic path is touched; `google-create-book` already rejects requests without a `bookOutline`.
-- Existing books are not backfilled by this change. If you want the ~92 library books' page 2 fixed too, that's a separate one-off backfill I can add after this lands.
+### Technical notes
+- Files: `src/pages/GoogleChat.tsx` (guards + outline pre-check), `src/utils/bookPrompts.ts` (no change expected, but confirm `parseBookOutline` tolerance for the "Title/Description only" transcript shape), edge function `supabase/functions/google-create-book/index.ts` (unchanged — it should keep rejecting outline-less requests).
+- No database or schema changes.

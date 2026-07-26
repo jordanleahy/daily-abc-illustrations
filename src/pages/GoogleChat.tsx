@@ -738,19 +738,32 @@ export default function GoogleChat() {
     // Guard 1: No active session
     if (!currentSessionId) {
       console.warn('No active session');
+      toast.error('No active chat session — start a new chat first.');
+      trackEvent('create_book_blocked', { reason: 'no_session', source });
       return null;
     }
 
     // Guard 2: No messages
     if (messages.length === 0) {
       console.warn('Please have a conversation first');
+      toast.error('Start a conversation before creating your book.');
+      trackEvent('create_book_blocked', { reason: 'no_messages', source });
       return null;
     }
 
     // Guard 3: Book already created for this session (prevents duplicates)
     if (createdBookId) {
       console.warn('[Book Creation] Book already exists for this session:', createdBookId);
-      if (!wait) return null;
+      trackEvent('create_book_blocked', { reason: 'already_created', source, book_id: createdBookId });
+
+      if (!wait) {
+        toast.info('This chat already has a book — opening it.');
+        navigate(`/books/${createdBookId}/read`, {
+          state: { from: 'google-chat', sessionId: currentSessionId },
+        });
+        return null;
+      }
+
 
       const { data: existingPages, error } = await supabase
         .from('pages')
@@ -760,6 +773,7 @@ export default function GoogleChat() {
 
       if (error || !existingPages) {
         console.error('Failed to fetch existing pages:', error);
+        toast.error(`Couldn't load the existing book's pages: ${error?.message ?? 'unknown error'}`);
         return null;
       }
       return { bookId: createdBookId, pages: existingPages };
@@ -768,8 +782,11 @@ export default function GoogleChat() {
     // Guard 4: Creation already in progress
     if (createBookMutation.isPending) {
       console.warn('[Book Creation] Book creation already in progress');
+      toast.info('Your book is already being created — hang tight.');
+      trackEvent('create_book_blocked', { reason: 'in_progress', source });
       return null;
     }
+
 
     const outline = parseBookOutline(messages);
 
@@ -811,7 +828,48 @@ export default function GoogleChat() {
     }));
 
     const bookOutlinePayload = buildOutlinePayload(outline);
+
+    // Guard 5: the edge function is deterministic-only and rejects requests
+    // without an outline (OUTLINE_REQUIRED). Ask the agent for one instead of
+    // firing a request we know will fail.
+    if (!bookOutlinePayload) {
+      console.warn('[Book Creation] blocked: no parsable page outline in transcript');
+      trackEvent('create_book_blocked', {
+        reason: 'no_outline',
+        source,
+        book_type: selectedBookType || 'unknown',
+        message_count: messages.length,
+      });
+      const expectedPages = selectedBookType === 'abc' ? 28 : 12;
+      toast.error("I still need the page-by-page outline — asking the assistant to generate it now.");
+      void sendMessage(
+        `Before we create the book, please output the complete page-by-page outline now. ` +
+        `Use exactly ${expectedPages} pages and this strict format, one page per line:\n` +
+        `**Page 1: <cover title>** <one-sentence description>\n` +
+        `**Page 2: <educational focus title>** <one-sentence description>\n` +
+        `...through Page ${expectedPages}. Do not skip any page numbers.`,
+        '📋 Generate the full page outline',
+        messages,
+        {
+          bookType: selectedBookType,
+          characterTheme: characterFlow.themeId,
+          gradeLevel: selectedGradeLevel,
+          season: selectedSeason,
+          environment: selectedEnvironment,
+          clothingBrand: selectedClothingBrand,
+          location: selectedLocation,
+          city: activeCity,
+          mannerType: selectedMannerType,
+          mannersSetting: selectedMannersSetting,
+          selectedCharacterIds: characterFlow.selectedCharacterIds,
+        }
+      );
+
+      return null;
+    }
+
     const createStartedAt = performance.now();
+
     trackEvent('create_book_start', {
       source,
       book_type: selectedBookType || 'unknown',
@@ -913,10 +971,15 @@ export default function GoogleChat() {
         error_code: err?.code ?? null,
         error_status: err?.status ?? null,
       });
-      // Error toast is handled by the mutation
+      // Surface the real reason (code + message), not just a generic failure
+      const detail = [err?.code, err?.status].filter(Boolean).join(' ');
+      toast.error(
+        `Book creation failed${detail ? ` (${detail})` : ''}: ${err?.message || 'unknown error'}`
+      );
       return null;
     }
-  }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent]);
+  }, [currentSessionId, messages, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, activeCity, selectedMannerType, selectedMannersSetting, trackEvent, navigate, sendMessage]);
+
 
   const handleCreateBook = useCallback(() => {
     void createBook();

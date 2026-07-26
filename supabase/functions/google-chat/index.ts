@@ -18,6 +18,9 @@ import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCac
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
 import { fetchSharedTemplates, interpolateTemplate } from '../_shared/sharedTemplates.ts';
 import { COVER_TITLE_INSTRUCTION } from '../_shared/coverPromptConstants.ts';
+import { composePrompt, logPromptBudget } from '../_shared/promptBudget.ts';
+import { callGateway, gatewayErrorResponse } from '../_shared/aiGateway.ts';
+
 
 // Dynamic question injection system - fetches enabled questions and injects [SUGGEST] blocks
 // Constants for input validation

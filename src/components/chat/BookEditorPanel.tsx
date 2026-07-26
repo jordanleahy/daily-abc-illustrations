@@ -447,7 +447,7 @@ export function BookEditorPanel({
     }
   };
 
-  const handleGenerateColorImage = handleGenerateWithBookCreation;
+  
 
 
 // Character to Westin breed mapping - simple breed replacements

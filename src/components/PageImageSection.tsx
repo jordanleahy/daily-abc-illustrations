@@ -10,6 +10,7 @@ import { Loader2, Upload, Clipboard, Copy, ArrowLeft, Sparkles } from "lucide-re
 import { ImageUpload } from "./ImageUpload";
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
+import { getImageFitClass } from '@/utils/imageFit';
 
 interface PageImageSectionProps {
   pageId: string;
@@ -258,7 +259,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             width={800}
             quality={85}
             srcSetSizes={[400, 800, 1200]}
-            className="w-full h-full object-contain"
+            className={`w-full h-full ${getImageFitClass(bookCategory)}`}
             containerClassName="w-full h-full"
           />
           

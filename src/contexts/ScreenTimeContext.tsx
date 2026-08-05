@@ -55,6 +55,7 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
   const [deadline, setDeadline] = useState<number | null>(() => readDeadline());
   const [now, setNow] = useState(() => Date.now());
   const [modalDismissed, setModalDismissed] = useState(false);
+  const [forceModal, setForceModal] = useState(false);
   const dismissedForDeadline = useRef<number | null>(null);
 
   const refresh = useCallback(() => {
@@ -105,10 +106,11 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
     if (dismissedForDeadline.current !== deadline) {
       dismissedForDeadline.current = null;
       setModalDismissed(false);
+      setForceModal(false);
     }
   }, [deadline]);
 
-  const showExpiredModal = isExpired && !modalDismissed;
+  const showExpiredModal = forceModal || (isExpired && !modalDismissed);
 
   const grantTime = useCallback((durationMs: number) => {
     const current = readDeadline();
@@ -121,6 +123,7 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
 
   const requestMoreTime = useCallback(() => {
     setModalDismissed(false);
+    setForceModal(true);
   }, []);
 
   const dismissExpiredModal = useCallback(
@@ -129,6 +132,7 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
       // until new screen time is purchased.
       dismissedForDeadline.current = deadline;
       setModalDismissed(true);
+      setForceModal(false);
 
       if (action === 'habits' && lastBookId) {
         navigate(`/library/book/${lastBookId}/read`);

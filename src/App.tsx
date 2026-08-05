@@ -146,6 +146,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <ScreenTimeProvider>
                 <GA4Tracker />
                 {process.env.NODE_ENV === 'development' && <PerformanceDashboard />}
                 <Routes>

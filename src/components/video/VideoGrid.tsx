@@ -103,6 +103,11 @@ export const VideoGrid = () => {
   });
 
   const handleVideoClick = (video: Video) => {
+    // Block playback when screen time is exhausted (or was never granted)
+    if (!hasTime) {
+      requestMoreTime();
+      return;
+    }
     // Track video access for LRU eviction
     trackVideoAccess(video.videoId);
     setPlayingVideoId(video.videoId);

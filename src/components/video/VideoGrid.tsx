@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Play } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
-import { ScreenTimeExpiredModal } from "./ScreenTimeExpiredModal";
-import { ScreenTimeWarningBanner } from "./ScreenTimeWarningBanner";
 import { VideoEmptyState } from "./VideoEmptyState";
 import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
 import { useActiveYouTubeChannels } from "@/hooks/useYouTubeChannels";

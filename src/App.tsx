@@ -6,6 +6,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NetworkStatusProvider } from "@/contexts/NetworkStatusContext";
+import { ScreenTimeProvider } from "@/contexts/ScreenTimeContext";
 import { WeakNetworkBanner } from "@/components/ui/WeakNetworkBanner";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -146,6 +147,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <ScreenTimeProvider>
                 <GA4Tracker />
                 {process.env.NODE_ENV === 'development' && <PerformanceDashboard />}
                 <Routes>
@@ -258,7 +260,9 @@ const App = () => {
                 <Route path="/:bookType" element={<BookTypeLanding />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+                </ScreenTimeProvider>
               </BrowserRouter>
+
             </NetworkStatusProvider>
           </RoleProvider>
         </AuthProvider>

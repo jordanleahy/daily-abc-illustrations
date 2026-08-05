@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Play } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
-import { ScreenTimeExpiredModal } from "./ScreenTimeExpiredModal";
-import { ScreenTimeWarningBanner } from "./ScreenTimeWarningBanner";
 import { VideoEmptyState } from "./VideoEmptyState";
 import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
 import { useActiveYouTubeChannels } from "@/hooks/useYouTubeChannels";
@@ -33,7 +31,12 @@ export const VideoGrid = () => {
   const navigate = useNavigate();
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   
-  const { timeRemaining, showWarning, showExpiredModal, dismissExpiredModal } = useScreenTimeTimer();
+  const { showWarning, isExpired, hasTime, requestMoreTime } = useScreenTimeTimer();
+
+  // Hard-stop playback the moment screen time runs out
+  useEffect(() => {
+    if (isExpired) setPlayingVideoId(null);
+  }, [isExpired]);
   
   // Get approved channels from database
   const { data: approvedChannels, isLoading: isLoadingChannels } = useActiveYouTubeChannels();
@@ -100,6 +103,11 @@ export const VideoGrid = () => {
   });
 
   const handleVideoClick = (video: Video) => {
+    // Block playback when screen time is exhausted (or was never granted)
+    if (!hasTime) {
+      requestMoreTime();
+      return;
+    }
     // Track video access for LRU eviction
     trackVideoAccess(video.videoId);
     setPlayingVideoId(video.videoId);
@@ -134,10 +142,7 @@ export const VideoGrid = () => {
 
   return (
     <>
-      {showWarning && timeRemaining !== null && timeRemaining > 0 && (
-        <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
-      )}
-      <ScreenTimeExpiredModal open={showExpiredModal} onDismiss={dismissExpiredModal} />
+
       
       <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${showWarning ? 'mt-12' : ''}`}>
         {videos.map((video) => (

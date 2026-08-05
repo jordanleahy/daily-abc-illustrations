@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { useScreenTime } from "@/contexts/ScreenTimeContext";
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import {
@@ -29,6 +30,7 @@ export const RewardsCarousel = memo(({
   const [selectedProduct, setSelectedProduct] = useState<RewardsProduct | null>(null);
   const { mutate: purchaseReward, isPending } = usePurchaseReward();
   const navigate = useNavigate();
+  const { grantTime } = useScreenTime();
 
   if (products.length === 0) return null;
 
@@ -41,9 +43,8 @@ export const RewardsCarousel = memo(({
     }, {
       onSuccess: () => {
         setSelectedProduct(null);
-        // Store return time (10 minutes from now) and navigate to videos
-        const returnTime = Date.now() + 10 * 60 * 1000; // 10 minutes
-        localStorage.setItem('returnHomeAt', returnTime.toString());
+        // Grant 10 minutes of screen time (extends any active session) and go watch
+        grantTime(10 * 60 * 1000);
         navigate('/videos');
       },
     });

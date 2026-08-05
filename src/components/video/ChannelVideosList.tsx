@@ -1,11 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
-import { ScreenTimeExpiredModal } from "./ScreenTimeExpiredModal";
-import { ScreenTimeWarningBanner } from "./ScreenTimeWarningBanner";
 import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
 
 interface Channel {
@@ -34,7 +32,12 @@ interface ChannelVideosListProps {
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   
-  const { timeRemaining, showWarning, showExpiredModal, dismissExpiredModal } = useScreenTimeTimer();
+  const { showWarning, isExpired, hasTime, requestMoreTime } = useScreenTimeTimer();
+
+  // Hard-stop playback the moment screen time runs out
+  useEffect(() => {
+    if (isExpired) setPlayingVideoId(null);
+  }, [isExpired]);
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -59,6 +62,10 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   });
 
   const handleVideoClick = (video: Video) => {
+    if (!hasTime) {
+      requestMoreTime();
+      return;
+    }
     setPlayingVideoId(video.videoId);
     onVideoSelect?.(video);
   };
@@ -76,11 +83,6 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
 
   return (
     <>
-      {showWarning && timeRemaining !== null && timeRemaining > 0 && (
-        <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
-      )}
-      <ScreenTimeExpiredModal open={showExpiredModal} onDismiss={dismissExpiredModal} />
-      
       <div className={`space-y-6 ${showWarning ? 'mt-12' : ''}`}>
         {isLoading && (
           <div className="text-center py-8 text-muted-foreground">

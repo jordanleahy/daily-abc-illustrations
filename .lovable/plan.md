@@ -1,39 +1,38 @@
-## How it works today
+# Screen-time timer stops enforcing after a video is closed
 
-- Allowed channels live in one shared `youtube_channels` table. Any signed-in user can add/remove rows; everyone sees all rows where `is_active = true` (verified in the table's access rules).
-- The kid-facing `/videos` page (`VideoGrid`) loads active channels, then pulls up to 6 recent videos per channel via the `youtube-video` edge function. No channels = no videos.
-- The only UI is the admin page `/admin/youtube-channels`, where you paste a URL / `@handle` / `UC…` ID.
-- Separately, `video_content` holds hand-picked individual videos (`VideoManagement`), and `ChannelBrowser.tsx` is dead code hardcoded to Google's channel.
+## What I verified in the code
 
-## Confirmed bug in the add flow
+- The deadline is a single localStorage key `returnHomeAt`, written once on reward purchase (`RewardsCarousel.tsx`, 10 minutes) and read by `useScreenTimeTimer`.
+- `useScreenTimeTimer`'s effect runs with an empty dependency array and reads `returnHomeAt` **only on mount**. It never re-reads on route changes within the same mounted tree, storage events, or tab focus.
+- `dismissExpiredModal` **deletes** `returnHomeAt`. After the modal is dismissed once, the key is gone, so any later visit to `/videos` has no deadline at all — the timer returns `null` and nothing ever expires.
+- The hook is instantiated independently inside `VideoGrid` and `ChannelVideosList`. There is no app-level enforcement, so timing only exists on those two screens.
+- On expiry, `VideoGrid`/`ChannelVideosList` show the modal but never clear `playingVideoId`, so the YouTube iframe keeps playing behind the dialog.
+- The interval callback closes over a stale `showWarning`, so the warning banner can fail to appear.
 
-`useYouTubeChannels.extractChannelId` strips the `@` from handles and returns the handle text, and after the edge function resolves it, the code saves the **input string** as `channel_id` instead of the resolved `channelInfo.channelId`. `get-channel-videos` passes `channelId` straight to the YouTube API with no handle resolution — so any channel added by handle or custom URL saves a non-`UC…` ID and returns zero videos.
+## Three ways to fix it
 
-## Plan
+**Option A — Global timer provider (recommended).**
+Move screen-time enforcement out of the two video components into a single app-level provider mounted in `App.tsx`. It owns one interval, re-reads the deadline on mount, on route change, on `visibilitychange`, and on the `storage` event, and renders the warning banner and expired modal globally. `VideoGrid`/`ChannelVideosList` just consume `timeRemaining`. This makes the timer independent of which video component is mounted or remounted.
 
-Keep the shared list and the admin-only page; make adding channels fast and correct.
+**Option B — Make the deadline the single source of truth (fix the delete).**
+Stop removing `returnHomeAt` on dismiss. Instead keep the expired deadline in place and treat "now >= deadline" as the blocked state, clearing it only when new screen time is purchased. Add a guard on `/videos` that immediately shows the expired modal and refuses playback when the deadline has passed, so reopening the page can't grant unlimited watching.
 
-1. **Fix ID resolution** (`src/hooks/useYouTubeChannels.ts`)
-   - Preserve `@` for handles when extracting.
-   - Save `channelInfo.channelId` (the resolved `UC…` ID) as `channel_id`, never the raw input.
-   - Surface a clear error when the channel can't be resolved.
+**Option C — Hard-stop playback on expiry.**
+On expiry, clear `playingVideoId` and unmount/destroy the YouTube player before showing the modal, and block `handleVideoClick` when no valid remaining time exists. This guarantees the "close out the video and start another" path cannot bypass enforcement even if the modal is dismissed.
 
-2. **Add search-and-add** (`src/pages/admin/YouTubeChannels.tsx`)
-   - The edge function already supports `action=search-channels`. Add a search box: type a channel name → debounced search → results grid with thumbnail, title, subscriber count, and an "Add" button per result.
-   - Keep the paste-a-URL input as a secondary option.
-   - Disable/mark results already in the list.
+I recommend doing all three: A fixes where the timer lives, B fixes the state that gets destroyed, C fixes what actually stops the video.
 
-3. **Bulk add**
-   - Textarea accepting one URL/handle/ID per line, resolving and inserting each with a per-line success/failure summary.
+## Implementation detail (technical)
 
-4. **Cleanup**
-   - Add a link to `/admin/youtube-channels` from the admin nav so it's reachable without typing the URL.
-   - Delete the unused `ChannelBrowser.tsx` (hardcoded Google channel).
+1. New `src/contexts/ScreenTimeContext.tsx`
+   - Reads `returnHomeAt`; exposes `deadline`, `timeRemaining`, `isExpired`, `hasTime`, `refresh()`, `grantTime(ms)`.
+   - One `setInterval` (1s) recomputing from the deadline; listeners for `storage`, `visibilitychange`, and `useLocation()` changes so the value is always re-read.
+   - Uses a ref for `showWarning` to avoid the stale-closure bug.
+   - Renders `ScreenTimeWarningBanner` and `ScreenTimeExpiredModal` once, globally.
+2. `App.tsx`: wrap the router content in `ScreenTimeProvider`.
+3. `useScreenTimeTimer.ts`: becomes a thin wrapper over the context so existing call sites keep working; remove the per-component interval and the local modal state.
+4. Dismiss behavior: keep `returnHomeAt` (expired) rather than deleting it; navigation to `/` or the last book stays as-is.
+5. `VideoGrid.tsx` / `ChannelVideosList.tsx`: remove local modal/banner rendering; in `handleVideoClick`, return early and show the expired modal when `!hasTime`; add an effect that sets `playingVideoId` to `null` when `isExpired` flips true.
+6. `RewardsCarousel.tsx`: call `grantTime()` from the context instead of writing localStorage directly, so an active session extends correctly.
 
-5. **Verify**
-   - Add a channel by `@handle`, confirm a `UC…` ID is stored, and confirm its videos appear on `/videos`.
-
-## Technical notes
-
-- No schema or access-rule changes; the existing shared-list rules already allow signed-in users to manage rows, and the page stays wrapped in `AdminOnly`.
-- Search results are cached 7 days by the edge function, so repeated searches don't burn YouTube API quota.
+No database, edge function, or RLS changes are needed — this is entirely client-side timer/state logic.

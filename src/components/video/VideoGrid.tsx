@@ -137,10 +137,7 @@ export const VideoGrid = () => {
 
   return (
     <>
-      {showWarning && timeRemaining !== null && timeRemaining > 0 && (
-        <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
-      )}
-      <ScreenTimeExpiredModal open={showExpiredModal} onDismiss={dismissExpiredModal} />
+
       
       <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${showWarning ? 'mt-12' : ''}`}>
         {videos.map((video) => (

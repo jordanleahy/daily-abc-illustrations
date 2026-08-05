@@ -259,7 +259,9 @@ const App = () => {
                 <Route path="/:bookType" element={<BookTypeLanding />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+                </ScreenTimeProvider>
               </BrowserRouter>
+
             </NetworkStatusProvider>
           </RoleProvider>
         </AuthProvider>

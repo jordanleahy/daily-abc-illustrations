@@ -6,6 +6,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NetworkStatusProvider } from "@/contexts/NetworkStatusContext";
+import { ScreenTimeProvider } from "@/contexts/ScreenTimeContext";
 import { WeakNetworkBanner } from "@/components/ui/WeakNetworkBanner";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";

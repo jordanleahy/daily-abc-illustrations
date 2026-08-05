@@ -31,7 +31,12 @@ export const VideoGrid = () => {
   const navigate = useNavigate();
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   
-  const { timeRemaining, showWarning, showExpiredModal, dismissExpiredModal } = useScreenTimeTimer();
+  const { showWarning, isExpired, hasTime, requestMoreTime } = useScreenTimeTimer();
+
+  // Hard-stop playback the moment screen time runs out
+  useEffect(() => {
+    if (isExpired) setPlayingVideoId(null);
+  }, [isExpired]);
   
   // Get approved channels from database
   const { data: approvedChannels, isLoading: isLoadingChannels } = useActiveYouTubeChannels();

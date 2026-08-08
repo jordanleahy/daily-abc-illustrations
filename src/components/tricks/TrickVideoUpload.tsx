@@ -9,7 +9,6 @@ import { VideoData } from '@/types/trick';
 import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableVideoItem } from './SortableVideoItem';
-import { formatDuration } from '@/utils/timeUtils';
 
 const MAX_VIDEOS = 3;
 

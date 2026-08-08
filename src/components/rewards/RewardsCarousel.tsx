@@ -30,7 +30,7 @@ export const RewardsCarousel = memo(({
   const [selectedProduct, setSelectedProduct] = useState<RewardsProduct | null>(null);
   const { mutate: purchaseReward, isPending } = usePurchaseReward();
   const navigate = useNavigate();
-  const { grantTime } = useScreenTime();
+  const { refresh: refreshScreenTime } = useScreenTime();
 
   if (products.length === 0) return null;
 
@@ -43,8 +43,8 @@ export const RewardsCarousel = memo(({
     }, {
       onSuccess: () => {
         setSelectedProduct(null);
-        // Grant 10 minutes of screen time (extends any active session) and go watch
-        grantTime(10 * 60 * 1000);
+        // The purchase already credited the server balance — just re-read it
+        refreshScreenTime();
         navigate('/videos');
       },
     });

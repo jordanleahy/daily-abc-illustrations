@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Play } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 import { VideoEmptyState } from "./VideoEmptyState";
-import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
-import { useActiveYouTubeChannels } from "@/hooks/useYouTubeChannels";
+import { useScreenTime } from "@/contexts/ScreenTimeContext";
+import { useActiveYouTubeChannels, callYouTubeFunction } from "@/hooks/useYouTubeChannels";
+import { formatDuration } from "@/utils/timeUtils";
 import { 
   saveVideoListToCache, 
   getCachedVideoList, 
@@ -28,16 +27,15 @@ interface Video {
 }
 
 export const VideoGrid = () => {
-  const navigate = useNavigate();
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-  
-  const { showWarning, isExpired, hasTime, requestMoreTime } = useScreenTimeTimer();
+
+  const { isExpired, hasTime, requestMoreTime } = useScreenTime();
 
   // Hard-stop playback the moment screen time runs out
   useEffect(() => {
     if (isExpired) setPlayingVideoId(null);
   }, [isExpired]);
-  
+
   // Get approved channels from database
   const { data: approvedChannels, isLoading: isLoadingChannels } = useActiveYouTubeChannels();
 
@@ -47,34 +45,20 @@ export const VideoGrid = () => {
   const { data: videos, isLoading: isLoadingVideos } = useQuery({
     queryKey: ['youtube-videos', approvedChannels?.map(c => c.channel_id).join(',')],
     queryFn: async () => {
-      // If no approved channels, return empty array
       if (!approvedChannels || approvedChannels.length === 0) {
         return [];
       }
-      
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
 
       // Fetch videos from approved channels only
       const allVideos: Video[] = [];
 
       for (const channel of approvedChannels) {
         try {
-          const videoResponse = await fetch(
-            `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=get-channel-videos&channelId=${channel.channel_id}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-              },
-            }
+          const data = await callYouTubeFunction(
+            `action=get-channel-videos&channelId=${channel.channel_id}`
           );
-
-          const videoResult = await videoResponse.json();
-          if (videoResult.success) {
-            // Take up to 6 videos per channel
-            allVideos.push(...videoResult.data.videos.slice(0, 6));
-          }
+          // Take up to 6 videos per channel
+          allVideos.push(...(data.videos as Video[]).slice(0, 6));
         } catch (error) {
           console.error(`Failed to fetch videos for channel ${channel.channel_id}:`, error);
         }
@@ -82,17 +66,16 @@ export const VideoGrid = () => {
 
       // Shuffle videos for variety
       const shuffled = allVideos.sort(() => Math.random() - 0.5);
-      
+
       // Phase 1: Save to LocalStorage cache
       saveVideoListToCache(shuffled);
-      
+
       // Phase 1: Prefetch thumbnails in background
-      const thumbnailUrls = shuffled.map(v => v.thumbnailUrl);
-      prefetchThumbnailsToCache(thumbnailUrls).catch(console.error);
-      
+      prefetchThumbnailsToCache(shuffled.map(v => v.thumbnailUrl)).catch(console.error);
+
       // Phase 4: Check storage quota and cleanup if needed
       performStorageCleanupIfNeeded().catch(console.error);
-      
+
       return shuffled;
     },
     enabled: !!approvedChannels && approvedChannels.length > 0,
@@ -113,74 +96,52 @@ export const VideoGrid = () => {
     setPlayingVideoId(video.videoId);
   };
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const isLoading = isLoadingChannels || isLoadingVideos;
-
-  if (isLoading) {
+  if (isLoadingChannels || isLoadingVideos) {
     return <LoadingState text="Loading videos..." />;
   }
 
-  // Show empty state if no approved channels
-  if (!approvedChannels || approvedChannels.length === 0) {
-    return <VideoEmptyState />;
-  }
-
-  // Show empty state if no videos available
-  if (!videos || videos.length === 0) {
+  // Show empty state if no approved channels or no videos available
+  if (!approvedChannels?.length || !videos?.length) {
     return <VideoEmptyState />;
   }
 
   return (
-    <>
-
-      
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${showWarning ? 'mt-12' : ''}`}>
-        {videos.map((video) => (
-          <Card
-            key={video.videoId}
-            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => playingVideoId !== video.videoId && handleVideoClick(video)}
-          >
-            {playingVideoId === video.videoId ? (
-              <div className="space-y-2">
-                <YouTubeVideoPlayer videoId={video.videoId} title={video.title} />
-                <div className="p-4">
-                  <h3 className="font-semibold line-clamp-2">{video.title}</h3>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {videos.map((video) => (
+        <Card
+          key={video.videoId}
+          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => playingVideoId !== video.videoId && handleVideoClick(video)}
+        >
+          {playingVideoId === video.videoId ? (
+            <div className="space-y-2">
+              <YouTubeVideoPlayer videoId={video.videoId} title={video.title} />
+              <div className="p-4">
+                <h3 className="font-semibold line-clamp-2">{video.title}</h3>
               </div>
-            ) : (
-              <>
-                <div className="aspect-video relative">
-                  <img 
-                    src={video.thumbnailUrl} 
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <Play className="w-16 h-16 text-white" />
-                  </div>
-                  <Badge className="absolute bottom-2 right-2 bg-black/80">
-                    {formatDuration(video.durationSeconds)}
-                  </Badge>
+            </div>
+          ) : (
+            <>
+              <div className="aspect-video relative">
+                <img
+                  src={video.thumbnailUrl}
+                  alt={video.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <Play className="w-16 h-16 text-white" />
                 </div>
-                <div className="p-4">
-                  <h3 className="font-semibold line-clamp-2">{video.title}</h3>
-                </div>
-              </>
-            )}
-          </Card>
-        ))}
-      </div>
-    </>
+                <Badge className="absolute bottom-2 right-2 bg-black/80">
+                  {formatDuration(video.durationSeconds)}
+                </Badge>
+              </div>
+              <div className="p-4">
+                <h3 className="font-semibold line-clamp-2">{video.title}</h3>
+              </div>
+            </>
+          )}
+        </Card>
+      ))}
+    </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { X, Play } from 'lucide-react';
+import { formatDuration } from '@/utils/timeUtils';
 
 interface SortableVideoItemProps {
   id: string;
@@ -24,12 +25,6 @@ export function SortableVideoItem({ id, thumbnail, duration, index, onRemove, di
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (

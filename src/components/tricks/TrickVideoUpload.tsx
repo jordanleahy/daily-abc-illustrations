@@ -9,6 +9,7 @@ import { VideoData } from '@/types/trick';
 import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { SortableVideoItem } from './SortableVideoItem';
+import { formatDuration } from '@/utils/timeUtils';
 
 const MAX_VIDEOS = 3;
 
@@ -169,12 +170,6 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
     }
     
     onVideosChange(videos.filter((_, i) => i !== index));
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (

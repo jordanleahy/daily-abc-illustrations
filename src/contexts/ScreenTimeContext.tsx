@@ -8,29 +8,33 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { ScreenTimeWarningBanner } from '@/components/video/ScreenTimeWarningBanner';
 import { ScreenTimeExpiredModal } from '@/components/video/ScreenTimeExpiredModal';
 import { useLastFinishedBook } from '@/hooks/useLastFinishedBook';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 
-const STORAGE_KEY = 'returnHomeAt';
 const WARNING_THRESHOLD_MS = 60 * 1000;
 const TICK_MS = 1000;
+/** How often watched time is debited against the server balance */
+const DEBIT_INTERVAL_MS = 30 * 1000;
 
 interface ScreenTimeContextValue {
-  /** Epoch ms deadline, or null when no screen time was ever granted */
-  deadline: number | null;
-  /** Milliseconds remaining, or null when no deadline exists */
+  /** Milliseconds remaining, or null until the server balance is known */
   timeRemaining: number | null;
-  /** A deadline exists and it has passed */
+  /** Balance is known and exhausted */
   isExpired: boolean;
-  /** A deadline exists and there is still time left */
+  /** Balance is known and there is still time left */
   hasTime: boolean;
   showWarning: boolean;
   showExpiredModal: boolean;
-  /** Re-read the deadline from storage */
+  /** Mark playback as started/stopped — time is only consumed while watching */
+  setWatching: (watching: boolean) => void;
+  /** Re-read the balance from the server */
   refresh: () => void;
-  /** Grant (or extend) screen time by a number of milliseconds */
+  /** Optimistically add time after a reward purchase (server is source of truth) */
   grantTime: (durationMs: number) => void;
   /** Show the expired modal (e.g. a blocked play attempt) */
   requestMoreTime: () => void;
@@ -40,86 +44,133 @@ interface ScreenTimeContextValue {
 
 const ScreenTimeContext = createContext<ScreenTimeContextValue | null>(null);
 
-function readDeadline(): number | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  const parsed = parseInt(raw, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 export function ScreenTimeProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const location = useLocation();
+  const queryClient = useQueryClient();
   const { data: lastBookId } = useLastFinishedBook();
+  const { data: kidProfiles } = useKidProfiles();
 
-  const [deadline, setDeadline] = useState<number | null>(() => readDeadline());
-  const [now, setNow] = useState(() => Date.now());
+  // Screen time is tracked against the first active kid profile
+  const kidId = kidProfiles?.[0]?.id ?? null;
+
+  const { data: serverBalanceSeconds, refetch } = useQuery({
+    queryKey: ['screen-time-balance', kidId],
+    enabled: !!kidId,
+    staleTime: 15 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kid_profiles')
+        .select('screen_time_balance_seconds')
+        .eq('id', kidId!)
+        .single();
+      if (error) throw error;
+      return data?.screen_time_balance_seconds ?? 0;
+    },
+  });
+
+  /**
+   * Anchored balance: the remaining milliseconds at a monotonic point in time.
+   * `performance.now()` is used instead of `Date.now()` so changing the device
+   * clock cannot extend a session.
+   */
+  const [anchor, setAnchor] = useState<{ ms: number; at: number } | null>(null);
+  const [isWatching, setIsWatching] = useState(false);
+  const [, setTick] = useState(0);
   const [modalDismissed, setModalDismissed] = useState(false);
   const [forceModal, setForceModal] = useState(false);
-  const dismissedForDeadline = useRef<number | null>(null);
+  const hasWatchedRef = useRef(false);
+  const lastDebitAtRef = useRef<number | null>(null);
+
+  // Re-anchor whenever the server reports a balance
+  useEffect(() => {
+    if (serverBalanceSeconds === undefined) return;
+    setAnchor({ ms: serverBalanceSeconds * 1000, at: performance.now() });
+  }, [serverBalanceSeconds]);
+
+  const elapsedMs = () =>
+    isWatching && anchor ? performance.now() - anchor.at : 0;
+
+  const timeRemaining = anchor === null ? null : Math.max(0, anchor.ms - elapsedMs());
+  const isExpired = anchor !== null && timeRemaining === 0;
+  const hasTime = timeRemaining !== null && timeRemaining > 0;
+  const showWarning = isWatching && hasTime && timeRemaining! <= WARNING_THRESHOLD_MS;
+
+  // Countdown ticker only runs while a video is actually playing
+  useEffect(() => {
+    if (!isWatching) return;
+    const interval = setInterval(() => setTick((t) => t + 1), TICK_MS);
+    return () => clearInterval(interval);
+  }, [isWatching]);
+
+  /** Debit watched seconds against the server balance and re-anchor */
+  const flushConsumption = useCallback(async () => {
+    if (!kidId || lastDebitAtRef.current === null) return;
+    const seconds = Math.round((performance.now() - lastDebitAtRef.current) / 1000);
+    lastDebitAtRef.current = performance.now();
+    if (seconds < 1) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('consume-screen-time', {
+        body: { kidProfileId: kidId, secondsWatched: seconds },
+      });
+      const remaining = (data as { remainingSeconds?: number } | null)?.remainingSeconds;
+      if (!error && typeof remaining === 'number') {
+        setAnchor({ ms: remaining * 1000, at: performance.now() });
+      }
+      queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
+    } catch (err) {
+      console.error('[ScreenTime] Failed to debit watched time', err);
+    }
+  }, [kidId, queryClient]);
+
+  // Periodic server debit while watching, plus a final flush when playback stops
+  useEffect(() => {
+    if (!isWatching) return;
+    lastDebitAtRef.current = performance.now();
+    const interval = setInterval(flushConsumption, DEBIT_INTERVAL_MS);
+    return () => {
+      clearInterval(interval);
+      void flushConsumption();
+      lastDebitAtRef.current = null;
+    };
+  }, [isWatching, flushConsumption]);
+
+  // Flush when the tab is backgrounded so time isn't lost or over-granted
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') void flushConsumption();
+    };
+    document.addEventListener('visibilitychange', onHidden);
+    return () => document.removeEventListener('visibilitychange', onHidden);
+  }, [flushConsumption]);
+
+  // Stop watching the instant the balance runs out
+  useEffect(() => {
+    if (isExpired && isWatching) setIsWatching(false);
+  }, [isExpired, isWatching]);
+
+  const setWatching = useCallback((watching: boolean) => {
+    if (watching) hasWatchedRef.current = true;
+    setIsWatching(watching);
+  }, []);
 
   const refresh = useCallback(() => {
-    const next = readDeadline();
-    setDeadline((prev) => (prev === next ? prev : next));
-    setNow(Date.now());
-  }, []);
+    void refetch();
+  }, [refetch]);
 
-  // Re-read the deadline whenever the app regains focus, storage changes in
-  // another tab, or the route changes. This keeps enforcement alive even when
-  // the video components unmount/remount.
-  useEffect(() => {
-    refresh();
-  }, [refresh, location.pathname]);
-
-  useEffect(() => {
-    const onStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === STORAGE_KEY) refresh();
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') refresh();
-    };
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('focus', refresh);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('focus', refresh);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [refresh]);
-
-  // Single global ticker
-  useEffect(() => {
-    if (deadline === null) return;
-    setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => clearInterval(interval);
-  }, [deadline]);
-
-  const timeRemaining = deadline === null ? null : Math.max(0, deadline - now);
-  const isExpired = deadline !== null && timeRemaining === 0;
-  const hasTime = timeRemaining !== null && timeRemaining > 0;
-  const showWarning = hasTime && timeRemaining! <= WARNING_THRESHOLD_MS;
-
-  // A new deadline resets any previous dismissal
-  useEffect(() => {
-    if (dismissedForDeadline.current !== deadline) {
-      dismissedForDeadline.current = null;
+  const grantTime = useCallback(
+    (durationMs: number) => {
+      // Server balance was already incremented by the purchase; reflect it now
+      setAnchor((prev) => ({
+        ms: Math.max(0, (prev?.ms ?? 0) - 0) + durationMs,
+        at: performance.now(),
+      }));
       setModalDismissed(false);
       setForceModal(false);
-    }
-  }, [deadline]);
-
-  const showExpiredModal = forceModal || (isExpired && !modalDismissed);
-
-  const grantTime = useCallback((durationMs: number) => {
-    const current = readDeadline();
-    const base = current && current > Date.now() ? current : Date.now();
-    const next = base + durationMs;
-    localStorage.setItem(STORAGE_KEY, next.toString());
-    setDeadline(next);
-    setNow(Date.now());
-  }, []);
+      void refetch();
+    },
+    [refetch]
+  );
 
   const requestMoreTime = useCallback(() => {
     setModalDismissed(false);
@@ -128,9 +179,6 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
 
   const dismissExpiredModal = useCallback(
     (action: 'home' | 'habits') => {
-      // Keep the expired deadline in storage so reopening /videos stays blocked
-      // until new screen time is purchased.
-      dismissedForDeadline.current = deadline;
       setModalDismissed(true);
       setForceModal(false);
 
@@ -140,17 +188,21 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
         navigate('/');
       }
     },
-    [deadline, lastBookId, navigate]
+    [lastBookId, navigate]
   );
+
+  // Only surface the modal after a play attempt — never on unrelated pages
+  const showExpiredModal =
+    forceModal || (isExpired && hasWatchedRef.current && !modalDismissed);
 
   const value = useMemo<ScreenTimeContextValue>(
     () => ({
-      deadline,
       timeRemaining,
       isExpired,
       hasTime,
       showWarning,
       showExpiredModal,
+      setWatching,
       refresh,
       grantTime,
       requestMoreTime,
@@ -158,12 +210,12 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
       lastBookId: lastBookId ?? null,
     }),
     [
-      deadline,
       timeRemaining,
       isExpired,
       hasTime,
       showWarning,
       showExpiredModal,
+      setWatching,
       refresh,
       grantTime,
       requestMoreTime,

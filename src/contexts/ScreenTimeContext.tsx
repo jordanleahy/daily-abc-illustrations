@@ -34,8 +34,6 @@ interface ScreenTimeContextValue {
   setWatching: (watching: boolean) => void;
   /** Re-read the balance from the server */
   refresh: () => void;
-  /** Optimistically add time after a reward purchase (server is source of truth) */
-  grantTime: (durationMs: number) => void;
   /** Show the expired modal (e.g. a blocked play attempt) */
   requestMoreTime: () => void;
   dismissExpiredModal: (action: 'home' | 'habits') => void;
@@ -155,22 +153,10 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(() => {
+    setModalDismissed(false);
+    setForceModal(false);
     void refetch();
   }, [refetch]);
-
-  const grantTime = useCallback(
-    (durationMs: number) => {
-      // Server balance was already incremented by the purchase; reflect it now
-      setAnchor((prev) => ({
-        ms: Math.max(0, (prev?.ms ?? 0) - 0) + durationMs,
-        at: performance.now(),
-      }));
-      setModalDismissed(false);
-      setForceModal(false);
-      void refetch();
-    },
-    [refetch]
-  );
 
   const requestMoreTime = useCallback(() => {
     setModalDismissed(false);
@@ -204,7 +190,6 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
       showExpiredModal,
       setWatching,
       refresh,
-      grantTime,
       requestMoreTime,
       dismissExpiredModal,
       lastBookId: lastBookId ?? null,
@@ -217,7 +202,6 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
       showExpiredModal,
       setWatching,
       refresh,
-      grantTime,
       requestMoreTime,
       dismissExpiredModal,
       lastBookId,

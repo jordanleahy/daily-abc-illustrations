@@ -29,12 +29,18 @@ interface Video {
 export const VideoGrid = () => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
-  const { isExpired, hasTime, requestMoreTime } = useScreenTime();
+  const { isExpired, hasTime, requestMoreTime, setWatching } = useScreenTime();
 
   // Hard-stop playback the moment screen time runs out
   useEffect(() => {
     if (isExpired) setPlayingVideoId(null);
   }, [isExpired]);
+
+  // Screen time is only consumed while a video is actually playing
+  useEffect(() => {
+    setWatching(!!playingVideoId);
+    return () => setWatching(false);
+  }, [playingVideoId, setWatching]);
 
   // Get approved channels from database
   const { data: approvedChannels, isLoading: isLoadingChannels } = useActiveYouTubeChannels();

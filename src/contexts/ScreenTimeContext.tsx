@@ -175,7 +175,11 @@ export function ScreenTimeProvider({ children }: { children: ReactNode }) {
   return (
     <ScreenTimeContext.Provider value={value}>
       {showWarning && timeRemaining !== null && (
-        <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
+        <>
+          <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
+          {/* Spacer so the fixed banner never covers page content */}
+          <div aria-hidden className="h-10" />
+        </>
       )}
       <ScreenTimeExpiredModal open={showExpiredModal} onDismiss={dismissExpiredModal} />
       {children}

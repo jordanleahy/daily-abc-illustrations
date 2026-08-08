@@ -84,3 +84,17 @@ export const getTimeBasedGreeting = (): string => {
   if (hour >= 12 && hour < 17) return 'afternoon';
   return 'evening';
 };
+/**
+ * Format a duration in seconds as m:ss (or h:mm:ss when an hour or longer).
+ */
+export const formatDuration = (seconds: number): string => {
+  const total = Math.max(0, Math.floor(seconds || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+};

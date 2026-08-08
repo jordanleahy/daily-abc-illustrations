@@ -26,7 +26,7 @@ export interface YouTubeChannelSearchResult {
 
 const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-video`;
 
-async function callYouTubeFunction(query: string) {
+export async function callYouTubeFunction(query: string) {
   const { data: session } = await supabase.auth.getSession();
   const response = await fetch(`${FUNCTIONS_URL}?${query}`, {
     headers: {

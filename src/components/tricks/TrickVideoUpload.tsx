@@ -171,12 +171,6 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
     onVideosChange(videos.filter((_, i) => i !== index));
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
     <div className="space-y-3">
       <Label>Videos (Optional - Max {MAX_VIDEOS}, 30s each)</Label>

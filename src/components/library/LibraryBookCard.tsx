@@ -20,10 +20,12 @@ import { LIBRARY_STYLES } from '@/styles/library.styles';
 interface LibraryBookCardProps {
   book: LibraryBook | LandingLibraryBook;
   priority?: boolean;
+  /** Render the cover immediately instead of waiting for viewport intersection */
+  eager?: boolean;
   size?: 'small' | 'medium' | 'large';
 }
 
-export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }: LibraryBookCardProps) => {
+export const LibraryBookCard = memo(({ book, priority = false, eager = false, size = 'medium' }: LibraryBookCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { data: kidProfiles = [] } = useKidProfiles();
@@ -33,6 +35,9 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
     rootMargin: LIBRARY_CONFIG.INTERSECTION_ROOT_MARGIN,
     triggerOnce: true,
   });
+
+  const shouldLoadImage = eager || priority || isInView;
+
 
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -105,14 +110,19 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
         )}
         
         <div className={LIBRARY_STYLES.bookCard.imageContainer}>
-          {isInView && coverImage ? (
+          {shouldLoadImage && coverImage ? (
             <BookImage
               src={coverImage}
               alt={book.book_name}
               priority={priority}
+              width={400}
+              quality={75}
+              srcSetWidths={[200, 400, 600]}
+              sizes="(max-width: 768px) 45vw, 200px"
               className={LIBRARY_STYLES.bookCard.image}
               interceptCopyAsImage={true}
             />
+
           ) : (
             <div className={LIBRARY_STYLES.bookCard.placeholder.container}>
               <div className={LIBRARY_STYLES.bookCard.placeholder.text}>

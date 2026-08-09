@@ -110,8 +110,8 @@ export const CategorizedBookSections = memo(({
       {categoriesWithBooks.map((category, index) => {
         const categoryBooks = booksByCategory[category.id] || [];
 
-        // First category loads immediately, rest are lazy loaded
-        if (index === 0) {
+        // First two categories load immediately, rest are lazy loaded
+        if (index < 2) {
           return (
             <CategoryBookCarousel
               key={category.id}

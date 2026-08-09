@@ -1,30 +1,47 @@
-# Homepage: swipe through every book, like the Library
+# Make repeat homepage visits paint thumbnails instantly
 
-Right now the homepage and the Library render the same component (`CategorizedBookSections`) from the same data source (the `get_library_books_by_completion` RPC), but the homepage narrows it twice:
+The app already ships a service worker (`public/sw.js`) registered from `src/main.tsx`, with a 90-day cache-first image cache. Repeat visits still refetch homepage covers because of how that cache is keyed and warmed:
 
-- It slices the book list to the first 30 books before grouping them into categories.
-- It passes `maxBooksPerCategory={5}`, so each carousel stops after 5 slides.
+- Homepage cards now request covers at **width 400 / quality 75**, but `prefetchImagesToCache` warms only the **600 / 800 / 1200 / original** variants. Supabase image-transform URLs differ by query string, and the service worker matches on the exact request URL, so the warmed entries never match what the homepage actually renders — every visit is a cache miss.
+- `public/_headers` only tunes `/storage/v1/object/public/book-covers*`. The transformed covers the app requests come from the **render** endpoint (`/storage/v1/render/image/...`) on the Supabase origin, so those rules don't apply to them at all.
+- The image cache has no size cap and no storage-persistence request, so on mobile the browser can evict the whole bucket between visits.
 
-QA of the live data confirms the impact: the RPC returns 93 published library books across 11 categories (digraphs 39, rhyming 15, sight words 11, ABC 8, emotions 6, opposites 4, manners 3, CVC 3, shapes 2, animals 1, other 1). The homepage keeps only the first 30 of those and then shows at most 5 per category — so a signed-in user typically sees roughly a dozen cards across a handful of categories, not 30, and any category whose books all sit outside the top 30 is missing from the homepage entirely.
+## The fix
 
-The Library passes neither limit, which is why swiping there keeps going and swiping on the homepage stops early.
+**1. Warm exactly the variants the UI renders**
+Give the prefetcher the same width/quality the cards ask for instead of a fixed 600/800/1200 ladder. The homepage warms 400/75; reading views keep their larger sizes. One warmed variant per image, matching the rendered URL, means a guaranteed hit on the next visit and a third of the prefetch bandwidth.
 
+**2. Add a dedicated cover-thumbnail path in the service worker**
+Route Supabase image-transform requests to a `book-covers` cache with:
+- cache-first response, so a repeat visit paints from disk with no network wait,
+- stale-while-revalidate refresh in the background so covers still update,
+- a normalized cache key (path + width + quality, ignoring incidental params like tokens) so near-identical URLs still hit,
+- an LRU trim to a fixed entry cap so the bucket can't grow without bound.
 
-## What changes
+**3. Ask the browser to keep the cache**
+Call `navigator.storage.persist()` once after the service worker activates, so the cover cache survives storage pressure on mobile. Fall back silently when the browser declines.
 
-1. Remove the 30-book slice on the homepage and feed the full personalized list into the sections.
-2. Remove the per-category cap so every category carousel holds all of its books, exactly like the Library.
-3. Keep the personalized ordering (most recently completed first) and keep the "View all" links, so a category can still be opened as a full grid page.
-4. Keep the existing image behavior: card-sized 400px covers, the first few marked priority, the rest eager — so swiping right reveals covers already loaded rather than letter placeholders.
+**4. Cache-control tuning where it applies**
+- Extend `public/_headers` to cover the render/transform paths and the app's own hashed assets.
+- Set a long `cacheControl` on cover uploads so Supabase serves `max-age` far above its 1-hour default; covers are content-addressed by book/page, and the service worker's revalidation handles replacements.
 
-## Ensuring it stays fast
-
-- Only the first two category sections mount immediately; later sections still mount when scrolled to, so the initial paint cost does not grow with the number of categories.
-- The image preloader warms the first batch of covers at card size; remaining covers load as normal lazy images inside their carousel.
-- No new network requests: the homepage already fetches the full list and was throwing most of it away.
+**5. Warm the next visit, not just this one**
+After the homepage data resolves, warm the remaining category covers during idle time so the *second* visit is fully cached even if the user never swiped that far.
 
 ## Technical notes
 
-- `src/pages/Index.tsx`: drop `limitedLibraryItems` (the `slice(0, 30)`) and the `maxBooksPerCategory={5}` prop; pass `libraryItems` directly.
-- `src/components/library/CategorizedBookSections.tsx` and `CategoryBookCarousel.tsx` already handle an absent `maxBooks` — no change needed there.
-- No backend, data, or business-logic changes; presentation only.
+Files involved:
+- `src/utils/imageCaching.ts` — accept width/quality options, warm one matching variant instead of the 4-variant ladder.
+- `src/hooks/useImagePreloader.ts` / `useTypedImagePreloader.ts` — pass the caller's width/quality through to the prefetch message.
+- `src/hooks/useHomeImagePreloader.ts` — keep 400/75, warm the full list on idle after the priority batch.
+- `public/sw.js` — new `dailyabc-covers-v2` cache with normalized keys, stale-while-revalidate, and LRU trim; add it to the activate-time keep list.
+- `src/utils/serviceWorker.ts` — request persistent storage; include the new cache in stats and clearing.
+- `public/_headers` — add render/transform and hashed-asset rules.
+
+No backend logic, data model, or business-rule changes; this is caching and asset delivery only.
+
+## Verification
+
+- Load the homepage, reload, and confirm cover requests are served from the service worker cache (no network fetch) with covers painted on first frame.
+- Confirm the warmed URL and the rendered URL are byte-identical strings.
+- Confirm cache entry count stays under the cap after browsing many categories.

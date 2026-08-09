@@ -72,7 +72,7 @@ const Index = () => {
   const limitedLibraryItems = libraryItems.slice(0, 30);
   const isMobile = useIsMobile();
   
-  if (subscriptionLoading || isLoadingBooks) {
+  if (subscriptionLoading) {
     return <StandardPageLayout>
         <div className="container mx-auto py-8">
           <LoadingState text="Loading..." />
@@ -154,7 +154,7 @@ const Index = () => {
         {hasActiveSubscription && firstKid && tricks.length > 0 && <TricksCarousel tricks={tricks} goals={trickGoals} />}
 
         {/* Categorized Book Sections */}
-        {limitedLibraryItems.length > 0 ? <CategorizedBookSections books={limitedLibraryItems} maxBooksPerCategory={5} showViewAllLinks={true} /> : null}
+        {isLoadingBooks || limitedLibraryItems.length > 0 ? <CategorizedBookSections books={limitedLibraryItems} maxBooksPerCategory={5} showViewAllLinks={true} isLoading={isLoadingBooks} /> : null}
       </div>
     </StandardPageLayout>;
 };

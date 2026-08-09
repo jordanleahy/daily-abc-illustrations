@@ -211,6 +211,35 @@ export function BookImage({
           transition: 'opacity 300ms ease-out'
         }}
       />
+
+      {/* Blur-up placeholder - tiny LQIP paints instantly, then crossfades to the full image */}
+      {blurUp && blurUrl && !isImageHidden && !showWordDetail && (
+        <div
+          className="absolute inset-0 overflow-hidden"
+          aria-hidden="true"
+          style={{
+            opacity: imageLoaded ? 0 : 1,
+            transition: 'opacity 400ms ease-out',
+          }}
+        >
+          <img
+            src={blurUrl}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            fetchPriority="high"
+            crossOrigin="anonymous"
+            className={className}
+            style={{
+              filter: 'blur(12px)',
+              transform: 'scale(1.1)',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+            }}
+          />
+        </div>
+      )}
+
       
       {/* Main image with crossfade and visibility toggle */}
       <div

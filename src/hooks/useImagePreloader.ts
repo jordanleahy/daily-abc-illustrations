@@ -47,9 +47,10 @@ export function useImagePreloader(
     
     // ⚡ OPTIMIZED: Only use service worker cache, avoid Image object creation
     // Browser will handle preloading via link rel=preload tags in OptimizedImage component
-    prefetchImagesToCache(validUrls).catch(error => {
+    prefetchImagesToCache(validUrls, { width, quality }).catch(error => {
       console.error('[Image Preloader] Cache prefetch failed:', error);
     });
+
 
     // For priority images only, use native browser preload hints (more efficient)
     if (priority) {

@@ -92,3 +92,13 @@ export function preloadImages(urls: (string | null | undefined)[], priority: 'hi
     document.head.appendChild(link);
   });
 }
+
+/**
+ * Build a tiny low-quality placeholder (LQIP) URL for blur-up loading.
+ * ~24px wide, low quality — typically a couple of KB, so it paints almost instantly
+ * and gets blurred/scaled up behind the real image.
+ */
+export function getBlurPlaceholderUrl(url: string | null | undefined): string | undefined {
+  if (!url || !url.includes('supabase.co/storage')) return undefined;
+  return optimizeImageUrl(url, { width: 24, quality: 30 });
+}

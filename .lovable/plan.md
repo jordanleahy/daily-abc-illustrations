@@ -5,7 +5,10 @@ Right now the homepage and the Library render the same component (`CategorizedBo
 - It slices the book list to the first 30 books before grouping them into categories.
 - It passes `maxBooksPerCategory={5}`, so each carousel stops after 5 slides.
 
-The Library passes neither limit, which is why swiping there keeps going and swiping on the homepage stops early. Categories whose books all fell outside the top 30 don't appear on the homepage at all.
+QA of the live data confirms the impact: the RPC returns 93 published library books across 11 categories (digraphs 39, rhyming 15, sight words 11, ABC 8, emotions 6, opposites 4, manners 3, CVC 3, shapes 2, animals 1, other 1). The homepage keeps only the first 30 of those and then shows at most 5 per category — so a signed-in user typically sees roughly a dozen cards across a handful of categories, not 30, and any category whose books all sit outside the top 30 is missing from the homepage entirely.
+
+The Library passes neither limit, which is why swiping there keeps going and swiping on the homepage stops early.
+
 
 ## What changes
 

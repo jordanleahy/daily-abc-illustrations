@@ -2,8 +2,18 @@ const CACHE_NAME = 'dailyabc-images-v1';
 const VIDEO_CACHE_NAME = 'dailyabc-videos-v1';
 const THUMBNAIL_CACHE_NAME = 'dailyabc-thumbnails-v1';
 const TTS_CACHE_NAME = 'dailyabc-tts-v1';
+const COVER_CACHE_NAME = 'dailyabc-covers-v2';
 const CACHE_DURATION = 90 * 24 * 60 * 60 * 1000; // 90 days in milliseconds
 const VIDEO_CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days for videos
+const COVER_CACHE_MAX_ENTRIES = 400; // LRU cap for transformed cover thumbnails
+
+const KEEP_CACHES = [
+  CACHE_NAME,
+  VIDEO_CACHE_NAME,
+  THUMBNAIL_CACHE_NAME,
+  TTS_CACHE_NAME,
+  COVER_CACHE_NAME,
+];
 
 // Install event - setup cache
 self.addEventListener('install', (event) => {
@@ -18,10 +28,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && 
-              cacheName !== VIDEO_CACHE_NAME && 
-              cacheName !== THUMBNAIL_CACHE_NAME &&
-              cacheName !== TTS_CACHE_NAME) {
+          if (!KEEP_CACHES.includes(cacheName)) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -43,6 +50,67 @@ function isVideoFile(url) {
     (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') || url.includes('/videos/'));
 }
 
+// Helper: Transformed image request (Supabase render endpoint or ?width= transform)
+function isTransformedImage(url) {
+  if (!url.includes('supabase.co/storage')) return false;
+  if (isVideoFile(url)) return false;
+  return url.includes('/render/image/') || url.includes('width=');
+}
+
+/**
+ * Normalized cache key for transformed images.
+ * Keeps only the transform-relevant params (width/quality/format) so that
+ * incidental params (tokens, cache-busters) still resolve to the same entry.
+ */
+function coverCacheKey(url) {
+  try {
+    const parsed = new URL(url);
+    const params = new URLSearchParams();
+    ['width', 'quality', 'format'].forEach((key) => {
+      const value = parsed.searchParams.get(key);
+      if (value) params.set(key, value);
+    });
+    const query = params.toString();
+    return `${parsed.origin}${parsed.pathname}${query ? `?${query}` : ''}`;
+  } catch (e) {
+    return url;
+  }
+}
+
+// Trim the cover cache to the max entry count (oldest insertions first)
+async function trimCoverCache(cache) {
+  const keys = await cache.keys();
+  if (keys.length <= COVER_CACHE_MAX_ENTRIES) return;
+  const excess = keys.length - COVER_CACHE_MAX_ENTRIES;
+  await Promise.all(keys.slice(0, excess).map((key) => cache.delete(key)));
+}
+
+/**
+ * Stale-while-revalidate for transformed cover thumbnails.
+ * Repeat visits paint from disk immediately; a background fetch refreshes the entry.
+ */
+async function handleCoverRequest(request) {
+  const cache = await caches.open(COVER_CACHE_NAME);
+  const key = coverCacheKey(request.url);
+  const cached = await cache.match(key);
+
+  const network = fetch(request)
+    .then(async (response) => {
+      if (response && response.status === 200) {
+        await cache.put(key, response.clone());
+        // Re-insert order keeps the newest entries last for the LRU trim
+        trimCoverCache(cache);
+      }
+      return response;
+    })
+    .catch(() => undefined);
+
+  if (cached) return cached;
+
+  const fresh = await network;
+  return fresh || new Response('Image unavailable', { status: 503 });
+}
+
 // Helper: Check if URL should be cached as an image
 function isImageToCaching(url) {
   return url.includes('supabase.co/storage') || 
@@ -52,10 +120,19 @@ function isImageToCaching(url) {
          (url.includes('/assets/') && (url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.webp')));
 }
 
+
 // Fetch event - cache-first strategy with special handling for different content types
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
-  
+
+  if (event.request.method !== 'GET') return;
+
+  // Phase 0: Transformed cover thumbnails (stale-while-revalidate, normalized key)
+  if (isTransformedImage(url)) {
+    event.respondWith(handleCoverRequest(event.request));
+    return;
+  }
+
   // Phase 1: Cache YouTube thumbnails
   if (isYouTubeThumbnail(url)) {
     event.respondWith(
@@ -178,7 +255,8 @@ self.addEventListener('message', (event) => {
         caches.delete(CACHE_NAME),
         caches.delete(VIDEO_CACHE_NAME),
         caches.delete(THUMBNAIL_CACHE_NAME),
-        caches.delete(TTS_CACHE_NAME)
+        caches.delete(TTS_CACHE_NAME),
+        caches.delete(COVER_CACHE_NAME)
       ]).then(() => {
         console.log('[Service Worker] All caches cleared');
         if (event.ports[0]) {
@@ -354,40 +432,53 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'PREFETCH_IMAGES') {
     const urls = event.data.urls || [];
     console.log('[Service Worker] Prefetching', urls.length, 'images');
-    
+
     event.waitUntil(
-      caches.open(CACHE_NAME).then((cache) => {
-        return Promise.allSettled(
-          urls.map((url) => {
-            return fetch(url)
-              .then((response) => {
-                if (response && response.status === 200) {
-                  const headers = new Headers(response.headers);
-                  headers.append('sw-cache-date', new Date().toISOString());
-                  
-                  const modifiedResponse = new Response(response.clone().body, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: headers
+      Promise.all([caches.open(CACHE_NAME), caches.open(COVER_CACHE_NAME)]).then(
+        ([imageCache, coverCache]) => {
+          return Promise.allSettled(
+            urls.map((url) => {
+              // Transformed thumbnails live in the cover cache under a normalized key
+              // so the fetch handler resolves them on the next visit.
+              const isCover = isTransformedImage(url);
+              const cache = isCover ? coverCache : imageCache;
+              const key = isCover ? coverCacheKey(url) : url;
+
+              return cache.match(key).then((existing) => {
+                if (existing) return existing;
+
+                return fetch(url)
+                  .then((response) => {
+                    if (response && response.status === 200) {
+                      const headers = new Headers(response.headers);
+                      headers.append('sw-cache-date', new Date().toISOString());
+
+                      const modifiedResponse = new Response(response.clone().body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: headers
+                      });
+
+                      cache.put(key, modifiedResponse);
+                    }
+                    return response;
+                  })
+                  .catch((error) => {
+                    console.error('[Service Worker] Prefetch failed for:', url, error);
                   });
-                  
-                  cache.put(url, modifiedResponse);
-                  console.log('[Service Worker] Prefetched:', url);
-                }
-                return response;
-              })
-              .catch((error) => {
-                console.error('[Service Worker] Prefetch failed for:', url, error);
               });
-          })
-        ).then(() => {
-          if (event.ports[0]) {
-            event.ports[0].postMessage({ success: true, count: urls.length });
-          }
-        });
-      })
+            })
+          ).then(() => {
+            trimCoverCache(coverCache);
+            if (event.ports[0]) {
+              event.ports[0].postMessage({ success: true, count: urls.length });
+            }
+          });
+        }
+      )
     );
   }
+
   
   // Phase 2: Prefetch videos
   if (event.data && event.data.type === 'PREFETCH_VIDEOS') {

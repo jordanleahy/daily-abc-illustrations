@@ -4,28 +4,37 @@
 
 import { optimizeImageUrl } from './imageOptimization';
 
+export interface PrefetchOptions {
+  /** Rendered width — must match what the UI requests so the cache key lines up */
+  width?: number;
+  /** Rendered quality — must match what the UI requests */
+  quality?: number;
+}
+
 /**
  * Prefetch and cache images using the service worker
- * Ensures all images are available offline and load instantly
+ *
+ * Warms exactly ONE variant per image: the same width/quality the UI renders.
+ * Warming other sizes produces different URLs (and different cache keys), so
+ * they would never be hit by the actual <img> request.
  */
-export async function prefetchImagesToCache(imageUrls: (string | null | undefined)[]): Promise<boolean> {
+export async function prefetchImagesToCache(
+  imageUrls: (string | null | undefined)[],
+  options: PrefetchOptions = {}
+): Promise<boolean> {
   if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
     console.warn('[Image Caching] Service worker not available');
     return false;
   }
 
-  // Filter out null/undefined and optimize URLs
+  const { width = 800, quality = 85 } = options;
+
+  // Filter out null/undefined and optimize URLs to the rendered variant
   const validUrls = imageUrls
     .filter((url): url is string => !!url && url.includes('supabase.co/storage'))
-    .flatMap((url) => {
-      // Cache both optimized and original versions
-      return [
-        optimizeImageUrl(url, { width: 600, quality: 85 }),
-        optimizeImageUrl(url, { width: 800, quality: 85 }),
-        optimizeImageUrl(url, { width: 1200, quality: 85 }),
-        url // Original
-      ].filter((u): u is string => !!u);
-    });
+    .map((url) => optimizeImageUrl(url, { width, quality }))
+    .filter((u): u is string => !!u);
+
 
   if (validUrls.length === 0) {
     return false;

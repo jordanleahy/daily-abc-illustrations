@@ -6,6 +6,22 @@ const IMAGE_CACHE_NAME = 'dailyabc-images-v1';
 const VIDEO_CACHE_NAME = 'dailyabc-videos-v1';
 const THUMBNAIL_CACHE_NAME = 'dailyabc-thumbnails-v1';
 const TTS_CACHE_NAME = 'dailyabc-tts-v1';
+const COVER_CACHE_NAME = 'dailyabc-covers-v2';
+
+/**
+ * Ask the browser to keep our caches under storage pressure.
+ * Safe no-op when unsupported or declined.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (!('storage' in navigator) || !navigator.storage?.persist) return false;
+    if (await navigator.storage.persisted?.()) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}
+
 
 /**
  * Clear all caches (images, videos, thumbnails, TTS)
@@ -55,23 +71,26 @@ export async function getCacheStats(): Promise<{
 }> {
   if ('caches' in window) {
     try {
-      const [imageCache, videoCache, thumbnailCache, ttsCache] = await Promise.all([
+      const [imageCache, videoCache, thumbnailCache, ttsCache, coverCache] = await Promise.all([
         caches.open(IMAGE_CACHE_NAME).then(cache => cache.keys()),
         caches.open(VIDEO_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
         caches.open(THUMBNAIL_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
         caches.open(TTS_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
+        caches.open(COVER_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
       ]);
       
       // TTS cache stores 2 entries per audio (audio + metadata), so divide by 2
       const ttsCount = Math.floor(ttsCache.length / 2);
+      const imageCount = imageCache.length + coverCache.length;
       
       return { 
-        images: imageCache.length,
+        images: imageCount,
         videos: videoCache.length,
         thumbnails: thumbnailCache.length,
         tts: ttsCount,
-        total: imageCache.length + videoCache.length + thumbnailCache.length + ttsCount,
+        total: imageCount + videoCache.length + thumbnailCache.length + ttsCount,
       };
+
     } catch (error) {
       console.error('Error getting cache stats:', error);
       return { images: 0, videos: 0, thumbnails: 0, tts: 0, total: 0 };

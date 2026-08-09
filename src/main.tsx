@@ -11,6 +11,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { requestPersistentStorage } from "./utils/serviceWorker";
 
 /**
  * Initialize and render the React application
@@ -34,6 +35,8 @@ if ('serviceWorker' in navigator) {
       .register('/sw.js')
       .then((registration) => {
         console.log('[App] Service Worker registered:', registration.scope);
+        // Keep the thumbnail caches from being evicted under storage pressure
+        requestPersistentStorage();
       })
       .catch((error) => {
         console.error('[App] Service Worker registration failed:', error);

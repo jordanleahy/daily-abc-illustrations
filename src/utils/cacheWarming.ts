@@ -64,7 +64,9 @@ export async function warmCriticalCache() {
 
     if (uniqueUrls.length > 0) {
       console.log(`[Cache Warming] Warming cache with ${uniqueUrls.length} critical images`);
-      await prefetchImagesToCache(uniqueUrls);
+      // Match the homepage card variant (400w / q75) so warmed URLs are cache hits
+      await prefetchImagesToCache(uniqueUrls, { width: 400, quality: 75 });
+
       console.log('[Cache Warming] ✅ Critical cache warmed successfully');
     } else {
       console.log('[Cache Warming] No critical images to cache');

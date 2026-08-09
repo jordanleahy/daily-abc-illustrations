@@ -431,40 +431,53 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'PREFETCH_IMAGES') {
     const urls = event.data.urls || [];
     console.log('[Service Worker] Prefetching', urls.length, 'images');
-    
+
     event.waitUntil(
-      caches.open(CACHE_NAME).then((cache) => {
-        return Promise.allSettled(
-          urls.map((url) => {
-            return fetch(url)
-              .then((response) => {
-                if (response && response.status === 200) {
-                  const headers = new Headers(response.headers);
-                  headers.append('sw-cache-date', new Date().toISOString());
-                  
-                  const modifiedResponse = new Response(response.clone().body, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: headers
+      Promise.all([caches.open(CACHE_NAME), caches.open(COVER_CACHE_NAME)]).then(
+        ([imageCache, coverCache]) => {
+          return Promise.allSettled(
+            urls.map((url) => {
+              // Transformed thumbnails live in the cover cache under a normalized key
+              // so the fetch handler resolves them on the next visit.
+              const isCover = isTransformedImage(url);
+              const cache = isCover ? coverCache : imageCache;
+              const key = isCover ? coverCacheKey(url) : url;
+
+              return cache.match(key).then((existing) => {
+                if (existing) return existing;
+
+                return fetch(url)
+                  .then((response) => {
+                    if (response && response.status === 200) {
+                      const headers = new Headers(response.headers);
+                      headers.append('sw-cache-date', new Date().toISOString());
+
+                      const modifiedResponse = new Response(response.clone().body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: headers
+                      });
+
+                      cache.put(key, modifiedResponse);
+                    }
+                    return response;
+                  })
+                  .catch((error) => {
+                    console.error('[Service Worker] Prefetch failed for:', url, error);
                   });
-                  
-                  cache.put(url, modifiedResponse);
-                  console.log('[Service Worker] Prefetched:', url);
-                }
-                return response;
-              })
-              .catch((error) => {
-                console.error('[Service Worker] Prefetch failed for:', url, error);
               });
-          })
-        ).then(() => {
-          if (event.ports[0]) {
-            event.ports[0].postMessage({ success: true, count: urls.length });
-          }
-        });
-      })
+            })
+          ).then(() => {
+            trimCoverCache(coverCache);
+            if (event.ports[0]) {
+              event.ports[0].postMessage({ success: true, count: urls.length });
+            }
+          });
+        }
+      )
     );
   }
+
   
   // Phase 2: Prefetch videos
   if (event.data && event.data.type === 'PREFETCH_VIDEOS') {

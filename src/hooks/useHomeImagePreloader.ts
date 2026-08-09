@@ -10,6 +10,6 @@ export function useHomeImagePreloader(books: LibraryBook[] | undefined) {
   useTypedImagePreloader(
     books,
     book => book.cover_image,
-    { priorityCount: 3, width: 800, batchSize: 6, batchDelay: 200 }
+    { priorityCount: 8, width: 400, quality: 75, batchSize: 8, batchDelay: 120 }
   );
 }

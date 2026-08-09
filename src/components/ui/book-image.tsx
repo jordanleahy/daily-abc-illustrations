@@ -55,6 +55,12 @@ interface BookImageProps {
   isVideoExporting?: boolean;
   /** Whether book video export is in progress */
   isBookVideoExporting?: boolean;
+  /** Rendered width used for optimization (default: 800) */
+  width?: number;
+  /** Image quality (default: 85) */
+  quality?: number;
+  /** Widths used to build the responsive srcSet (default: [400, 800, 1200]) */
+  srcSetWidths?: number[];
 }
 
 /**
@@ -81,6 +87,9 @@ export function BookImage({
   isAudioPlaying = false,
   isVideoExporting = false,
   isBookVideoExporting = false,
+  width = 800,
+  quality = 85,
+  srcSetWidths = [400, 800, 1200],
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasBeenTapped, setHasBeenTapped] = useState(false);
@@ -105,8 +114,8 @@ export function BookImage({
     );
   }
 
-  const optimizedUrl = optimizeImageUrl(src, { width: 800, quality: 85 });
-  const srcSet = generateSrcSet(src, [400, 800, 1200]);
+  const optimizedUrl = optimizeImageUrl(src, { width, quality });
+  const srcSet = generateSrcSet(src, srcSetWidths);
   
   // PHASE 4: Create performance tracker for this image
   const performanceTracker = createImageLoadTracker(optimizedUrl || src);

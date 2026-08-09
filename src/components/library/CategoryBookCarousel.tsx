@@ -111,7 +111,9 @@ export const CategoryBookCarousel = memo(({
                 <LibraryBookCard
                   book={book}
                   priority={index < LIBRARY_CONFIG.PRIORITY_IMAGE_COUNT}
+                  eager
                 />
+
               </CarouselItem>
             ))}
           </CarouselContent>

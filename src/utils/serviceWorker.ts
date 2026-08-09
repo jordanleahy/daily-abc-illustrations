@@ -6,6 +6,22 @@ const IMAGE_CACHE_NAME = 'dailyabc-images-v1';
 const VIDEO_CACHE_NAME = 'dailyabc-videos-v1';
 const THUMBNAIL_CACHE_NAME = 'dailyabc-thumbnails-v1';
 const TTS_CACHE_NAME = 'dailyabc-tts-v1';
+const COVER_CACHE_NAME = 'dailyabc-covers-v2';
+
+/**
+ * Ask the browser to keep our caches under storage pressure.
+ * Safe no-op when unsupported or declined.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (!('storage' in navigator) || !navigator.storage?.persist) return false;
+    if (await navigator.storage.persisted?.()) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}
+
 
 /**
  * Clear all caches (images, videos, thumbnails, TTS)

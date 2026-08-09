@@ -124,7 +124,15 @@ function isImageToCaching(url) {
 // Fetch event - cache-first strategy with special handling for different content types
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
-  
+
+  if (event.request.method !== 'GET') return;
+
+  // Phase 0: Transformed cover thumbnails (stale-while-revalidate, normalized key)
+  if (isTransformedImage(url)) {
+    event.respondWith(handleCoverRequest(event.request));
+    return;
+  }
+
   // Phase 1: Cache YouTube thumbnails
   if (isYouTubeThumbnail(url)) {
     event.respondWith(

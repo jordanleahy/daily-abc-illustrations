@@ -16,7 +16,7 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff, BookOpen, Copy, Check, Volume2, Video, Smartphone, Monitor, Square, ArrowLeft, Infinity } from 'lucide-react';
-import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { optimizeImageUrl, generateSrcSet, getBlurPlaceholderUrl } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 import { WordDetailView } from '@/components/reading/WordDetailView';
 import { copyImageToClipboard } from '@/utils/clipboardHelpers';
@@ -61,6 +61,8 @@ interface BookImageProps {
   quality?: number;
   /** Widths used to build the responsive srcSet (default: [400, 800, 1200]) */
   srcSetWidths?: number[];
+  /** Show a tiny blurred placeholder while the full image loads (default: true) */
+  blurUp?: boolean;
 }
 
 /**
@@ -90,6 +92,7 @@ export function BookImage({
   width = 800,
   quality = 85,
   srcSetWidths = [400, 800, 1200],
+  blurUp = true,
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasBeenTapped, setHasBeenTapped] = useState(false);
@@ -116,6 +119,7 @@ export function BookImage({
 
   const optimizedUrl = optimizeImageUrl(src, { width, quality });
   const srcSet = generateSrcSet(src, srcSetWidths);
+  const blurUrl = getBlurPlaceholderUrl(src);
   
   // PHASE 4: Create performance tracker for this image
   const performanceTracker = createImageLoadTracker(optimizedUrl || src);

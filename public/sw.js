@@ -255,7 +255,8 @@ self.addEventListener('message', (event) => {
         caches.delete(CACHE_NAME),
         caches.delete(VIDEO_CACHE_NAME),
         caches.delete(THUMBNAIL_CACHE_NAME),
-        caches.delete(TTS_CACHE_NAME)
+        caches.delete(TTS_CACHE_NAME),
+        caches.delete(COVER_CACHE_NAME)
       ]).then(() => {
         console.log('[Service Worker] All caches cleared');
         if (event.ports[0]) {
